@@ -82,7 +82,7 @@ const ar: Dict = {
   'service.fuel': 'وقود',
   'service.oil_change': 'تغيير زيت',
   'service.maintenance': 'الصيانة الدورية',
-  'service.tires': 'تغيير الكفرات',
+  'service.tires': 'إطارات',
   'service.battery': 'بطارية',
   'service.parts': 'تغيير قطع',
   'service.other': 'أخرى',
