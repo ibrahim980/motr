@@ -20,12 +20,13 @@ import {
   User as UserIcon,
   ChevronLeft,
   Share2,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Trash2
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ar as arLocale, enUS as enLocale } from 'date-fns/locale';
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
@@ -249,6 +250,71 @@ function AlertItemRow({ status }: { status: MaintenanceStatus }) {
   );
 }
 
+function VehicleManageRow({
+  vehicle,
+  onDelete,
+}: {
+  vehicle: Vehicle;
+  onDelete: (v: Vehicle) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  if (confirming) {
+    return (
+      <div className="bg-danger/5 border border-danger/20 rounded-2xl p-4 space-y-3">
+        <p className="text-sm font-bold text-danger">{vehicle.name}</p>
+        <p className="text-xs text-black/60 leading-relaxed">{t('settings.delete_explain')}</p>
+        <div className="flex gap-2">
+          <button
+            onClick={() => setConfirming(false)}
+            disabled={busy}
+            className="flex-1 bg-black/5 border border-black/10 py-2.5 rounded-xl text-xs font-bold hover:bg-black/10 transition"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onDelete(vehicle);
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+            className="flex-1 bg-danger text-white py-2.5 rounded-xl text-xs font-bold hover:brightness-95 transition disabled:opacity-60"
+          >
+            {t('settings.delete_confirm_button')}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="bg-white border border-black/10 rounded-2xl p-4 flex items-center justify-between gap-3">
+      <div className="min-w-0">
+        <p className="font-bold text-sm truncate">{vehicle.name}</p>
+        {(vehicle.make || vehicle.model) && (
+          <p className="text-[10px] uppercase tracking-widest text-black/40 truncate">
+            {vehicle.make} {vehicle.model}
+            {vehicle.year ? ` • ${vehicle.year}` : ''}
+          </p>
+        )}
+      </div>
+      <button
+        onClick={() => setConfirming(true)}
+        className="w-9 h-9 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger/20 transition shrink-0"
+        aria-label={t('settings.delete_vehicle')}
+      >
+        <Trash2 className="w-4 h-4" />
+      </button>
+    </div>
+  );
+}
+
 function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
   const { t } = useI18n();
   const items = getMaintenanceStatuses(vehicle);
@@ -396,6 +462,35 @@ export default function App() {
   };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const newVehicleIdRef = useRef<string | null>(null);
+
+  const handleAddVehicle = () => {
+    setSelectedVehicle(null);
+    fileInputRef.current?.click();
+  };
+
+  const handleDeleteVehicle = async (vehicle: Vehicle) => {
+    if (!user) return;
+    try {
+      const eventsQuery = query(
+        collection(db, 'events'),
+        where('userId', '==', user.uid),
+        where('vehicleId', '==', vehicle.id)
+      );
+      const snap = await getDocs(eventsQuery);
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        const chunk = snap.docs.slice(i, i + 400);
+        const batch = writeBatch(db);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+      await deleteDoc(doc(db, 'vehicles', vehicle.id));
+      toast.success(t('settings.deleted'));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('settings.delete_failed'));
+    }
+  };
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -417,6 +512,13 @@ export default function App() {
       const vList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
       setVehicles(vList);
       setSelectedVehicle((current) => {
+        if (newVehicleIdRef.current) {
+          const justAdded = vList.find((v) => v.id === newVehicleIdRef.current);
+          if (justAdded) {
+            newVehicleIdRef.current = null;
+            return justAdded;
+          }
+        }
         if (!current) return vList[0] ?? null;
         const fresh = vList.find((v) => v.id === current.id);
         return fresh ?? vList[0] ?? null;
@@ -485,6 +587,7 @@ export default function App() {
             updatedAt: serverTimestamp()
           });
           vehicleId = newV.id;
+          newVehicleIdRef.current = newV.id;
         } else {
           // Update current vehicle mileage
           await updateDoc(doc(db, 'vehicles', vehicleId), {
@@ -947,6 +1050,28 @@ export default function App() {
                   </button>
                 ) : (
                   <>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-bold">{t('profile.your_vehicles')}</h3>
+                      <button
+                        onClick={handleAddVehicle}
+                        className="w-full bg-brand text-white p-4 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-brand/20 hover:brightness-95 transition"
+                      >
+                        <Plus className="w-5 h-5" />
+                        <span>{t('profile.add_vehicle')}</span>
+                      </button>
+                      {vehicles.length === 0 ? (
+                        <p className="text-sm text-black/40 text-center py-3">{t('profile.no_vehicles')}</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {vehicles.map((v) => (
+                            <div key={v.id}>
+                              <VehicleManageRow vehicle={v} onDelete={handleDeleteVehicle} />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
                     {vehicles.length === 0 && (
                       <button
                         onClick={async () => {
