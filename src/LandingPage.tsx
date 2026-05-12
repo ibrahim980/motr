@@ -17,7 +17,7 @@ export function LandingPage() {
     <div className="min-h-screen bg-bg-dark text-ink">
       {/* Header */}
       <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <img src="/logo.svg" alt="MOTR" className="h-12 w-auto drop-shadow-md" />
+        <img src="/motr2.svg" alt="MOTR" className="h-14 w-auto drop-shadow-md" />
         <a
           href={APP_URL}
           className="hidden sm:inline-flex items-center gap-2 bg-white border border-black/10 rounded-full px-5 py-2.5 text-sm font-bold hover:bg-black/5 transition"
@@ -169,7 +169,13 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-white py-8 border-t border-black/5">
         <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50">
-          © 2025 MOTR. جميع الحقوق محفوظة.
+          © 2025
+          <img
+            src="/motr2.svg"
+            alt="MOTR"
+            className="inline-block h-5 w-auto align-middle mx-1"
+          />
+          . جميع الحقوق محفوظة.
         </div>
       </footer>
     </div>

@@ -284,9 +284,9 @@ export default function App() {
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
                   <img
-                    src="/logo.svg"
+                    src="/motr2.svg"
                     alt="MOTR"
-                    className="h-10 w-auto drop-shadow-md"
+                    className="h-12 w-auto drop-shadow-md"
                   />
                   <p className="text-[10px] text-brand font-medium tracking-[0.1em] uppercase">Smart System</p>
                 </div>

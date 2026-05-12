@@ -81,7 +81,15 @@ export function InstallPrompt() {
           <div className="bg-white rounded-2xl shadow-2xl border border-black/10 p-4 flex items-start gap-3 dir-rtl">
             <img src="/icon.svg" alt="" className="w-12 h-12 shrink-0" />
             <div className="flex-1 min-w-0">
-              <p className="font-bold text-sm mb-1">أضف MOTR إلى شاشتك الرئيسية</p>
+              <p className="font-bold text-sm mb-1">
+                أضف
+                <img
+                  src="/motr2.svg"
+                  alt="MOTR"
+                  className="inline-block h-5 w-auto align-middle mx-1"
+                />
+                إلى شاشتك الرئيسية
+              </p>
               {isIOS ? (
                 <p className="text-xs text-black/60 leading-relaxed">
                   اضغط زر المشاركة
