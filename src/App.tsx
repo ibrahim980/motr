@@ -246,7 +246,7 @@ export default function App() {
   const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
-  const dateLocale = lang === 'ar' ? 'ar-u-ca-gregory-nu-arab' : 'en-US';
+  const dateLocale = lang === 'ar' ? 'ar-u-ca-gregory-nu-latn' : 'en-US';
 
   const serviceLabel = (type: ServiceType): string => {
     const map: Record<ServiceType, string> = {
