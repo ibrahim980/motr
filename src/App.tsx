@@ -26,6 +26,7 @@ import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDo
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
 import { ServiceType, Vehicle, TimelineEvent } from './types';
 import { scanOdometer } from './lib/gemini';
+import { InstallPrompt } from './InstallPrompt';
 
 import { generateVehicleReport } from './lib/reports';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -303,6 +304,7 @@ export default function App() {
       </AnimatePresence>
 
       <Toaster position="top-center" />
+      {!showSplash && <InstallPrompt />}
 
       {/* Pages */}
       <main className="max-w-md mx-auto px-6 pt-12">
