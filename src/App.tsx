@@ -24,6 +24,8 @@ import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
 import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs } from 'firebase/firestore';
+import { formatDistanceToNow } from 'date-fns';
+import { ar as arLocale, enUS as enLocale } from 'date-fns/locale';
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
 import { ServiceType, Vehicle, TimelineEvent } from './types';
 import { scanOdometer } from './lib/gemini';
@@ -135,6 +137,21 @@ function CornerBracket({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
     br: 'bottom-3 right-3 border-b-2 border-r-2 rounded-br-md',
   };
   return <span className={`${base} ${styles[position]}`} />;
+}
+
+function timestampToDate(ts: unknown): Date | null {
+  if (!ts) return null;
+  if (ts instanceof Date) return ts;
+  if (typeof ts === 'object' && ts !== null) {
+    const anyTs = ts as { toDate?: () => Date; seconds?: number };
+    if (typeof anyTs.toDate === 'function') return anyTs.toDate();
+    if (typeof anyTs.seconds === 'number') return new Date(anyTs.seconds * 1000);
+  }
+  if (typeof ts === 'string' || typeof ts === 'number') {
+    const d = new Date(ts);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  return null;
 }
 
 function getBatteryAlert(vehicle: Vehicle): { state: 'soon' | 'overdue'; months: number } | null {
@@ -521,8 +538,17 @@ export default function App() {
                             <p className="text-xl font-bold"><CountUp value={selectedVehicle.currentMileage} /></p>
                           </div>
                           <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
-                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.confidence')}</p>
-                            <p className="text-xl font-bold text-success">98%</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.last_update')}</p>
+                            <p className="text-xl font-bold">
+                              {(() => {
+                                const d = timestampToDate(selectedVehicle.updatedAt) || timestampToDate(selectedVehicle.createdAt);
+                                if (!d) return t('common.never');
+                                return formatDistanceToNow(d, {
+                                  addSuffix: true,
+                                  locale: lang === 'ar' ? arLocale : enLocale,
+                                });
+                              })()}
+                            </p>
                           </div>
                         </div>
 
