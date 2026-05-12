@@ -416,9 +416,11 @@ export default function App() {
     const unsubV = onSnapshot(vQuery, (snap) => {
       const vList = snap.docs.map(doc => ({ id: doc.id, ...doc.data() } as Vehicle));
       setVehicles(vList);
-      if (vList.length > 0 && !selectedVehicle) {
-        setSelectedVehicle(vList[0]);
-      }
+      setSelectedVehicle((current) => {
+        if (!current) return vList[0] ?? null;
+        const fresh = vList.find((v) => v.id === current.id);
+        return fresh ?? vList[0] ?? null;
+      });
     });
 
     const eQuery = query(collection(db, 'events'), where('userId', '==', user.uid));

@@ -1,7 +1,17 @@
 import { useEffect, useState, type ReactNode } from 'react';
 import { motion } from 'motion/react';
-import { X } from 'lucide-react';
-import { doc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { Trash2, X } from 'lucide-react';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query,
+  serverTimestamp,
+  updateDoc,
+  where,
+  writeBatch,
+} from 'firebase/firestore';
 import { toast } from 'react-hot-toast';
 import { db } from './lib/firebase';
 import { useI18n } from './i18n';
@@ -47,6 +57,8 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
   const [partsMonths, setPartsMonths] = useState(toNumber(vehicle.partsIntervalMonths, 12));
 
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
@@ -55,6 +67,36 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onClose]);
+
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      const eventsQuery = query(
+        collection(db, 'events'),
+        where('userId', '==', vehicle.userId),
+        where('vehicleId', '==', vehicle.id)
+      );
+      const snap = await getDocs(eventsQuery);
+      // Firestore batches max 500 ops. Chunk if needed.
+      const chunks: typeof snap.docs[] = [];
+      for (let i = 0; i < snap.docs.length; i += 400) {
+        chunks.push(snap.docs.slice(i, i + 400));
+      }
+      for (const chunk of chunks) {
+        const batch = writeBatch(db);
+        chunk.forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+      await deleteDoc(doc(db, 'vehicles', vehicle.id));
+      toast.success(t('settings.deleted'));
+      onClose();
+    } catch (err) {
+      console.error(err);
+      toast.error(t('settings.delete_failed'));
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -190,6 +232,42 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
               onChange={setPartsDate}
             />
           </Section>
+
+          <div className="pt-4 pb-2 border-t border-black/10">
+            <h4 className="text-sm font-bold text-danger mb-3 uppercase tracking-wider">
+              {t('settings.danger_zone')}
+            </h4>
+            {confirmDelete ? (
+              <div className="bg-danger/5 border border-danger/20 rounded-2xl p-4 space-y-3">
+                <p className="text-sm font-bold text-danger">{t('settings.delete_warning')}</p>
+                <p className="text-xs text-black/60 leading-relaxed">{t('settings.delete_explain')}</p>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    disabled={deleting}
+                    className="flex-1 bg-black/5 border border-black/10 py-2.5 rounded-xl text-xs font-bold hover:bg-black/10 transition"
+                  >
+                    {t('common.cancel')}
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    disabled={deleting}
+                    className="flex-1 bg-danger text-white py-2.5 rounded-xl text-xs font-bold hover:brightness-95 transition disabled:opacity-60"
+                  >
+                    {t('settings.delete_confirm_button')}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmDelete(true)}
+                className="w-full bg-danger/10 text-danger py-3 rounded-2xl text-sm font-bold inline-flex items-center justify-center gap-2 hover:bg-danger/15 transition"
+              >
+                <Trash2 className="w-4 h-4" />
+                {t('settings.delete_vehicle')}
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="flex gap-3 p-6 pt-4 border-t border-black/5">
