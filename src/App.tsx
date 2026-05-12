@@ -30,6 +30,7 @@ import { ar as arLocale, enUS as enLocale } from 'date-fns/locale';
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
 import { ServiceType, Vehicle, TimelineEvent } from './types';
 import { scanOdometer } from './lib/gemini';
+import { seedDemoData } from './lib/seedDemo';
 import { InstallPrompt } from './InstallPrompt';
 import { useI18n, LanguageToggle } from './i18n';
 import { VehicleSettings } from './VehicleSettings';
@@ -780,13 +781,33 @@ export default function App() {
                     <span>{t('profile.sign_in_google')}</span>
                   </button>
                 ) : (
-                  <button
-                    onClick={() => signOut(auth)}
-                    className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-danger font-bold"
-                  >
-                    <LogOut className="w-6 h-6" />
-                    <span>{t('profile.sign_out')}</span>
-                  </button>
+                  <>
+                    {vehicles.length === 0 && (
+                      <button
+                        onClick={async () => {
+                          try {
+                            await seedDemoData(user.uid);
+                            toast.success(t('profile.seed_demo_done'));
+                            setActivePage('dashboard');
+                          } catch (err) {
+                            console.error(err);
+                            toast.error(t('profile.seed_demo_failed'));
+                          }
+                        }}
+                        className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-brand font-bold"
+                      >
+                        <Plus className="w-6 h-6" />
+                        <span>{t('profile.seed_demo')}</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => signOut(auth)}
+                      className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-danger font-bold"
+                    >
+                      <LogOut className="w-6 h-6" />
+                      <span>{t('profile.sign_out')}</span>
+                    </button>
+                  </>
                 )}
               </div>
             </motion.div>
