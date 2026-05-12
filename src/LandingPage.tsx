@@ -1,15 +1,17 @@
+import { useEffect, useRef, useState } from 'react';
 import {
   Bell,
   BarChart3,
   Brain,
   Camera,
   ChevronDown,
+  Menu as MenuIcon,
   Plus,
   Smartphone,
   TrendingUp,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
-import { LanguageToggle, useI18n } from './i18n';
+import { useI18n, type Lang } from './i18n';
 
 const APP_URL = '/app';
 
@@ -20,16 +22,8 @@ export function LandingPage() {
     <div className="min-h-screen bg-bg-dark text-ink">
       {/* Header */}
       <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <img src="/motr2.svg" alt="MOTR" className="h-14 w-auto drop-shadow-md" />
-        <div className="flex items-center gap-2">
-          <LanguageToggle />
-          <a
-            href={APP_URL}
-            className="hidden sm:inline-flex items-center gap-2 bg-white border border-black/10 rounded-full px-5 py-2.5 text-sm font-bold hover:bg-black/5 transition"
-          >
-            {t('landing.open_app')}
-          </a>
-        </div>
+        <img src="/logo.svg" alt="MOTR" className="h-14 w-auto drop-shadow-md" />
+        <HeaderMenu />
       </header>
 
       {/* Hero */}
@@ -64,7 +58,11 @@ export function LandingPage() {
                 <ChevronDown className="w-5 h-5" />
               </a>
             </div>
-            <p className="text-sm text-black/60">{t('landing.free')}</p>
+
+            <div className="flex items-center gap-3 justify-center md:justify-end">
+              <AvatarStack />
+              <p className="text-sm text-black/60 font-medium">{t('landing.social_proof')}</p>
+            </div>
           </div>
         </div>
       </section>
@@ -85,44 +83,29 @@ export function LandingPage() {
       </section>
 
       {/* How it works */}
-      <section className="py-20">
+      <section id="how" className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             {t('landing.how_h')}
           </h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <Step n={1} icon={Camera} title={t('landing.s1_t')} desc={t('landing.s1_d')} />
-            <Step n={2} icon={Brain} title={t('landing.s2_t')} desc={t('landing.s2_d')} />
-            <Step n={3} icon={TrendingUp} title={t('landing.s3_t')} desc={t('landing.s3_d')} />
-            <Step n={4} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
-          </div>
-        </div>
-      </section>
-
-      {/* Screenshots */}
-      <section className="bg-white py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            {t('landing.overview_h')}
-          </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {[
-              { src: '/screenshots/01-splash.png', label: t('landing.ov_splash') },
-              { src: '/screenshots/02-dashboard.png', label: t('landing.ov_dashboard') },
-              { src: '/screenshots/03-timeline.png', label: t('landing.ov_timeline') },
-              { src: '/screenshots/04-profile.png', label: t('landing.ov_profile') },
-            ].map((s) => (
-              <div key={s.src} className="flex flex-col items-center">
-                <PhoneFrame src={s.src} alt={s.label} small />
-                <p className="mt-3 text-sm font-medium text-black/60">{s.label}</p>
-              </div>
-            ))}
+          <div className="relative">
+            {/* dashed connecting line (desktop) */}
+            <div
+              className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] border-t-2 border-dashed border-brand/30"
+              aria-hidden="true"
+            />
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+              <Step n={1} icon={Camera} title={t('landing.s1_t')} desc={t('landing.s1_d')} />
+              <Step n={2} icon={Brain} title={t('landing.s2_t')} desc={t('landing.s2_d')} />
+              <Step n={3} icon={TrendingUp} title={t('landing.s3_t')} desc={t('landing.s3_d')} />
+              <Step n={4} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
+            </div>
           </div>
         </div>
       </section>
 
       {/* Download */}
-      <section className="py-20">
+      <section id="download" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-black/5">
             <div className="grid md:grid-cols-2 gap-10 items-center">
@@ -142,6 +125,12 @@ export function LandingPage() {
                     fgColor="#0F1115"
                     bgColor="#FFFFFF"
                     level="M"
+                    imageSettings={{
+                      src: '/icon.svg',
+                      height: 32,
+                      width: 32,
+                      excavate: true,
+                    }}
                   />
                 </div>
                 <p className="mt-3 text-xs font-medium text-black/60">{t('landing.scan_label')}</p>
@@ -153,35 +142,131 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-white py-8 border-t border-black/5">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50">
-          {t('landing.rights')}
-          <img
-            src="/motr2.svg"
-            alt="MOTR"
-            className="inline-block h-5 w-auto align-middle mx-1"
-          />
-          {t('landing.rights_after')}
+        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50 flex flex-wrap items-center justify-center gap-1">
+          <span>{t('landing.rights')}</span>
+          <img src="/logo.svg" alt="MOTR" className="inline-block h-5 w-auto align-middle" />
+          <span>{t('landing.rights_after')}</span>
         </div>
       </footer>
     </div>
   );
 }
 
-function PhoneFrame({ src, alt, small = false }: { src: string; alt: string; small?: boolean }) {
+function HeaderMenu() {
+  const { t, lang, setLang } = useI18n();
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onClick = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+    window.addEventListener('mousedown', onClick);
+    window.addEventListener('keydown', onKey);
+    return () => {
+      window.removeEventListener('mousedown', onClick);
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  const items: Array<{ href: string; label: string }> = [
+    { href: APP_URL, label: t('landing.start') },
+    { href: '#features', label: t('landing.learn') },
+    { href: '#how', label: t('landing.how_h') },
+    { href: '#download', label: t('landing.download_h') },
+  ];
+
+  const toggleLang = (l: Lang) => {
+    setLang(l);
+    setOpen(false);
+  };
+
   return (
-    <div
-      className={
-        small
-          ? 'bg-ink rounded-[1.6rem] p-1.5 shadow-xl w-full max-w-[180px]'
-          : 'bg-ink rounded-[2.4rem] p-2 shadow-2xl w-full max-w-[280px]'
-      }
-    >
+    <div className="relative" ref={ref}>
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center hover:bg-black/5 transition shadow-sm"
+        aria-label={t('landing.menu_label')}
+        aria-expanded={open}
+      >
+        <MenuIcon className="w-5 h-5 text-ink" />
+      </button>
+
+      {open && (
+        <div className="absolute end-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-black/10 p-2 z-30">
+          {items.map((it) => (
+            <a
+              key={it.href}
+              href={it.href}
+              onClick={() => setOpen(false)}
+              className="block px-4 py-2.5 text-sm font-medium rounded-xl hover:bg-black/5 text-end"
+            >
+              {it.label}
+            </a>
+          ))}
+          <div className="my-1 border-t border-black/10" />
+          <div className="flex gap-1 p-1">
+            <button
+              type="button"
+              onClick={() => toggleLang('ar')}
+              className={
+                'flex-1 py-2 rounded-xl text-xs font-bold transition ' +
+                (lang === 'ar' ? 'bg-brand text-white' : 'hover:bg-black/5 text-ink')
+              }
+            >
+              العربية
+            </button>
+            <button
+              type="button"
+              onClick={() => toggleLang('en')}
+              className={
+                'flex-1 py-2 rounded-xl text-xs font-bold transition ' +
+                (lang === 'en' ? 'bg-brand text-white' : 'hover:bg-black/5 text-ink')
+              }
+            >
+              English
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PhoneFrame({ src, alt }: { src: string; alt: string }) {
+  return (
+    <div className="bg-ink rounded-[2.4rem] p-2 shadow-2xl w-full max-w-[280px]">
       <img
         src={src}
         alt={alt}
-        className={small ? 'w-full rounded-[1.2rem] block' : 'w-full rounded-[2rem] block'}
+        className="w-full rounded-[2rem] block"
         loading="lazy"
       />
+    </div>
+  );
+}
+
+const AVATAR_PALETTE = [
+  'linear-gradient(135deg, #F5A06A 0%, #E94B1B 100%)',
+  'linear-gradient(135deg, #88B4D1 0%, #4878A8 100%)',
+  'linear-gradient(135deg, #C9A88D 0%, #7A4E2E 100%)',
+];
+
+function AvatarStack() {
+  return (
+    <div className="flex -space-x-2 rtl:space-x-reverse">
+      {AVATAR_PALETTE.map((bg, i) => (
+        <div
+          key={i}
+          className="w-9 h-9 rounded-full border-2 border-bg-dark shadow-md"
+          style={{ background: bg }}
+        />
+      ))}
     </div>
   );
 }
