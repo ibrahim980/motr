@@ -30,7 +30,7 @@ export function LandingPage() {
       <section className="max-w-6xl mx-auto px-6 pt-6 pb-20">
         <div className="grid md:grid-cols-2 gap-10 items-center">
           <div className="order-2 md:order-1 flex justify-center">
-            <PhoneFrame src="/screenshots/02-dashboard.png" alt={t('landing.ov_dashboard')} />
+            <PhoneFrame src="/screenshots/02-dashboard.jpeg" alt={t('landing.ov_dashboard')} />
           </div>
 
           <div className="order-1 md:order-2 text-center md:text-end">
