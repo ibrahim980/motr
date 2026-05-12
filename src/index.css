@@ -3,27 +3,30 @@
 
 @theme {
   --font-sans: "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
-  --color-brand: #3B82F6;
-  --color-success: #22C55E;
-  --color-warning: #EAB308;
-  --color-danger: #EF4444;
-  --color-bg-dark: #050816;
+
+  /* Gulf-inspired palette */
+  --color-brand: #F26430;       /* Gulf orange — primary accent */
+  --color-success: #16A34A;
+  --color-warning: #CA8A04;
+  --color-danger: #DC2626;
+  --color-bg-dark: #A6D1E5;     /* Gulf powder blue — page background */
+  --color-ink: #0F1115;         /* primary dark text */
 }
 
 @layer base {
   body {
-    @apply bg-bg-dark text-white font-sans selection:bg-brand/30;
+    @apply bg-bg-dark text-ink font-sans selection:bg-brand/30;
   }
 }
 
 .glass {
-  @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
+  @apply bg-white/70 backdrop-blur-xl border border-black/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)];
 }
 
 .glass-dark {
-  @apply bg-[#0a0f24] backdrop-blur-xl border border-white/5 shadow-2xl;
+  @apply bg-white backdrop-blur-xl border border-black/10 shadow-2xl;
 }
 
 .pill-nav {
-  @apply bg-white/5 border border-white/10 backdrop-blur-2xl rounded-full p-2 px-3 shadow-[0_20px_50px_rgba(0,0,0,0.5)];
+  @apply bg-white/80 border border-black/10 backdrop-blur-2xl rounded-full p-2 px-3 shadow-[0_20px_50px_rgba(0,0,0,0.15)];
 }

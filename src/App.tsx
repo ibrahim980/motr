@@ -35,7 +35,7 @@ const HealthIndicator = ({ score }: { score: number }) => {
     { value: score },
     { value: 100 - score }
   ];
-  const COLORS = ['#3B82F6', 'rgba(255,255,255,0.05)'];
+  const COLORS = ['#3B82F6', 'rgba(0,0,0,0.05)'];
 
   return (
     <div className="relative w-32 h-32 mx-auto">
@@ -59,7 +59,7 @@ const HealthIndicator = ({ score }: { score: number }) => {
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold tracking-tighter">{score}</span>
-        <span className="text-[8px] text-white/40 uppercase tracking-[0.2em] font-bold">Health Score</span>
+        <span className="text-[8px] text-black/40 uppercase tracking-[0.2em] font-bold">Health Score</span>
       </div>
     </div>
   );
@@ -82,7 +82,7 @@ const Splash = ({ onStart }: { onStart: () => void }) => (
         <Car className="w-12 h-12 text-white" />
       </div>
       <h1 className="text-5xl font-bold tracking-tighter mb-2">MOTR</h1>
-      <p className="text-white/60 text-lg dir-rtl">صوّر العداد واترك الباقي علينا</p>
+      <p className="text-black/60 text-lg dir-rtl">صوّر العداد واترك الباقي علينا</p>
     </motion.div>
     
       <motion.button
@@ -116,7 +116,7 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
               onClick={() => setActivePage(tab.id)}
               className={cn(
                 "px-3 sm:px-6 py-3 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2",
-                isActive ? "bg-brand text-white shadow-[0_0_20px_rgba(59,130,246,0.5)]" : "text-white/40 hover:text-white"
+                isActive ? "bg-brand text-white shadow-[0_0_20px_rgba(242,100,48,0.5)]" : "text-black/40 hover:text-ink"
               )}
             >
               <Icon className="w-4 h-4 shrink-0" />
@@ -296,7 +296,7 @@ export default function App() {
   if (loading) return null;
 
   return (
-    <div className="min-h-screen bg-bg-dark text-white selection:bg-brand/30 overflow-x-hidden pb-32">
+    <div className="min-h-screen bg-bg-dark text-ink selection:bg-brand/30 overflow-x-hidden pb-32">
       <AnimatePresence>
         {showSplash && <Splash onStart={() => setShowSplash(false)} />}
       </AnimatePresence>
@@ -316,7 +316,7 @@ export default function App() {
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.5)]">
+                  <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(242,100,48,0.5)]">
                     <Car className="w-6 h-6 text-white" />
                   </div>
                   <div>
@@ -329,27 +329,27 @@ export default function App() {
                     <select 
                       value={selectedVehicle?.id} 
                       onChange={(e) => setSelectedVehicle(vehicles.find(v => v.id === e.target.value) || null)}
-                      className="bg-white/5 border border-white/10 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wider outline-none"
+                      className="bg-black/5 border border-black/10 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wider outline-none"
                     >
                       {vehicles.map(v => <option key={v.id} value={v.id} className="bg-bg-dark">{v.name}</option>)}
                     </select>
                   )}
                   <button 
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-10 h-10 glass-dark rounded-full flex items-center justify-center hover:bg-white/10 transition-colors shadow-lg"
+                    className="w-10 h-10 glass-dark rounded-full flex items-center justify-center hover:bg-black/10 transition-colors shadow-lg"
                   >
                     <Plus className="w-5 h-5 text-brand" />
                   </button>
-                  {user?.photoURL && <img src={user.photoURL} className="w-8 h-8 rounded-full border border-white/10" />}
+                  {user?.photoURL && <img src={user.photoURL} className="w-8 h-8 rounded-full border border-black/10" />}
                 </div>
               </div>
 
               {vehicles.length === 0 ? (
                 <div className="glass-dark p-8 rounded-[32px] text-center space-y-4">
-                  <div className="w-16 h-16 bg-white/5 rounded-2xl flex items-center justify-center mx-auto">
-                    <Camera className="w-8 h-8 text-white/20" />
+                  <div className="w-16 h-16 bg-black/5 rounded-2xl flex items-center justify-center mx-auto">
+                    <Camera className="w-8 h-8 text-black/20" />
                   </div>
-                  <p className="text-white/40">ابدأ بتصوير عدادك وسنتولى الباقي</p>
+                  <p className="text-black/40">ابدأ بتصوير عدادك وسنتولى الباقي</p>
                   <button 
                     onClick={() => setActivePage('camera')}
                     className="bg-brand text-white px-6 py-4 rounded-2xl font-bold w-full uppercase tracking-widest text-xs"
@@ -367,11 +367,11 @@ export default function App() {
                         <div className="flex justify-between items-start relative z-10">
                           <div>
                             <h3 className="text-2xl font-bold mb-1 tracking-tight">{selectedVehicle.name}</h3>
-                            <p className="text-[10px] uppercase tracking-widest text-white/40">{selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.year}</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/40">{selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.year}</p>
                           </div>
                           <button 
                             onClick={() => generateVehicleReport(selectedVehicle, events.filter(e => e.vehicleId === selectedVehicle.id))}
-                            className="bg-white/5 border border-white/10 p-2.5 rounded-full hover:bg-white/10 transition-colors"
+                            className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
                           >
                             <Share2 className="w-5 h-5 text-brand" />
                           </button>
@@ -386,24 +386,24 @@ export default function App() {
                         />
 
                         <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-white/5 p-5 rounded-[32px] border border-white/10">
-                            <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Mileage</p>
+                          <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
+                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">Mileage</p>
                             <p className="text-xl font-bold">{formatMileage(selectedVehicle.currentMileage)}</p>
                           </div>
-                          <div className="bg-white/5 p-5 rounded-[32px] border border-white/10">
-                            <p className="text-[10px] uppercase tracking-widest text-white/40 mb-2">Confidence</p>
+                          <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
+                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">Confidence</p>
                             <p className="text-xl font-bold text-success">98%</p>
                           </div>
                         </div>
 
                         <div className="space-y-4">
                           <div className="flex justify-between items-center text-xs uppercase tracking-widest">
-                            <span className="text-white/40 font-bold">Oil Life</span>
+                            <span className="text-black/40 font-bold">Oil Life</span>
                             <span className="font-bold text-brand">
                               {Math.max(0, (selectedVehicle.lastOilChangeMileage || 0) + selectedVehicle.oilIntervalKm - selectedVehicle.currentMileage)} KM LEFT
                             </span>
                           </div>
-                          <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
+                          <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
                             <motion.div 
                               initial={{ width: 0 }}
                               animate={{ width: `${calculateOilLife(selectedVehicle.currentMileage, selectedVehicle.lastOilChangeMileage || 0, selectedVehicle.oilIntervalKm)}%` }}
@@ -420,11 +420,11 @@ export default function App() {
                             <Car className="w-6 h-6 text-brand shrink-0" />
                             <div className="flex-1">
                               <p className="text-sm font-bold">سمّ مركبتك</p>
-                              <p className="text-xs text-white/40 mb-3">لقد قمت بـ {events.length} عمليات، ما هو الاسم المفضل لسيارتك؟</p>
+                              <p className="text-xs text-black/40 mb-3">لقد قمت بـ {events.length} عمليات، ما هو الاسم المفضل لسيارتك؟</p>
                               <div className="flex gap-2">
                                 <input 
                                   id="vehicle-name-input"
-                                  className="bg-white/5 border border-white/10 rounded-xl px-3 py-2 text-xs flex-1 outline-none focus:border-brand"
+                                  className="bg-black/5 border border-black/10 rounded-xl px-3 py-2 text-xs flex-1 outline-none focus:border-brand"
                                   placeholder="مثل: فورد رابتور"
                                 />
                                 <button 
@@ -450,7 +450,7 @@ export default function App() {
                           <AlertCircle className="w-5 h-5 text-warning shrink-0" />
                           <div>
                             <p className="text-sm font-bold">تنبيه ذكي</p>
-                            <p className="text-xs text-white/40">بناءً على استخدامك الحالي، قد تحتاج للكشف على البطارية في الشهر القادم.</p>
+                            <p className="text-xs text-black/40">بناءً على استخدامك الحالي، قد تحتاج للكشف على البطارية في الشهر القادم.</p>
                           </div>
                         </div>
                       </div>
@@ -465,12 +465,12 @@ export default function App() {
                           {events.filter(e => e.vehicleId === selectedVehicle.id).slice(0, 3).map((event) => (
                             <div key={event.id} className="glass-dark p-4 rounded-2xl flex justify-between items-center">
                               <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-white/5 rounded-xl flex items-center justify-center">
+                                <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
                                   {event.type === ServiceType.FUEL ? <Fuel className="w-5 h-5 text-brand" /> : <Droplets className="w-5 h-5 text-success" />}
                                 </div>
                                 <div className="text-right">
                                   <p className="font-bold text-sm">{event.type}</p>
-                                  <p className="text-[10px] text-white/40">{new Date(event.date).toLocaleDateString('ar-SA')}</p>
+                                  <p className="text-[10px] text-black/40">{new Date(event.date).toLocaleDateString('ar-SA')}</p>
                                 </div>
                               </div>
                               <p className="font-bold text-xs">{formatMileage(event.mileage)}</p>
@@ -537,7 +537,7 @@ export default function App() {
               
               <div>
                 <h2 className="text-2xl font-bold mb-2">تحديث ذكي بالصور</h2>
-                <p className="text-white/40 max-w-[240px]">وجّه الكاميرا نحو عداد السيارة، وسنتولى استخراج البيانات تلقائياً</p>
+                <p className="text-black/40 max-w-[240px]">وجّه الكاميرا نحو عداد السيارة، وسنتولى استخراج البيانات تلقائياً</p>
               </div>
 
               <button 
@@ -560,16 +560,16 @@ export default function App() {
             >
               <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">سجل المركبة</h2>
-                <button className="p-2 glass-dark rounded-full"><Share2 className="w-5 h-5 text-white/60" /></button>
+                <button className="p-2 glass-dark rounded-full"><Share2 className="w-5 h-5 text-black/60" /></button>
               </div>
 
               <div className="space-y-4">
                 {events.length === 0 ? (
-                  <div className="py-20 text-center text-white/20">لا يوجد سجلات حتى الآن</div>
+                  <div className="py-20 text-center text-black/20">لا يوجد سجلات حتى الآن</div>
                 ) : (
                   events.map((event, i) => (
                     <div key={event.id} className="relative pl-8 pb-8 last:pb-0">
-                      {i !== events.length - 1 && <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-white/10" />}
+                      {i !== events.length - 1 && <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-black/10" />}
                       <div className={cn(
                         "absolute left-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark",
                         event.type === ServiceType.FUEL ? "bg-brand" : "bg-success"
@@ -580,11 +580,11 @@ export default function App() {
                              {event.type === ServiceType.FUEL ? <Fuel className="w-4 h-4 text-brand" /> : <Droplets className="w-4 h-4 text-success" />}
                              <span className="font-bold">{event.type}</span>
                           </div>
-                          <span className="text-xs text-white/40">{new Date(event.date).toLocaleDateString('ar-SA')}</span>
+                          <span className="text-xs text-black/40">{new Date(event.date).toLocaleDateString('ar-SA')}</span>
                         </div>
                         <div className="flex justify-between">
                           <p className="text-lg font-bold">{formatMileage(event.mileage)}</p>
-                          <p className="text-white/40 text-sm">{event.notes || ''}</p>
+                          <p className="text-black/40 text-sm">{event.notes || ''}</p>
                         </div>
                       </div>
                     </div>
@@ -602,18 +602,18 @@ export default function App() {
               className="space-y-8"
             >
               <div className="text-center pt-10">
-                <div className="w-24 h-24 bg-white/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/10">
-                  {user?.photoURL ? <img src={user.photoURL} className="rounded-full" /> : <UserIcon className="w-12 h-12 text-white/20" />}
+                <div className="w-24 h-24 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-black/10">
+                  {user?.photoURL ? <img src={user.photoURL} className="rounded-full" /> : <UserIcon className="w-12 h-12 text-black/20" />}
                 </div>
                 <h2 className="text-2xl font-bold">{user?.displayName || 'ضيف'}</h2>
-                <p className="text-white/40">{user?.email || 'سجّل الدخول لمزامنة بياناتك'}</p>
+                <p className="text-black/40">{user?.email || 'سجّل الدخول لمزامنة بياناتك'}</p>
               </div>
 
               <div className="space-y-4">
                 {!user ? (
                   <button 
                     onClick={handleSignIn}
-                    className="w-full glass p-6 rounded-3xl flex items-center gap-4 hover:bg-white/10 transition-all font-bold text-lg"
+                    className="w-full glass p-6 rounded-3xl flex items-center gap-4 hover:bg-black/10 transition-all font-bold text-lg"
                   >
                     <div className="w-10 h-10 bg-brand rounded-full flex items-center justify-center">
                       <Plus className="w-6 h-6 text-white" />
@@ -642,7 +642,7 @@ export default function App() {
             >
               <div>
                 <h2 className="text-3xl font-bold mb-2">ماذا فعلت؟</h2>
-                <p className="text-white/40">اطلعت على العداد {formatMileage(tempEventData?.mileage || 0)}</p>
+                <p className="text-black/40">اطلعت على العداد {formatMileage(tempEventData?.mileage || 0)}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -652,7 +652,7 @@ export default function App() {
                   { type: ServiceType.MAINTENANCE, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10' },
                   { type: ServiceType.TIRES, icon: Disc, color: 'text-purple-400', bg: 'bg-purple-400/10' },
                   { type: ServiceType.BATTERY, icon: Battery, color: 'text-danger', bg: 'bg-danger/10' },
-                  { type: ServiceType.OTHER, icon: Plus, color: 'text-white/60', bg: 'bg-white/5' },
+                  { type: ServiceType.OTHER, icon: Plus, color: 'text-black/60', bg: 'bg-black/5' },
                 ].map((s) => (
                   <button
                     key={s.type}
@@ -669,7 +669,7 @@ export default function App() {
 
               <button 
                 onClick={() => setActivePage('dashboard')}
-                className="w-full text-white/40 font-medium py-4"
+                className="w-full text-black/40 font-medium py-4"
               >
                 تخطي الآن
               </button>
