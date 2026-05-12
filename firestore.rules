@@ -1,0 +1,98 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Phase 3: Primitives
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // Phase 4: Validation Blueprints
+    function isValidVehicle(data) {
+      return data.userId == request.auth.uid
+        && data.name is string && data.name.size() > 0 && data.name.size() <= 100
+        && data.currentMileage is number && data.currentMileage >= 0 && data.currentMileage <= 10000000
+        && (!('make' in data) || (data.make is string && data.make.size() <= 50))
+        && (!('model' in data) || (data.model is string && data.model.size() <= 50))
+        && (!('year' in data) || (data.year is number && data.year >= 1886 && data.year <= 2100))
+        && data.keys().hasAll(['userId', 'name', 'currentMileage']);
+    }
+
+    function isValidEvent(data) {
+      return data.userId == request.auth.uid
+        && data.vehicleId is string && isValidId(data.vehicleId)
+        && data.type in ['Fuel', 'Oil Change', 'Maintenance', 'Tires', 'Battery', 'Other']
+        && data.mileage is number && data.mileage >= 0 && data.mileage <= 10000000
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
+        && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000))
+        && data.keys().hasAll(['userId', 'vehicleId', 'type', 'mileage']);
+    }
+
+    // Collections
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow create: if isOwner(userId) 
+        && incoming().keys().hasAll(['email', 'displayName', 'createdAt'])
+        && incoming().email is string && incoming().email.size() <= 255;
+      allow update: if isOwner(userId)
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']);
+    }
+
+    match /vehicles/{vehicleId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidVehicle(incoming())
+        && (incoming().createdAt == request.time || incoming().createdAt is string) // Allow string fallback for initial migration if needed, but prefer server timestamp
+        && incoming().createdAt == request.time;
+      
+      allow update: if isOwner(existing().userId) && isValidVehicle(incoming())
+        && incoming().userId == existing().userId
+        && (
+          // Action: Manual Update
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'make', 'model', 'year', 'color', 'currentMileage', 'lastOilChangeMileage', 'oilIntervalKm', 'healthScore', 'updatedAt'])
+        )
+        && incoming().updatedAt == request.time;
+        
+      allow delete: if isOwner(existing().userId);
+    }
+
+    match /events/{eventId} {
+      allow get: if isOwner(existing().userId);
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() && isValidEvent(incoming())
+        && get(/databases/$(database)/documents/vehicles/$(incoming().vehicleId)).data.userId == request.auth.uid
+        && incoming().createdAt == request.time;
+      
+      allow update: if isOwner(existing().userId) && isValidEvent(incoming())
+        && incoming().userId == existing().userId
+        && incoming().vehicleId == existing().vehicleId
+        && (
+          incoming().diff(existing()).affectedKeys().hasOnly(['type', 'mileage', 'notes', 'location', 'imageUrl'])
+        );
+        
+      allow delete: if isOwner(existing().userId);
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "MOTR",
+  "description": "Smart vehicle memory platform with AI-powered odometer tracking, maintenance history, and health scoring.",
+  "requestFramePermissions": ["camera", "geolocation"],
+  "majorCapabilities": ["AI-powered OCR", "Vehicle Health Analytics", "Smart Reminders"]
+}

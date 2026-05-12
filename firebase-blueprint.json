@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "Vehicle": {
+      "title": "Vehicle",
+      "description": "Represents a user's vehicle in the platform.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "userId": { "type": "string" },
+        "name": { "type": "string", "description": "e.g., My Raptor" },
+        "make": { "type": "string", "description": "e.g., Ford" },
+        "model": { "type": "string", "description": "e.g., Raptor" },
+        "year": { "type": "number" },
+        "color": { "type": "string" },
+        "currentMileage": { "type": "number" },
+        "lastOilChangeMileage": { "type": "number" },
+        "oilIntervalKm": { "type": "number", "description": "Default 10000" },
+        "healthScore": { "type": "number", "description": "0-100" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "name", "currentMileage"]
+    },
+    "TimelineEvent": {
+      "title": "TimelineEvent",
+      "description": "An entry in the vehicle's maintenance history.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "vehicleId": { "type": "string" },
+        "userId": { "type": "string" },
+        "type": {
+          "type": "string",
+          "enum": ["Fuel", "Oil Change", "Maintenance", "Tires", "Battery", "Other"]
+        },
+        "mileage": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" },
+        "location": {
+          "type": "object",
+          "properties": {
+            "lat": { "type": "number" },
+            "lng": { "type": "number" },
+            "address": { "type": "string" }
+          }
+        },
+        "imageUrl": { "type": "string" },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["vehicleId", "userId", "type", "mileage"]
+    },
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User specific data.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "email": { "type": "string" },
+        "displayName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/vehicles/{vehicleId}": {
+      "schema": "Vehicle",
+      "description": "User vehicles collection."
+    },
+    "/events/{eventId}": {
+      "schema": "TimelineEvent",
+      "description": "Maintenance and usage events collection."
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Private user profile data."
+    }
+  }
+}
