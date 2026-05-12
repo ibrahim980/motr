@@ -13,6 +13,8 @@ import {
   Wrench, 
   Disc, 
   Battery,
+  Bell,
+  CheckCircle2,
   Cog,
   LogOut,
   User as UserIcon,
@@ -203,11 +205,21 @@ const STATUS_ICONS: Record<StatusKind, typeof Battery> = {
   parts: Cog,
 };
 
-function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
-  const { t } = useI18n();
-  const items = getMaintenanceStatuses(vehicle);
+const STATE_COLOR: Record<StatusState, string> = {
+  ok: 'text-success',
+  soon: 'text-warning',
+  overdue: 'text-danger',
+};
 
-  const formatValue = (s: MaintenanceStatus): string => {
+const STATE_ICON_BG: Record<StatusState, string> = {
+  ok: 'bg-success/10 text-success',
+  soon: 'bg-warning/10 text-warning',
+  overdue: 'bg-danger/10 text-danger',
+};
+
+function useFormatStatusValue() {
+  const { t } = useI18n();
+  return (s: MaintenanceStatus): string => {
     if (s.state === 'soon' && s.value === 0) return t('status.due_now');
     const key =
       s.state === 'overdue'
@@ -216,18 +228,30 @@ function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
     const value = s.unit === 'km' ? formatMileage(s.value).replace(' KM', '') : s.value;
     return t(key, { value });
   };
+}
 
-  const stateColor: Record<StatusState, string> = {
-    ok: 'text-success',
-    soon: 'text-warning',
-    overdue: 'text-danger',
-  };
+function AlertItemRow({ status }: { status: MaintenanceStatus }) {
+  const { t } = useI18n();
+  const formatValue = useFormatStatusValue();
+  const Icon = STATUS_ICONS[status.kind];
+  return (
+    <div className="flex items-center justify-between">
+      <div className="flex items-center gap-3">
+        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', STATE_ICON_BG[status.state])}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <span className="text-sm font-medium">{t(`status.${status.kind}`)}</span>
+      </div>
+      <span className={cn('text-sm font-bold whitespace-nowrap', STATE_COLOR[status.state])}>
+        {formatValue(status)}
+      </span>
+    </div>
+  );
+}
 
-  const stateIconBg: Record<StatusState, string> = {
-    ok: 'bg-success/10 text-success',
-    soon: 'bg-warning/10 text-warning',
-    overdue: 'bg-danger/10 text-danger',
-  };
+function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
+  const { t } = useI18n();
+  const items = getMaintenanceStatuses(vehicle);
 
   return (
     <div className="glass-dark p-6 rounded-[32px] space-y-4">
@@ -236,22 +260,9 @@ function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
         <p className="text-sm text-black/40 leading-relaxed">{t('status.empty_hint')}</p>
       ) : (
         <div className="space-y-3">
-          {items.map((s) => {
-            const Icon = STATUS_ICONS[s.kind];
-            return (
-              <div key={s.kind} className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', stateIconBg[s.state])}>
-                    <Icon className="w-5 h-5" />
-                  </div>
-                  <span className="text-sm font-medium">{t(`status.${s.kind}`)}</span>
-                </div>
-                <span className={cn('text-sm font-bold whitespace-nowrap', stateColor[s.state])}>
-                  {formatValue(s)}
-                </span>
-              </div>
-            );
-          })}
+          {items.map((s) => (
+            <div key={s.kind}><AlertItemRow status={s} /></div>
+          ))}
         </div>
       )}
     </div>
@@ -323,6 +334,7 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
   const { t } = useI18n();
   const tabs = [
     { id: 'dashboard', icon: Car, label: t('nav.vehicles') },
+    { id: 'alerts', icon: Bell, label: t('nav.alerts') },
     { id: 'camera', icon: Camera, label: t('nav.camera') },
     { id: 'timeline', icon: History, label: t('nav.timeline') },
     { id: 'profile', icon: UserIcon, label: t('nav.profile') },
@@ -768,8 +780,72 @@ export default function App() {
             </motion.div>
           )}
 
+          {activePage === 'alerts' && (
+            <motion.div
+              key="alerts"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-6"
+            >
+              <h2 className="text-3xl font-bold tracking-tight">{t('alerts.title')}</h2>
+
+              {(() => {
+                const groups = vehicles
+                  .map((v) => ({
+                    vehicle: v,
+                    items: getMaintenanceStatuses(v).filter((s) => s.state !== 'ok'),
+                  }))
+                  .filter((g) => g.items.length > 0);
+
+                if (groups.length === 0) {
+                  return (
+                    <div className="glass-dark p-12 rounded-[32px] text-center space-y-3">
+                      <CheckCircle2 className="w-14 h-14 text-success mx-auto" />
+                      <p className="text-lg font-bold">{t('alerts.all_good_title')}</p>
+                      <p className="text-sm text-black/40">{t('alerts.all_good_desc')}</p>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="space-y-5">
+                    {groups.map(({ vehicle, items }) => (
+                      <div key={vehicle.id} className="glass-dark p-6 rounded-[32px] space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div className="min-w-0">
+                            <h3 className="text-lg font-bold truncate">{vehicle.name}</h3>
+                            {(vehicle.make || vehicle.model) && (
+                              <p className="text-[10px] uppercase tracking-widest text-black/40">
+                                {vehicle.make} {vehicle.model}
+                              </p>
+                            )}
+                          </div>
+                          <button
+                            onClick={() => {
+                              setSelectedVehicle(vehicle);
+                              setActivePage('dashboard');
+                            }}
+                            className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full"
+                          >
+                            {t('alerts.open_vehicle')}
+                          </button>
+                        </div>
+                        <div className="space-y-2">
+                          {items.map((s) => (
+                            <div key={s.kind}><AlertItemRow status={s} /></div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
+            </motion.div>
+          )}
+
           {activePage === 'camera' && (
-            <motion.div 
+            <motion.div
               key="camera"
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}

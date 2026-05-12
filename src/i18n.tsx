@@ -33,9 +33,14 @@ const ar: Dict = {
 
   // nav
   'nav.vehicles': 'مركباتي',
+  'nav.alerts': 'التنبيهات',
   'nav.camera': 'تصوير',
   'nav.timeline': 'السجل',
   'nav.profile': 'حسابي',
+  'alerts.title': 'سجل التنبيهات',
+  'alerts.all_good_title': 'كل شيء على ما يرام',
+  'alerts.all_good_desc': 'لا توجد تنبيهات حالية على مركباتك.',
+  'alerts.open_vehicle': 'فتح',
 
   // dashboard
   'dashboard.empty_hint': 'ابدأ بتصوير عدادك وسنتولى الباقي',
@@ -209,9 +214,14 @@ const en: Dict = {
 
   // nav
   'nav.vehicles': 'Vehicles',
+  'nav.alerts': 'Alerts',
   'nav.camera': 'Capture',
   'nav.timeline': 'History',
   'nav.profile': 'Profile',
+  'alerts.title': 'Alerts log',
+  'alerts.all_good_title': 'All clear',
+  'alerts.all_good_desc': 'No active alerts on your vehicles right now.',
+  'alerts.open_vehicle': 'Open',
 
   // dashboard
   'dashboard.empty_hint': 'Capture your odometer and we’ll handle the rest',
