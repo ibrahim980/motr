@@ -277,17 +277,17 @@ function RotatingPhoneFrame({
   }, [images.length, interval]);
 
   return (
-    <div className="bg-ink rounded-[2.4rem] p-2 shadow-2xl w-full max-w-[280px]">
+    <div className="bg-ink rounded-[2.2rem] p-1.5 shadow-2xl w-full max-w-[240px]">
       <div
-        className="relative w-full overflow-hidden rounded-[2rem] bg-bg-dark"
-        style={{ aspectRatio: '9 / 19.5' }}
+        className="relative w-full overflow-hidden rounded-[1.8rem] bg-bg-dark"
+        style={{ aspectRatio: '9 / 18.5' }}
       >
         <AnimatePresence mode="wait">
           <motion.img
             key={images[index]}
             src={images[index]}
             alt=""
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-contain"
             initial={{ opacity: 0, scale: 1.03 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.97 }}
