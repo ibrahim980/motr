@@ -2,7 +2,7 @@
   "name": "MOTR",
   "short_name": "MOTR",
   "description": "Vehicle maintenance tracker",
-  "start_url": "/",
+  "start_url": "/app",
   "display": "standalone",
   "theme_color": "#FA5306",
   "background_color": "#A6D1E5",

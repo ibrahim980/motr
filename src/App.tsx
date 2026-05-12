@@ -66,37 +66,6 @@ const HealthIndicator = ({ score }: { score: number }) => {
   );
 };
 
-const Splash = ({ onStart }: { onStart: () => void }) => (
-  <motion.div 
-    initial={{ opacity: 0 }}
-    animate={{ opacity: 1 }}
-    exit={{ opacity: 0 }}
-    className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-bg-dark text-center p-6"
-  >
-    <motion.div
-      initial={{ scale: 0.8, opacity: 0 }}
-      animate={{ scale: 1, opacity: 1 }}
-      transition={{ delay: 0.2 }}
-      className="mb-8"
-    >
-      <img
-        src="/logo.svg"
-        alt="MOTR"
-        className="h-24 w-auto mx-auto mb-6 drop-shadow-2xl"
-      />
-      <p className="text-black/60 text-lg dir-rtl">صوّر العداد واترك الباقي علينا</p>
-    </motion.div>
-    
-      <motion.button
-      whileHover={{ scale: 1.05 }}
-      whileTap={{ scale: 0.95 }}
-      onClick={onStart}
-      className="bg-brand text-white text-xs font-bold tracking-[0.2em] uppercase px-12 py-5 rounded-full shadow-2xl shadow-brand/20"
-    >
-      ابدأ الآن
-    </motion.button>
-  </motion.div>
-);
 
 const Navbar = ({ activePage, setActivePage, user }: any) => {
   const tabs = [
@@ -136,7 +105,6 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [showSplash, setShowSplash] = useState(true);
   const [activePage, setActivePage] = useState('camera');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
@@ -299,12 +267,8 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-bg-dark text-ink selection:bg-brand/30 overflow-x-hidden pb-32">
-      <AnimatePresence>
-        {showSplash && <Splash onStart={() => setShowSplash(false)} />}
-      </AnimatePresence>
-
       <Toaster position="top-center" />
-      {!showSplash && <InstallPrompt />}
+      <InstallPrompt />
 
       {/* Pages */}
       <main className="max-w-md mx-auto px-6 pt-12">
@@ -690,7 +654,7 @@ export default function App() {
         onChange={handleCapture}
       />
 
-      {!showSplash && <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />}
+      <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />
     </div>
   );
 }
