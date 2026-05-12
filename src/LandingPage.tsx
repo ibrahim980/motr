@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   Bell,
-  BarChart3,
   Brain,
   Camera,
   ChevronDown,
@@ -56,10 +55,6 @@ export function LandingPage() {
               </a>
             </div>
 
-            <div className="flex items-center gap-3 justify-center md:justify-start">
-              <AvatarStack />
-              <p className="text-sm text-black/60 font-medium">{t('landing.social_proof')}</p>
-            </div>
           </div>
 
           <div className="flex justify-center">
@@ -74,11 +69,10 @@ export function LandingPage() {
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
             {t('landing.features_h')}
           </h2>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
             <FeatureCard icon={Camera} title={t('landing.f1_t')} desc={t('landing.f1_d')} />
             <FeatureCard icon={Brain} title={t('landing.f2_t')} desc={t('landing.f2_d')} />
             <FeatureCard icon={Bell} title={t('landing.f3_t')} desc={t('landing.f3_d')} />
-            <FeatureCard icon={BarChart3} title={t('landing.f4_t')} desc={t('landing.f4_d')} />
           </div>
         </div>
       </section>
@@ -256,26 +250,6 @@ function PhoneFrame({ src, alt }: { src: string; alt: string }) {
         className="w-full rounded-[2rem] block"
         loading="lazy"
       />
-    </div>
-  );
-}
-
-const AVATAR_PALETTE = [
-  'linear-gradient(135deg, #F5A06A 0%, #E94B1B 100%)',
-  'linear-gradient(135deg, #88B4D1 0%, #4878A8 100%)',
-  'linear-gradient(135deg, #C9A88D 0%, #7A4E2E 100%)',
-];
-
-function AvatarStack() {
-  return (
-    <div className="flex -space-x-2 rtl:space-x-reverse">
-      {AVATAR_PALETTE.map((bg, i) => (
-        <div
-          key={i}
-          className="w-9 h-9 rounded-full border-2 border-bg-dark shadow-md"
-          style={{ background: bg }}
-        />
-      ))}
     </div>
   );
 }
