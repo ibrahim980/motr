@@ -3,7 +3,6 @@ import {
   Bell,
   Brain,
   Camera,
-  ChevronDown,
   Menu as MenuIcon,
   Plus,
   Smartphone,
@@ -53,13 +52,6 @@ export function LandingPage() {
               >
                 <Plus className="w-5 h-5" />
                 {t('landing.start')}
-              </a>
-              <a
-                href="#features"
-                className="bg-white border border-black/10 px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 hover:bg-black/5 transition"
-              >
-                {t('landing.learn')}
-                <ChevronDown className="w-5 h-5" />
               </a>
             </div>
 
