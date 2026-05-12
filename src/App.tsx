@@ -78,10 +78,11 @@ const Splash = ({ onStart }: { onStart: () => void }) => (
       transition={{ delay: 0.2 }}
       className="mb-8"
     >
-      <div className="w-24 h-24 bg-brand rounded-3xl flex items-center justify-center shadow-2xl shadow-brand/20 mb-6 mx-auto">
-        <Car className="w-12 h-12 text-white" />
-      </div>
-      <h1 className="text-5xl font-bold tracking-tighter mb-2">MOTR</h1>
+      <img
+        src="/logo.svg"
+        alt="MOTR"
+        className="h-24 w-auto mx-auto mb-6 drop-shadow-2xl"
+      />
       <p className="text-black/60 text-lg dir-rtl">صوّر العداد واترك الباقي علينا</p>
     </motion.div>
     
@@ -316,13 +317,12 @@ export default function App() {
             >
               <div className="flex justify-between items-center mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-brand rounded-xl flex items-center justify-center shadow-[0_0_15px_rgba(242,100,48,0.5)]">
-                    <Car className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-xl font-bold tracking-tight uppercase leading-none">MOTR</h2>
-                    <p className="text-[10px] text-brand font-medium tracking-[0.1em] uppercase">Smart System</p>
-                  </div>
+                  <img
+                    src="/logo.svg"
+                    alt="MOTR"
+                    className="h-10 w-auto drop-shadow-md"
+                  />
+                  <p className="text-[10px] text-brand font-medium tracking-[0.1em] uppercase">Smart System</p>
                 </div>
                 <div className="flex items-center gap-3">
                   {vehicles.length > 1 && (
