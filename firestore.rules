@@ -35,6 +35,9 @@ service cloud.firestore {
         && (!('make' in data) || (data.make is string && data.make.size() <= 50))
         && (!('model' in data) || (data.model is string && data.model.size() <= 50))
         && (!('year' in data) || (data.year is number && data.year >= 1886 && data.year <= 2100))
+        && (!('oilIntervalKm' in data) || (data.oilIntervalKm is number && data.oilIntervalKm >= 1000 && data.oilIntervalKm <= 100000))
+        && (!('batteryIntervalMonths' in data) || (data.batteryIntervalMonths is number && data.batteryIntervalMonths >= 1 && data.batteryIntervalMonths <= 240))
+        && (!('lastBatteryChangeDate' in data) || (data.lastBatteryChangeDate is string && data.lastBatteryChangeDate.size() <= 30))
         && data.keys().hasAll(['userId', 'name', 'currentMileage']);
     }
 
@@ -70,7 +73,7 @@ service cloud.firestore {
         && incoming().userId == existing().userId
         && (
           // Action: Manual Update
-          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'make', 'model', 'year', 'color', 'currentMileage', 'lastOilChangeMileage', 'oilIntervalKm', 'healthScore', 'updatedAt'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'make', 'model', 'year', 'color', 'currentMileage', 'lastOilChangeMileage', 'oilIntervalKm', 'healthScore', 'updatedAt', 'lastBatteryChangeDate', 'batteryIntervalMonths'])
         )
         && incoming().updatedAt == request.time;
         

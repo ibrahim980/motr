@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { X, Share } from 'lucide-react';
+import { useI18n } from './i18n';
 
 const DISMISS_KEY = 'motr-install-dismissed';
 
@@ -25,6 +26,7 @@ function detectIOS(): boolean {
 }
 
 export function InstallPrompt() {
+  const { t } = useI18n();
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
   const [show, setShow] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
@@ -78,37 +80,37 @@ export function InstallPrompt() {
           transition={{ type: 'spring', stiffness: 260, damping: 24 }}
           className="fixed bottom-28 left-1/2 -translate-x-1/2 z-30 w-[92%] max-w-md px-2"
         >
-          <div className="bg-white rounded-2xl shadow-2xl border border-black/10 p-4 flex items-start gap-3 dir-rtl">
+          <div className="bg-white rounded-2xl shadow-2xl border border-black/10 p-4 flex items-start gap-3">
             <img src="/icon.svg" alt="" className="w-12 h-12 shrink-0" />
             <div className="flex-1 min-w-0">
               <p className="font-bold text-sm mb-1">
-                أضف
+                {t('install.title_prefix')}
                 <img
                   src="/motr2.svg"
                   alt="MOTR"
                   className="inline-block h-5 w-auto align-middle mx-1"
                 />
-                إلى شاشتك الرئيسية
+                {t('install.title_suffix')}
               </p>
               {isIOS ? (
                 <p className="text-xs text-black/60 leading-relaxed">
-                  اضغط زر المشاركة
+                  {t('install.ios_hint_a')}
                   <Share className="inline w-3.5 h-3.5 mx-1 -mt-0.5" />
-                  ثم اختر <span className="font-medium">"Add to Home Screen"</span>
+                  {t('install.ios_hint_b')}
                 </p>
               ) : (
                 <button
                   onClick={install}
                   className="mt-1 bg-brand text-white text-xs font-bold uppercase tracking-wider px-4 py-2 rounded-full"
                 >
-                  ثبّت الآن
+                  {t('install.now')}
                 </button>
               )}
             </div>
             <button
               onClick={dismiss}
               className="text-black/40 hover:text-ink shrink-0"
-              aria-label="إغلاق"
+              aria-label={t('install.dismiss')}
             >
               <X className="w-5 h-5" />
             </button>

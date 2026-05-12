@@ -17,6 +17,8 @@ export interface Vehicle {
   currentMileage: number;
   lastOilChangeMileage?: number;
   oilIntervalKm: number;
+  lastBatteryChangeDate?: string;
+  batteryIntervalMonths?: number;
   healthScore: number;
   createdAt: any;
   updatedAt: any;

@@ -17,7 +17,8 @@ import {
   User as UserIcon,
   ChevronLeft,
   Share2,
-  AlertCircle
+  AlertCircle,
+  Settings as SettingsIcon
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
@@ -27,6 +28,21 @@ import { cn, formatMileage, calculateOilLife } from './lib/utils';
 import { ServiceType, Vehicle, TimelineEvent } from './types';
 import { scanOdometer } from './lib/gemini';
 import { InstallPrompt } from './InstallPrompt';
+import { useI18n, LanguageToggle } from './i18n';
+import { VehicleSettings } from './VehicleSettings';
+
+function getBatteryAlert(vehicle: Vehicle): { state: 'soon' | 'overdue'; months: number } | null {
+  if (!vehicle.lastBatteryChangeDate || !vehicle.batteryIntervalMonths) return null;
+  const last = new Date(vehicle.lastBatteryChangeDate);
+  if (Number.isNaN(last.getTime())) return null;
+  const due = new Date(last);
+  due.setMonth(due.getMonth() + vehicle.batteryIntervalMonths);
+  const diffMs = due.getTime() - Date.now();
+  const monthsLeft = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.44));
+  if (monthsLeft < 0) return { state: 'overdue', months: Math.abs(monthsLeft) };
+  if (monthsLeft <= 2) return { state: 'soon', months: Math.max(0, monthsLeft) };
+  return null;
+}
 
 import { generateVehicleReport } from './lib/reports';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
@@ -60,19 +76,29 @@ const HealthIndicator = ({ score }: { score: number }) => {
       </ResponsiveContainer>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
         <span className="text-3xl font-bold tracking-tighter">{score}</span>
-        <span className="text-[8px] text-black/40 uppercase tracking-[0.2em] font-bold">Health Score</span>
+        <HealthLabel />
       </div>
     </div>
   );
 };
 
 
+const HealthLabel = () => {
+  const { t } = useI18n();
+  return (
+    <span className="text-[8px] text-black/40 uppercase tracking-[0.2em] font-bold">
+      {t('common.health_score')}
+    </span>
+  );
+};
+
 const Navbar = ({ activePage, setActivePage, user }: any) => {
+  const { t } = useI18n();
   const tabs = [
-    { id: 'dashboard', icon: Car, label: 'مركباتي' },
-    { id: 'camera', icon: Camera, label: 'تصوير' },
-    { id: 'timeline', icon: History, label: 'السجل' },
-    { id: 'profile', icon: UserIcon, label: 'حسابي' },
+    { id: 'dashboard', icon: Car, label: t('nav.vehicles') },
+    { id: 'camera', icon: Camera, label: t('nav.camera') },
+    { id: 'timeline', icon: History, label: t('nav.timeline') },
+    { id: 'profile', icon: UserIcon, label: t('nav.profile') },
   ];
 
   return (
@@ -103,6 +129,7 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
 // --- Main App ---
 
 export default function App() {
+  const { t, lang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePage, setActivePage] = useState('camera');
@@ -110,6 +137,21 @@ export default function App() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+
+  const dateLocale = lang === 'ar' ? 'ar-SA' : 'en-US';
+
+  const serviceLabel = (type: ServiceType): string => {
+    const map: Record<ServiceType, string> = {
+      [ServiceType.FUEL]: t('service.fuel'),
+      [ServiceType.OIL_CHANGE]: t('service.oil_change'),
+      [ServiceType.MAINTENANCE]: t('service.maintenance'),
+      [ServiceType.TIRES]: t('service.tires'),
+      [ServiceType.BATTERY]: t('service.battery'),
+      [ServiceType.OTHER]: t('service.other'),
+    };
+    return map[type] ?? type;
+  };
   
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -153,10 +195,10 @@ export default function App() {
     try {
       const provider = new GoogleAuthProvider();
       await signInWithPopup(auth, provider);
-      toast.success('مرحباً بك!');
+      toast.success(t('profile.welcome'));
     } catch (err) {
       console.error(err);
-      toast.error('فشل تسجيل الدخول');
+      toast.error(t('profile.sign_in_failed'));
     }
   };
 
@@ -165,7 +207,7 @@ export default function App() {
     if (!file) return;
 
     if (!user) {
-      toast.error('يرجى تسجيل الدخول أولاً');
+      toast.error(t('profile.sign_in_first'));
       setActivePage('profile');
       return;
     }
@@ -176,16 +218,16 @@ export default function App() {
       const base64 = (reader.result as string).split(',')[1];
       try {
         const result = await scanOdometer(base64);
-        toast.success(`تم اكتشاف ${formatMileage(result.mileage)}`);
-        
+        toast.success(t('camera.detected', { value: formatMileage(result.mileage) }));
+
         // Find existing vehicle or create new
         let vehicleId = selectedVehicle?.id;
-        
+
         if (!vehicleId) {
           // If no vehicles, create one silently
           const newV = await addDoc(collection(db, 'vehicles'), {
             userId: user.uid,
-            name: result.make ? `${result.make} ${result.model || ''}`.trim() : 'مركبتي الجديدة',
+            name: result.make ? `${result.make} ${result.model || ''}`.trim() : (lang === 'ar' ? 'مركبتي الجديدة' : 'My new vehicle'),
             make: result.make || '',
             model: result.model || '',
             currentMileage: result.mileage,
@@ -210,7 +252,7 @@ export default function App() {
         
       } catch (err) {
         console.error(err);
-        toast.error('لم نتمكن من قراءة العداد، حاول مرة أخرى');
+        toast.error(t('camera.failed'));
       } finally {
         setScanning(false);
       }
@@ -254,12 +296,12 @@ export default function App() {
         });
       }
       
-      toast.success('تم الحفظ بنجاح');
+      toast.success(t('service.saved'));
       setActivePage('dashboard');
       setTempEventData(null);
     } catch (err) {
       console.error(err);
-      toast.error('خطأ في الحفظ');
+      toast.error(t('service.save_failed'));
     }
   };
 
@@ -288,21 +330,22 @@ export default function App() {
                     alt="MOTR"
                     className="h-12 w-auto drop-shadow-md"
                   />
-                  <p className="text-[10px] text-brand font-medium tracking-[0.1em] uppercase">Smart System</p>
                 </div>
-                <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2">
                   {vehicles.length > 1 && (
-                    <select 
-                      value={selectedVehicle?.id} 
+                    <select
+                      value={selectedVehicle?.id}
                       onChange={(e) => setSelectedVehicle(vehicles.find(v => v.id === e.target.value) || null)}
-                      className="bg-black/5 border border-black/10 rounded-full px-4 py-2 text-[10px] font-bold uppercase tracking-wider outline-none"
+                      className="bg-black/5 border border-black/10 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-wider outline-none max-w-[120px]"
                     >
                       {vehicles.map(v => <option key={v.id} value={v.id} className="bg-bg-dark">{v.name}</option>)}
                     </select>
                   )}
-                  <button 
+                  <LanguageToggle />
+                  <button
                     onClick={() => fileInputRef.current?.click()}
                     className="w-10 h-10 glass-dark rounded-full flex items-center justify-center hover:bg-black/10 transition-colors shadow-lg"
+                    aria-label={t('dashboard.update_odometer')}
                   >
                     <Plus className="w-5 h-5 text-brand" />
                   </button>
@@ -315,12 +358,12 @@ export default function App() {
                   <div className="w-16 h-16 bg-black/5 rounded-2xl flex items-center justify-center mx-auto">
                     <Camera className="w-8 h-8 text-black/20" />
                   </div>
-                  <p className="text-black/40">ابدأ بتصوير عدادك وسنتولى الباقي</p>
-                  <button 
+                  <p className="text-black/40">{t('dashboard.empty_hint')}</p>
+                  <button
                     onClick={() => setActivePage('camera')}
                     className="bg-brand text-white px-6 py-4 rounded-2xl font-bold w-full uppercase tracking-widest text-xs"
                   >
-                    ابدأ أول مسح
+                    {t('dashboard.first_scan')}
                   </button>
                 </div>
               ) : (
@@ -335,12 +378,21 @@ export default function App() {
                             <h3 className="text-2xl font-bold mb-1 tracking-tight">{selectedVehicle.name}</h3>
                             <p className="text-[10px] uppercase tracking-widest text-black/40">{selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.year}</p>
                           </div>
-                          <button 
-                            onClick={() => generateVehicleReport(selectedVehicle, events.filter(e => e.vehicleId === selectedVehicle.id))}
-                            className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
-                          >
-                            <Share2 className="w-5 h-5 text-brand" />
-                          </button>
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => setShowSettings(true)}
+                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
+                              aria-label={t('common.settings')}
+                            >
+                              <SettingsIcon className="w-5 h-5 text-ink" />
+                            </button>
+                            <button
+                              onClick={() => generateVehicleReport(selectedVehicle, events.filter(e => e.vehicleId === selectedVehicle.id))}
+                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
+                            >
+                              <Share2 className="w-5 h-5 text-brand" />
+                            </button>
+                          </div>
                         </div>
 
                         <HealthIndicator 
@@ -353,20 +405,20 @@ export default function App() {
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
-                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">Mileage</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.mileage')}</p>
                             <p className="text-xl font-bold">{formatMileage(selectedVehicle.currentMileage)}</p>
                           </div>
                           <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
-                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">Confidence</p>
+                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.confidence')}</p>
                             <p className="text-xl font-bold text-success">98%</p>
                           </div>
                         </div>
 
                         <div className="space-y-4">
                           <div className="flex justify-between items-center text-xs uppercase tracking-widest">
-                            <span className="text-black/40 font-bold">Oil Life</span>
+                            <span className="text-black/40 font-bold">{t('common.oil_life')}</span>
                             <span className="font-bold text-brand">
-                              {Math.max(0, (selectedVehicle.lastOilChangeMileage || 0) + selectedVehicle.oilIntervalKm - selectedVehicle.currentMileage)} KM LEFT
+                              {Math.max(0, (selectedVehicle.lastOilChangeMileage || 0) + selectedVehicle.oilIntervalKm - selectedVehicle.currentMileage)} {t('common.km_left')}
                             </span>
                           </div>
                           <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
@@ -380,30 +432,30 @@ export default function App() {
                       </div>
 
                       {/* Smart Insights */}
-                      {events.filter(e => e.vehicleId === selectedVehicle.id).length >= 5 && selectedVehicle.name.includes('مركبتي الجديدة') && (
+                      {events.filter(e => e.vehicleId === selectedVehicle.id).length >= 5 && (selectedVehicle.name.includes('مركبتي الجديدة') || selectedVehicle.name.toLowerCase().includes('my new vehicle')) && (
                         <div className="glass-dark p-6 rounded-[32px] border-l-4 border-l-brand">
                           <div className="flex gap-4">
                             <Car className="w-6 h-6 text-brand shrink-0" />
                             <div className="flex-1">
-                              <p className="text-sm font-bold">سمّ مركبتك</p>
-                              <p className="text-xs text-black/40 mb-3">لقد قمت بـ {events.length} عمليات، ما هو الاسم المفضل لسيارتك؟</p>
+                              <p className="text-sm font-bold">{t('dashboard.name_your_car')}</p>
+                              <p className="text-xs text-black/40 mb-3">{t('dashboard.name_hint', { count: events.length })}</p>
                               <div className="flex gap-2">
-                                <input 
+                                <input
                                   id="vehicle-name-input"
                                   className="bg-black/5 border border-black/10 rounded-xl px-3 py-2 text-xs flex-1 outline-none focus:border-brand"
-                                  placeholder="مثل: فورد رابتور"
+                                  placeholder={t('dashboard.name_placeholder')}
                                 />
-                                <button 
+                                <button
                                   onClick={async () => {
                                     const input = document.getElementById('vehicle-name-input') as HTMLInputElement;
                                     if (input.value) {
                                       await updateDoc(doc(db, 'vehicles', selectedVehicle.id), { name: input.value });
-                                      toast.success('تم تحديث الاسم');
+                                      toast.success(t('dashboard.name_updated'));
                                     }
                                   }}
-                                  className="bg-brand px-4 py-2 rounded-xl text-xs font-bold"
+                                  className="bg-brand px-4 py-2 rounded-xl text-xs font-bold text-white"
                                 >
-                                  حفظ
+                                  {t('common.save')}
                                 </button>
                               </div>
                             </div>
@@ -411,21 +463,32 @@ export default function App() {
                         </div>
                       )}
 
-                      <div className="glass-dark p-6 rounded-[32px] border-l-4 border-l-warning">
-                        <div className="flex gap-3">
-                          <AlertCircle className="w-5 h-5 text-warning shrink-0" />
-                          <div>
-                            <p className="text-sm font-bold">تنبيه ذكي</p>
-                            <p className="text-xs text-black/40">بناءً على استخدامك الحالي، قد تحتاج للكشف على البطارية في الشهر القادم.</p>
+                      {(() => {
+                        const alert = getBatteryAlert(selectedVehicle);
+                        if (!alert) return null;
+                        const message = alert.state === 'overdue'
+                          ? t('dashboard.battery_overdue', { months: alert.months })
+                          : alert.months === 0
+                            ? t('dashboard.battery_due_now')
+                            : t('dashboard.battery_due_soon', { months: alert.months });
+                        return (
+                          <div className="glass-dark p-6 rounded-[32px] border-l-4 border-l-warning">
+                            <div className="flex gap-3">
+                              <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+                              <div>
+                                <p className="text-sm font-bold">{t('dashboard.smart_alert')}</p>
+                                <p className="text-xs text-black/40">{message}</p>
+                              </div>
+                            </div>
                           </div>
-                        </div>
-                      </div>
+                        );
+                      })()}
 
                       {/* Recent Activity */}
                       <div className="space-y-4">
                         <div className="flex justify-between items-center">
-                          <h4 className="text-xl font-bold">آخر النشاطات</h4>
-                          <button onClick={() => setActivePage('timeline')} className="text-brand text-sm font-medium">عرض الكل</button>
+                          <h4 className="text-xl font-bold">{t('dashboard.recent_activity')}</h4>
+                          <button onClick={() => setActivePage('timeline')} className="text-brand text-sm font-medium">{t('common.show_all')}</button>
                         </div>
                         <div className="space-y-3">
                           {events.filter(e => e.vehicleId === selectedVehicle.id).slice(0, 3).map((event) => (
@@ -434,9 +497,9 @@ export default function App() {
                                 <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
                                   {event.type === ServiceType.FUEL ? <Fuel className="w-5 h-5 text-brand" /> : <Droplets className="w-5 h-5 text-success" />}
                                 </div>
-                                <div className="text-right">
-                                  <p className="font-bold text-sm">{event.type}</p>
-                                  <p className="text-[10px] text-black/40">{new Date(event.date).toLocaleDateString('ar-SA')}</p>
+                                <div>
+                                  <p className="font-bold text-sm">{serviceLabel(event.type)}</p>
+                                  <p className="text-[10px] text-black/40">{new Date(event.date).toLocaleDateString(dateLocale)}</p>
                                 </div>
                               </div>
                               <p className="font-bold text-xs">{formatMileage(event.mileage)}</p>
@@ -455,16 +518,16 @@ export default function App() {
                       <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center">
                         <Camera className="w-6 h-6 text-brand" />
                       </div>
-                      <span className="text-sm font-medium">تحديث العداد</span>
+                      <span className="text-sm font-medium">{t('dashboard.update_odometer')}</span>
                     </button>
-                    <button 
+                    <button
                       onClick={() => setActivePage('timeline')}
                       className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-transform active:scale-95"
                     >
                       <div className="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center">
                         <History className="w-6 h-6 text-success" />
                       </div>
-                      <span className="text-sm font-medium">سجل النشاط</span>
+                      <span className="text-sm font-medium">{t('dashboard.activity_log')}</span>
                     </button>
                   </div>
                 </div>
@@ -496,22 +559,22 @@ export default function App() {
                   />
                 )}
                 <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-[10px] uppercase font-bold text-brand opacity-80 animate-pulse">OCR Detection Active</span>
+                  <span className="text-[10px] uppercase font-bold text-brand opacity-80 animate-pulse">{t('common.ocr_active')}</span>
                   <span className="w-1.5 h-1.5 bg-brand rounded-full"></span>
                 </div>
               </div>
-              
+
               <div>
-                <h2 className="text-2xl font-bold mb-2">تحديث ذكي بالصور</h2>
-                <p className="text-black/40 max-w-[240px]">وجّه الكاميرا نحو عداد السيارة، وسنتولى استخراج البيانات تلقائياً</p>
+                <h2 className="text-2xl font-bold mb-2">{t('camera.title')}</h2>
+                <p className="text-black/40 max-w-[240px]">{t('camera.subtitle')}</p>
               </div>
 
-              <button 
+              <button
                 onClick={() => fileInputRef.current?.click()}
                 disabled={scanning}
                 className="bg-brand text-white px-12 py-4 rounded-3xl font-bold shadow-2xl shadow-brand/20 disabled:opacity-50"
               >
-                {scanning ? 'جاري المسح...' : 'فتح الكاميرا'}
+                {scanning ? t('camera.scanning') : t('camera.open')}
               </button>
             </motion.div>
           )}
@@ -525,28 +588,28 @@ export default function App() {
               className="space-y-6"
             >
               <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold tracking-tight">سجل المركبة</h2>
+                <h2 className="text-3xl font-bold tracking-tight">{t('timeline.title')}</h2>
                 <button className="p-2 glass-dark rounded-full"><Share2 className="w-5 h-5 text-black/60" /></button>
               </div>
 
               <div className="space-y-4">
                 {events.length === 0 ? (
-                  <div className="py-20 text-center text-black/20">لا يوجد سجلات حتى الآن</div>
+                  <div className="py-20 text-center text-black/20">{t('timeline.empty')}</div>
                 ) : (
                   events.map((event, i) => (
-                    <div key={event.id} className="relative pl-8 pb-8 last:pb-0">
-                      {i !== events.length - 1 && <div className="absolute left-4 top-8 bottom-0 w-[1px] bg-black/10" />}
+                    <div key={event.id} className="relative ps-8 pb-8 last:pb-0">
+                      {i !== events.length - 1 && <div className="absolute start-4 top-8 bottom-0 w-[1px] bg-black/10" />}
                       <div className={cn(
-                        "absolute left-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark",
+                        "absolute start-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark",
                         event.type === ServiceType.FUEL ? "bg-brand" : "bg-success"
                       )} />
                       <div className="glass-dark p-6 rounded-[28px] space-y-3">
                         <div className="flex justify-between items-start">
                           <div className="flex items-center gap-2">
                              {event.type === ServiceType.FUEL ? <Fuel className="w-4 h-4 text-brand" /> : <Droplets className="w-4 h-4 text-success" />}
-                             <span className="font-bold">{event.type}</span>
+                             <span className="font-bold">{serviceLabel(event.type)}</span>
                           </div>
-                          <span className="text-xs text-black/40">{new Date(event.date).toLocaleDateString('ar-SA')}</span>
+                          <span className="text-xs text-black/40">{new Date(event.date).toLocaleDateString(dateLocale)}</span>
                         </div>
                         <div className="flex justify-between">
                           <p className="text-lg font-bold">{formatMileage(event.mileage)}</p>
@@ -571,28 +634,32 @@ export default function App() {
                 <div className="w-24 h-24 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-black/10">
                   {user?.photoURL ? <img src={user.photoURL} className="rounded-full" /> : <UserIcon className="w-12 h-12 text-black/20" />}
                 </div>
-                <h2 className="text-2xl font-bold">{user?.displayName || 'ضيف'}</h2>
-                <p className="text-black/40">{user?.email || 'سجّل الدخول لمزامنة بياناتك'}</p>
+                <h2 className="text-2xl font-bold">{user?.displayName || t('profile.guest')}</h2>
+                <p className="text-black/40">{user?.email || t('profile.sign_in_hint')}</p>
+              </div>
+
+              <div className="flex justify-center">
+                <LanguageToggle />
               </div>
 
               <div className="space-y-4">
                 {!user ? (
-                  <button 
+                  <button
                     onClick={handleSignIn}
                     className="w-full glass p-6 rounded-3xl flex items-center gap-4 hover:bg-black/10 transition-all font-bold text-lg"
                   >
                     <div className="w-10 h-10 bg-brand rounded-full flex items-center justify-center">
                       <Plus className="w-6 h-6 text-white" />
                     </div>
-                    <span>تسجيل الدخول باستخدام Google</span>
+                    <span>{t('profile.sign_in_google')}</span>
                   </button>
                 ) : (
-                  <button 
+                  <button
                     onClick={() => signOut(auth)}
                     className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-danger font-bold"
                   >
                     <LogOut className="w-6 h-6" />
-                    <span>تسجيل الخروج</span>
+                    <span>{t('profile.sign_out')}</span>
                   </button>
                 )}
               </div>
@@ -607,8 +674,8 @@ export default function App() {
               className="space-y-8 pt-6"
             >
               <div>
-                <h2 className="text-3xl font-bold mb-2">ماذا فعلت؟</h2>
-                <p className="text-black/40">اطلعت على العداد {formatMileage(tempEventData?.mileage || 0)}</p>
+                <h2 className="text-3xl font-bold mb-2">{t('service.title')}</h2>
+                <p className="text-black/40">{t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -628,16 +695,16 @@ export default function App() {
                     <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", s.bg)}>
                       <s.icon className={cn("w-7 h-7", s.color)} />
                     </div>
-                    <span className="text-sm font-bold">{s.type}</span>
+                    <span className="text-sm font-bold">{serviceLabel(s.type)}</span>
                   </button>
                 ))}
               </div>
 
-              <button 
+              <button
                 onClick={() => setActivePage('dashboard')}
                 className="w-full text-black/40 font-medium py-4"
               >
-                تخطي الآن
+                {t('service.skip')}
               </button>
             </motion.div>
           )}
@@ -655,6 +722,12 @@ export default function App() {
       />
 
       <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />
+
+      <AnimatePresence>
+        {showSettings && selectedVehicle && (
+          <VehicleSettings vehicle={selectedVehicle} onClose={() => setShowSettings(false)} />
+        )}
+      </AnimatePresence>
     </div>
   );
 }

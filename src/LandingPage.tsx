@@ -9,59 +9,62 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
+import { LanguageToggle, useI18n } from './i18n';
 
 const APP_URL = '/app';
 
 export function LandingPage() {
+  const { t } = useI18n();
+
   return (
     <div className="min-h-screen bg-bg-dark text-ink">
       {/* Header */}
       <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
         <img src="/motr2.svg" alt="MOTR" className="h-14 w-auto drop-shadow-md" />
-        <a
-          href={APP_URL}
-          className="hidden sm:inline-flex items-center gap-2 bg-white border border-black/10 rounded-full px-5 py-2.5 text-sm font-bold hover:bg-black/5 transition"
-        >
-          فتح التطبيق
-        </a>
+        <div className="flex items-center gap-2">
+          <LanguageToggle />
+          <a
+            href={APP_URL}
+            className="hidden sm:inline-flex items-center gap-2 bg-white border border-black/10 rounded-full px-5 py-2.5 text-sm font-bold hover:bg-black/5 transition"
+          >
+            {t('landing.open_app')}
+          </a>
+        </div>
       </header>
 
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-6 pb-20">
         <div className="grid md:grid-cols-2 gap-10 items-center">
           <div className="order-2 md:order-1 flex justify-center">
-            <PhoneFrame src="/screenshots/02-dashboard.png" alt="MOTR dashboard" />
+            <PhoneFrame src="/screenshots/02-dashboard.png" alt={t('landing.ov_dashboard')} />
           </div>
 
-          <div className="order-1 md:order-2 text-right">
+          <div className="order-1 md:order-2 text-center md:text-end">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] mb-6">
-              صوّر العداد
+              {t('landing.hero_t1')}
               <br />
-              <span className="text-brand">واترك الباقي علينا</span>
+              <span className="text-brand">{t('landing.hero_t2')}</span>
             </h1>
-            <p className="text-lg text-black/60 mb-8 max-w-md ms-auto leading-relaxed">
-              تطبيق ذكي يراقب حالة سيارتك ويتتبّع الصيانة ويذكّرك بكل ما تحتاجه
-              في الوقت المناسب.
+            <p className="text-lg text-black/60 mb-8 max-w-md mx-auto md:ms-auto md:me-0 leading-relaxed">
+              {t('landing.hero_desc')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-end mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-end mb-6">
               <a
                 href={APP_URL}
                 className="bg-brand text-white px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-brand/30 hover:brightness-95 transition"
               >
                 <Plus className="w-5 h-5" />
-                ابدأ الآن
+                {t('landing.start')}
               </a>
               <a
                 href="#features"
                 className="bg-white border border-black/10 px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 hover:bg-black/5 transition"
               >
-                تعرف على التطبيق
+                {t('landing.learn')}
                 <ChevronDown className="w-5 h-5" />
               </a>
             </div>
-            <p className="text-sm text-black/60">
-              100% مجاني • بدون إعلانات • بياناتك آمنة
-            </p>
+            <p className="text-sm text-black/60">{t('landing.free')}</p>
           </div>
         </div>
       </section>
@@ -70,29 +73,13 @@ export function LandingPage() {
       <section id="features" className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            ماذا يفعل التطبيق؟
+            {t('landing.features_h')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-            <FeatureCard
-              icon={Camera}
-              title="تصوير العداد"
-              desc="صوّر عداد سيارتك والتطبيق يقرأه تلقائياً بدقة عالية."
-            />
-            <FeatureCard
-              icon={Brain}
-              title="ذكاء اصطناعي"
-              desc="يحلل بيانات سيارتك ويتنبأ باحتياجات الصيانة قبل حدوثها."
-            />
-            <FeatureCard
-              icon={Bell}
-              title="تنبيهات ذكية"
-              desc="يذكّرك بالمواعيد المهمة مثل تغيير الزيت والفحص الدوري."
-            />
-            <FeatureCard
-              icon={BarChart3}
-              title="تقارير مفهومة"
-              desc="اعرف حالة سيارتك بتقارير بسيطة وواضحة في أي وقت."
-            />
+            <FeatureCard icon={Camera} title={t('landing.f1_t')} desc={t('landing.f1_d')} />
+            <FeatureCard icon={Brain} title={t('landing.f2_t')} desc={t('landing.f2_d')} />
+            <FeatureCard icon={Bell} title={t('landing.f3_t')} desc={t('landing.f3_d')} />
+            <FeatureCard icon={BarChart3} title={t('landing.f4_t')} desc={t('landing.f4_d')} />
           </div>
         </div>
       </section>
@@ -101,13 +88,13 @@ export function LandingPage() {
       <section className="py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            كيف يعمل؟
+            {t('landing.how_h')}
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <Step n={1} icon={Camera} title="صوّر العداد" desc="افتح التطبيق وصوّر عداد السيارة." />
-            <Step n={2} icon={Brain} title="تقرأ البيانات" desc="التطبيق يقرأ المسافة بذكاء اصطناعي." />
-            <Step n={3} icon={TrendingUp} title="نحلل الحالة" desc="نحلل حالة السيارة ونقدر احتياجات الصيانة." />
-            <Step n={4} icon={Bell} title="ننبهك في الوقت المناسب" desc="تصلك تنبيهات ذكية قبل أي مشكلة." />
+            <Step n={1} icon={Camera} title={t('landing.s1_t')} desc={t('landing.s1_d')} />
+            <Step n={2} icon={Brain} title={t('landing.s2_t')} desc={t('landing.s2_d')} />
+            <Step n={3} icon={TrendingUp} title={t('landing.s3_t')} desc={t('landing.s3_d')} />
+            <Step n={4} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
           </div>
         </div>
       </section>
@@ -116,14 +103,14 @@ export function LandingPage() {
       <section className="bg-white py-20">
         <div className="max-w-6xl mx-auto px-6">
           <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            نظرة على التطبيق
+            {t('landing.overview_h')}
           </h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {[
-              { src: '/screenshots/01-splash.png', label: 'البداية' },
-              { src: '/screenshots/02-dashboard.png', label: 'لوحة المعلومات' },
-              { src: '/screenshots/03-timeline.png', label: 'سجل المركبة' },
-              { src: '/screenshots/04-profile.png', label: 'حسابي' },
+              { src: '/screenshots/01-splash.png', label: t('landing.ov_splash') },
+              { src: '/screenshots/02-dashboard.png', label: t('landing.ov_dashboard') },
+              { src: '/screenshots/03-timeline.png', label: t('landing.ov_timeline') },
+              { src: '/screenshots/04-profile.png', label: t('landing.ov_profile') },
             ].map((s) => (
               <div key={s.src} className="flex flex-col items-center">
                 <PhoneFrame src={s.src} alt={s.label} small />
@@ -139,14 +126,12 @@ export function LandingPage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-black/5">
             <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div className="text-right">
-                <h2 className="text-3xl font-bold mb-3">حمّل التطبيق الآن</h2>
-                <p className="text-black/60 mb-6 leading-relaxed">
-                  امسح الباركود لفتح التطبيق وابدأ رحلة العناية الذكية بسيارتك.
-                </p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                  <StoreButton store="Google Play" />
-                  <StoreButton store="App Store" />
+              <div className="text-center md:text-end">
+                <h2 className="text-3xl font-bold mb-3">{t('landing.download_h')}</h2>
+                <p className="text-black/60 mb-6 leading-relaxed">{t('landing.download_d')}</p>
+                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-end">
+                  <StoreButton store={t('landing.gplay')} comingSoon={t('landing.coming_soon')} />
+                  <StoreButton store={t('landing.appstore')} comingSoon={t('landing.coming_soon')} />
                 </div>
               </div>
               <div className="flex flex-col items-center">
@@ -159,7 +144,7 @@ export function LandingPage() {
                     level="M"
                   />
                 </div>
-                <p className="mt-3 text-xs font-medium text-black/60">امسح للتحميل</p>
+                <p className="mt-3 text-xs font-medium text-black/60">{t('landing.scan_label')}</p>
               </div>
             </div>
           </div>
@@ -169,13 +154,13 @@ export function LandingPage() {
       {/* Footer */}
       <footer className="bg-white py-8 border-t border-black/5">
         <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50">
-          © 2025
+          {t('landing.rights')}
           <img
             src="/motr2.svg"
             alt="MOTR"
             className="inline-block h-5 w-auto align-middle mx-1"
           />
-          . جميع الحقوق محفوظة.
+          {t('landing.rights_after')}
         </div>
       </footer>
     </div>
@@ -222,7 +207,7 @@ function Step({ n, icon: Icon, title, desc }: { n: number; icon: IconType; title
         <div className="absolute inset-0 bg-white border-2 border-brand/30 rounded-full flex items-center justify-center">
           <Icon className="w-7 h-7 text-brand" />
         </div>
-        <span className="absolute -bottom-1 -right-1 bg-brand text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md">
+        <span className="absolute -bottom-1 -end-1 bg-brand text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md">
           {n}
         </span>
       </div>
@@ -232,12 +217,12 @@ function Step({ n, icon: Icon, title, desc }: { n: number; icon: IconType; title
   );
 }
 
-function StoreButton({ store }: { store: string }) {
+function StoreButton({ store, comingSoon }: { store: string; comingSoon: string }) {
   return (
     <div className="bg-ink text-white px-5 py-3 rounded-2xl flex items-center gap-3">
       <Smartphone className="w-7 h-7 shrink-0" />
-      <div className="text-right leading-tight">
-        <div className="text-[10px] opacity-70">قريباً</div>
+      <div className="text-start leading-tight">
+        <div className="text-[10px] opacity-70">{comingSoon}</div>
         <div className="font-bold text-sm">{store}</div>
       </div>
     </div>

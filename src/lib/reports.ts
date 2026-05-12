@@ -30,7 +30,7 @@ export function generateVehicleReport(vehicle: Vehicle, events: TimelineEvent[])
     head: [['Date', 'Service Type', 'Mileage', 'Notes']],
     body: tableData,
     theme: 'grid',
-    headStyles: { fillColor: [59, 130, 246] }
+    headStyles: { fillColor: [242, 100, 48] }
   });
 
   doc.save(`${vehicle.name.replace(/\s+/g, '_')}_history.pdf`);

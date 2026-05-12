@@ -1,0 +1,345 @@
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  type ReactNode,
+} from 'react';
+
+export type Lang = 'ar' | 'en';
+const LANG_KEY = 'motr-lang';
+
+type Dict = Record<string, string>;
+
+const ar: Dict = {
+  // common
+  'common.save': 'حفظ',
+  'common.cancel': 'إلغاء',
+  'common.close': 'إغلاق',
+  'common.settings': 'الإعدادات',
+  'common.months': 'شهر',
+  'common.km_unit': 'كم',
+  'common.km_left': 'كم متبقي',
+  'common.show_all': 'عرض الكل',
+  'common.confidence': 'الثقة',
+  'common.mileage': 'المسافة',
+  'common.health_score': 'مؤشر الحالة',
+  'common.oil_life': 'عمر الزيت',
+  'common.ocr_active': 'مسح OCR نشط',
+
+  // nav
+  'nav.vehicles': 'مركباتي',
+  'nav.camera': 'تصوير',
+  'nav.timeline': 'السجل',
+  'nav.profile': 'حسابي',
+
+  // dashboard
+  'dashboard.empty_hint': 'ابدأ بتصوير عدادك وسنتولى الباقي',
+  'dashboard.first_scan': 'ابدأ أول مسح',
+  'dashboard.name_your_car': 'سمّ مركبتك',
+  'dashboard.name_hint': 'لقد قمت بـ {count} عمليات، ما هو الاسم المفضل لسيارتك؟',
+  'dashboard.name_placeholder': 'مثل: فورد رابتور',
+  'dashboard.name_updated': 'تم تحديث الاسم',
+  'dashboard.smart_alert': 'تنبيه ذكي',
+  'dashboard.battery_due_soon': 'البطارية تقترب من نهاية عمرها الافتراضي (متبقي {months} شهر).',
+  'dashboard.battery_overdue': 'انتهى عمر البطارية المتوقع منذ {months} شهر — قد تحتاج لاستبدالها.',
+  'dashboard.battery_due_now': 'حان وقت الكشف على البطارية.',
+  'dashboard.recent_activity': 'آخر النشاطات',
+  'dashboard.update_odometer': 'تحديث العداد',
+  'dashboard.activity_log': 'سجل النشاط',
+
+  // camera
+  'camera.title': 'تحديث ذكي بالصور',
+  'camera.subtitle': 'وجّه الكاميرا نحو عداد السيارة، وسنتولى استخراج البيانات تلقائياً',
+  'camera.scanning': 'جاري المسح...',
+  'camera.open': 'فتح الكاميرا',
+  'camera.detected': 'تم اكتشاف {value}',
+  'camera.failed': 'لم نتمكن من قراءة العداد، حاول مرة أخرى',
+
+  // timeline
+  'timeline.title': 'سجل المركبة',
+  'timeline.empty': 'لا يوجد سجلات حتى الآن',
+
+  // profile
+  'profile.guest': 'ضيف',
+  'profile.sign_in_hint': 'سجّل الدخول لمزامنة بياناتك',
+  'profile.sign_in_google': 'تسجيل الدخول باستخدام Google',
+  'profile.sign_out': 'تسجيل الخروج',
+  'profile.welcome': 'مرحباً بك!',
+  'profile.sign_in_failed': 'فشل تسجيل الدخول',
+  'profile.sign_in_first': 'يرجى تسجيل الدخول أولاً',
+
+  // service select
+  'service.title': 'ماذا فعلت؟',
+  'service.saw_odometer': 'اطلعت على العداد {value}',
+  'service.skip': 'تخطي الآن',
+  'service.saved': 'تم الحفظ بنجاح',
+  'service.save_failed': 'خطأ في الحفظ',
+  'service.fuel': 'وقود',
+  'service.oil_change': 'تغيير زيت',
+  'service.maintenance': 'صيانة',
+  'service.tires': 'إطارات',
+  'service.battery': 'بطارية',
+  'service.other': 'أخرى',
+
+  // settings (vehicle)
+  'settings.title': 'إعدادات المركبة',
+  'settings.oil_interval': 'الفترة بين تغيير الزيت (كم)',
+  'settings.last_oil': 'آخر تغيير زيت (عداد)',
+  'settings.battery_date': 'تاريخ آخر تغيير للبطارية',
+  'settings.battery_interval': 'عمر البطارية بالأشهر',
+  'settings.saved': 'تم حفظ الإعدادات',
+  'settings.save_failed': 'فشل حفظ الإعدادات',
+
+  // install prompt
+  'install.title_prefix': 'أضف',
+  'install.title_suffix': 'إلى شاشتك الرئيسية',
+  'install.now': 'ثبّت الآن',
+  'install.ios_hint_a': 'اضغط زر المشاركة',
+  'install.ios_hint_b': 'ثم اختر "Add to Home Screen"',
+  'install.dismiss': 'إغلاق',
+
+  // landing
+  'landing.open_app': 'فتح التطبيق',
+  'landing.hero_t1': 'صوّر العداد',
+  'landing.hero_t2': 'واترك الباقي علينا',
+  'landing.hero_desc': 'تطبيق ذكي يراقب حالة سيارتك ويتتبّع الصيانة ويذكّرك بكل ما تحتاجه في الوقت المناسب.',
+  'landing.start': 'ابدأ الآن',
+  'landing.learn': 'تعرف على التطبيق',
+  'landing.free': '100% مجاني • بدون إعلانات • بياناتك آمنة',
+  'landing.features_h': 'ماذا يفعل التطبيق؟',
+  'landing.f1_t': 'تصوير العداد',
+  'landing.f1_d': 'صوّر عداد سيارتك والتطبيق يقرأه تلقائياً بدقة عالية.',
+  'landing.f2_t': 'ذكاء اصطناعي',
+  'landing.f2_d': 'يحلل بيانات سيارتك ويتنبأ باحتياجات الصيانة قبل حدوثها.',
+  'landing.f3_t': 'تنبيهات ذكية',
+  'landing.f3_d': 'يذكّرك بالمواعيد المهمة مثل تغيير الزيت والفحص الدوري.',
+  'landing.f4_t': 'تقارير مفهومة',
+  'landing.f4_d': 'اعرف حالة سيارتك بتقارير بسيطة وواضحة في أي وقت.',
+  'landing.how_h': 'كيف يعمل؟',
+  'landing.s1_t': 'صوّر العداد',
+  'landing.s1_d': 'افتح التطبيق وصوّر عداد السيارة.',
+  'landing.s2_t': 'تقرأ البيانات',
+  'landing.s2_d': 'التطبيق يقرأ المسافة بذكاء اصطناعي.',
+  'landing.s3_t': 'نحلل الحالة',
+  'landing.s3_d': 'نحلل حالة السيارة ونقدر احتياجات الصيانة.',
+  'landing.s4_t': 'ننبهك في الوقت المناسب',
+  'landing.s4_d': 'تصلك تنبيهات ذكية قبل أي مشكلة.',
+  'landing.overview_h': 'نظرة على التطبيق',
+  'landing.ov_splash': 'البداية',
+  'landing.ov_dashboard': 'لوحة المعلومات',
+  'landing.ov_timeline': 'سجل المركبة',
+  'landing.ov_profile': 'حسابي',
+  'landing.download_h': 'حمّل التطبيق الآن',
+  'landing.download_d': 'امسح الباركود لفتح التطبيق وابدأ رحلة العناية الذكية بسيارتك.',
+  'landing.scan_label': 'امسح للتحميل',
+  'landing.coming_soon': 'قريباً',
+  'landing.gplay': 'Google Play',
+  'landing.appstore': 'App Store',
+  'landing.rights': '© 2025',
+  'landing.rights_after': '. جميع الحقوق محفوظة.',
+};
+
+const en: Dict = {
+  // common
+  'common.save': 'Save',
+  'common.cancel': 'Cancel',
+  'common.close': 'Close',
+  'common.settings': 'Settings',
+  'common.months': 'months',
+  'common.km_unit': 'km',
+  'common.km_left': 'KM LEFT',
+  'common.show_all': 'Show all',
+  'common.confidence': 'Confidence',
+  'common.mileage': 'Mileage',
+  'common.health_score': 'Health Score',
+  'common.oil_life': 'Oil Life',
+  'common.ocr_active': 'OCR Detection Active',
+
+  // nav
+  'nav.vehicles': 'Vehicles',
+  'nav.camera': 'Capture',
+  'nav.timeline': 'History',
+  'nav.profile': 'Profile',
+
+  // dashboard
+  'dashboard.empty_hint': 'Capture your odometer and we’ll handle the rest',
+  'dashboard.first_scan': 'Start first scan',
+  'dashboard.name_your_car': 'Name your car',
+  'dashboard.name_hint': 'You’ve logged {count} entries — what would you like to call your car?',
+  'dashboard.name_placeholder': 'e.g. Ford Raptor',
+  'dashboard.name_updated': 'Name updated',
+  'dashboard.smart_alert': 'Smart alert',
+  'dashboard.battery_due_soon': 'Battery is nearing the end of its expected life ({months} months left).',
+  'dashboard.battery_overdue': 'Battery is {months} months past its expected life — it likely needs replacement.',
+  'dashboard.battery_due_now': 'Time to check the battery.',
+  'dashboard.recent_activity': 'Recent activity',
+  'dashboard.update_odometer': 'Update odometer',
+  'dashboard.activity_log': 'Activity log',
+
+  // camera
+  'camera.title': 'Smart photo update',
+  'camera.subtitle': 'Point the camera at your dashboard and we’ll extract the reading automatically.',
+  'camera.scanning': 'Scanning…',
+  'camera.open': 'Open camera',
+  'camera.detected': 'Detected {value}',
+  'camera.failed': 'Couldn’t read the odometer, please try again',
+
+  // timeline
+  'timeline.title': 'Vehicle history',
+  'timeline.empty': 'No entries yet',
+
+  // profile
+  'profile.guest': 'Guest',
+  'profile.sign_in_hint': 'Sign in to sync your data',
+  'profile.sign_in_google': 'Sign in with Google',
+  'profile.sign_out': 'Sign out',
+  'profile.welcome': 'Welcome!',
+  'profile.sign_in_failed': 'Sign-in failed',
+  'profile.sign_in_first': 'Please sign in first',
+
+  // service select
+  'service.title': 'What did you do?',
+  'service.saw_odometer': 'You saw the odometer at {value}',
+  'service.skip': 'Skip for now',
+  'service.saved': 'Saved',
+  'service.save_failed': 'Save failed',
+  'service.fuel': 'Fuel',
+  'service.oil_change': 'Oil change',
+  'service.maintenance': 'Maintenance',
+  'service.tires': 'Tires',
+  'service.battery': 'Battery',
+  'service.other': 'Other',
+
+  // settings (vehicle)
+  'settings.title': 'Vehicle settings',
+  'settings.oil_interval': 'Oil change interval (km)',
+  'settings.last_oil': 'Last oil change (odometer)',
+  'settings.battery_date': 'Last battery replacement date',
+  'settings.battery_interval': 'Battery life (months)',
+  'settings.saved': 'Settings saved',
+  'settings.save_failed': 'Failed to save settings',
+
+  // install prompt
+  'install.title_prefix': 'Add',
+  'install.title_suffix': 'to your home screen',
+  'install.now': 'Install now',
+  'install.ios_hint_a': 'Tap the share button',
+  'install.ios_hint_b': 'then choose "Add to Home Screen"',
+  'install.dismiss': 'Dismiss',
+
+  // landing
+  'landing.open_app': 'Open app',
+  'landing.hero_t1': 'Snap the odometer',
+  'landing.hero_t2': 'and leave the rest to us',
+  'landing.hero_desc': 'A smart app that watches your car, tracks maintenance, and reminds you of everything you need right on time.',
+  'landing.start': 'Start now',
+  'landing.learn': 'Learn about the app',
+  'landing.free': '100% free • No ads • Your data stays yours',
+  'landing.features_h': 'What does the app do?',
+  'landing.f1_t': 'Odometer capture',
+  'landing.f1_d': 'Snap your odometer and the app reads it automatically with high accuracy.',
+  'landing.f2_t': 'AI insights',
+  'landing.f2_d': 'Analyzes your car’s data and predicts maintenance needs before they happen.',
+  'landing.f3_t': 'Smart alerts',
+  'landing.f3_d': 'Reminds you of important dates like oil changes and periodic inspections.',
+  'landing.f4_t': 'Clear reports',
+  'landing.f4_d': 'Know your car’s status with simple, clear reports anytime.',
+  'landing.how_h': 'How does it work?',
+  'landing.s1_t': 'Snap the odometer',
+  'landing.s1_d': 'Open the app and snap your car’s odometer.',
+  'landing.s2_t': 'Reads the data',
+  'landing.s2_d': 'The app reads the distance with AI.',
+  'landing.s3_t': 'Analyzes the state',
+  'landing.s3_d': 'We analyze your car and estimate maintenance needs.',
+  'landing.s4_t': 'Alerts you on time',
+  'landing.s4_d': 'You get smart alerts before any problem.',
+  'landing.overview_h': 'A look at the app',
+  'landing.ov_splash': 'Welcome',
+  'landing.ov_dashboard': 'Dashboard',
+  'landing.ov_timeline': 'Vehicle history',
+  'landing.ov_profile': 'Profile',
+  'landing.download_h': 'Download the app now',
+  'landing.download_d': 'Scan the QR code to open the app and start your smart car-care journey.',
+  'landing.scan_label': 'Scan to open',
+  'landing.coming_soon': 'Coming soon',
+  'landing.gplay': 'Google Play',
+  'landing.appstore': 'App Store',
+  'landing.rights': '© 2025',
+  'landing.rights_after': '. All rights reserved.',
+};
+
+const dictionaries: Record<Lang, Dict> = { ar, en };
+
+function detectInitialLang(): Lang {
+  if (typeof window === 'undefined') return 'ar';
+  const stored = window.localStorage.getItem(LANG_KEY);
+  if (stored === 'ar' || stored === 'en') return stored;
+  const browser = (window.navigator.language || 'ar').toLowerCase();
+  return browser.startsWith('en') ? 'en' : 'ar';
+}
+
+interface I18nContext {
+  lang: Lang;
+  setLang: (l: Lang) => void;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}
+
+const Context = createContext<I18nContext | null>(null);
+
+export function LanguageProvider({ children }: { children: ReactNode }) {
+  const [lang, setLangState] = useState<Lang>(() => detectInitialLang());
+
+  useEffect(() => {
+    window.localStorage.setItem(LANG_KEY, lang);
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  }, [lang]);
+
+  const setLang = useCallback((l: Lang) => setLangState(l), []);
+
+  const t = useCallback(
+    (key: string, vars?: Record<string, string | number>): string => {
+      let value = dictionaries[lang][key];
+      if (value == null) {
+        value = dictionaries.ar[key] ?? dictionaries.en[key] ?? key;
+      }
+      if (vars) {
+        for (const [k, v] of Object.entries(vars)) {
+          value = value.replace(new RegExp(`\\{${k}\\}`, 'g'), String(v));
+        }
+      }
+      return value;
+    },
+    [lang]
+  );
+
+  const value = useMemo<I18nContext>(() => ({ lang, setLang, t }), [lang, setLang, t]);
+
+  return <Context.Provider value={value}>{children}</Context.Provider>;
+}
+
+export function useI18n(): I18nContext {
+  const ctx = useContext(Context);
+  if (!ctx) throw new Error('useI18n must be used within <LanguageProvider>');
+  return ctx;
+}
+
+export function LanguageToggle({ className = '' }: { className?: string }) {
+  const { lang, setLang } = useI18n();
+  return (
+    <button
+      type="button"
+      onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+      className={
+        'inline-flex items-center justify-center min-w-[44px] h-10 px-3 rounded-full bg-white border border-black/10 text-xs font-bold tracking-wider hover:bg-black/5 transition ' +
+        className
+      }
+      aria-label="Toggle language"
+    >
+      {lang === 'ar' ? 'EN' : 'ع'}
+    </button>
+  );
+}
