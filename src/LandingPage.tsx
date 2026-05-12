@@ -85,27 +85,6 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* How it works */}
-      <section id="how" className="py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            {t('landing.how_h')}
-          </h2>
-          <div className="relative">
-            {/* dashed connecting line (desktop) */}
-            <div
-              className="hidden md:block absolute top-8 left-[16.7%] right-[16.7%] border-t-2 border-dashed border-brand/30"
-              aria-hidden="true"
-            />
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative max-w-4xl mx-auto">
-              <Step n={1} icon={Camera} title={t('landing.s1_t')} desc={t('landing.s1_d')} />
-              <Step n={2} icon={Brain} title={t('landing.s2_t')} desc={t('landing.s2_d')} />
-              <Step n={3} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Download */}
       <section id="download" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
@@ -197,7 +176,6 @@ function HeaderMenu() {
   const items: Array<{ href: string; label: string }> = [
     { href: APP_URL, label: t('landing.start') },
     { href: '#features', label: t('landing.learn') },
-    { href: '#how', label: t('landing.how_h') },
     { href: '#download', label: t('landing.download_h') },
   ];
 
@@ -323,23 +301,6 @@ function FeatureCard({ icon: Icon, title, desc }: { icon: IconType; title: strin
       </div>
       <h3 className="font-bold text-lg mb-2">{title}</h3>
       <p className="text-sm text-black/60 leading-relaxed">{desc}</p>
-    </div>
-  );
-}
-
-function Step({ n, icon: Icon, title, desc }: { n: number; icon: IconType; title: string; desc: string }) {
-  return (
-    <div className="text-center">
-      <div className="relative w-16 h-16 mx-auto mb-4">
-        <div className="absolute inset-0 bg-white border-2 border-brand/30 rounded-full flex items-center justify-center">
-          <Icon className="w-7 h-7 text-brand" />
-        </div>
-        <span className="absolute -bottom-1 -start-1 bg-brand text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md">
-          {n}
-        </span>
-      </div>
-      <h3 className="font-bold mb-2">{title}</h3>
-      <p className="text-sm text-black/60 leading-relaxed max-w-[200px] mx-auto">{desc}</p>
     </div>
   );
 }
