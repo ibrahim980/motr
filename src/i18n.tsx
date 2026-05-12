@@ -142,6 +142,7 @@ const ar: Dict = {
   'landing.appstore': 'App Store',
   'landing.rights': '© 2025',
   'landing.rights_after': '. جميع الحقوق محفوظة.',
+  'landing.support_label': 'للدعم',
 };
 
 const en: Dict = {
@@ -273,6 +274,7 @@ const en: Dict = {
   'landing.appstore': 'App Store',
   'landing.rights': '© 2025',
   'landing.rights_after': '. All rights reserved.',
+  'landing.support_label': 'Support',
 };
 
 const dictionaries: Record<Lang, Dict> = { ar, en };

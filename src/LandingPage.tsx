@@ -145,10 +145,21 @@ export function LandingPage() {
 
       {/* Footer */}
       <footer className="bg-white py-8 border-t border-black/5">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50 flex flex-wrap items-center justify-center gap-1">
-          <span>{t('landing.rights')}</span>
-          <img src="/logo.svg" alt="MOTR" className="inline-block h-5 w-auto align-middle" />
-          <span>{t('landing.rights_after')}</span>
+        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50 space-y-2">
+          <div className="flex flex-wrap items-center justify-center gap-1">
+            <span>{t('landing.rights')}</span>
+            <img src="/logo.svg" alt="MOTR" className="inline-block h-5 w-auto align-middle" />
+            <span>{t('landing.rights_after')}</span>
+          </div>
+          <div>
+            {t('landing.support_label')}:{' '}
+            <a
+              href="mailto:support@motrs.uk"
+              className="text-brand font-medium hover:underline"
+            >
+              support@motrs.uk
+            </a>
+          </div>
         </div>
       </footer>
     </div>
