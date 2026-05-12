@@ -18,7 +18,6 @@ import {
   User as UserIcon,
   ChevronLeft,
   Share2,
-  AlertCircle,
   Settings as SettingsIcon
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
@@ -156,60 +155,120 @@ function timestampToDate(ts: unknown): Date | null {
   return null;
 }
 
-type AlertState = 'soon' | 'overdue';
-type AlertKind = 'battery' | 'tires' | 'maintenance' | 'parts';
-interface MaintenanceAlert {
-  kind: AlertKind;
-  state: AlertState;
+type StatusState = 'ok' | 'soon' | 'overdue';
+type StatusKind = 'battery' | 'tires' | 'maintenance' | 'parts';
+type StatusUnit = 'months' | 'km';
+interface MaintenanceStatus {
+  kind: StatusKind;
+  unit: StatusUnit;
+  state: StatusState;
   value: number;
 }
 
-function monthsAlert(
+function statusFromMonths(
+  kind: StatusKind,
   lastDate: string | undefined,
   intervalMonths: number | undefined,
-  threshold = 2
-): { state: AlertState; value: number } | null {
+  soonThreshold = 2
+): MaintenanceStatus | null {
   if (!lastDate || !intervalMonths) return null;
   const last = new Date(lastDate);
   if (Number.isNaN(last.getTime())) return null;
   const due = new Date(last);
   due.setMonth(due.getMonth() + intervalMonths);
   const monthsLeft = Math.round((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44));
-  if (monthsLeft < 0) return { state: 'overdue', value: Math.abs(monthsLeft) };
-  if (monthsLeft <= threshold) return { state: 'soon', value: Math.max(0, monthsLeft) };
-  return null;
+  if (monthsLeft < 0) return { kind, unit: 'months', state: 'overdue', value: Math.abs(monthsLeft) };
+  if (monthsLeft <= soonThreshold) return { kind, unit: 'months', state: 'soon', value: Math.max(0, monthsLeft) };
+  return { kind, unit: 'months', state: 'ok', value: monthsLeft };
 }
 
-function kmAlert(
+function statusFromKm(
+  kind: StatusKind,
   currentMileage: number,
   lastMileage: number | undefined,
   intervalKm: number | undefined,
-  threshold = 2000
-): { state: AlertState; value: number } | null {
+  soonThreshold = 2000
+): MaintenanceStatus | null {
   if (lastMileage == null || !intervalKm) return null;
-  const due = lastMileage + intervalKm;
-  const remaining = due - currentMileage;
-  if (remaining < 0) return { state: 'overdue', value: Math.abs(remaining) };
-  if (remaining <= threshold) return { state: 'soon', value: Math.max(0, remaining) };
-  return null;
+  const remaining = lastMileage + intervalKm - currentMileage;
+  if (remaining < 0) return { kind, unit: 'km', state: 'overdue', value: Math.abs(remaining) };
+  if (remaining <= soonThreshold) return { kind, unit: 'km', state: 'soon', value: Math.max(0, remaining) };
+  return { kind, unit: 'km', state: 'ok', value: remaining };
 }
 
-function getMaintenanceAlerts(vehicle: Vehicle): MaintenanceAlert[] {
-  const out: MaintenanceAlert[] = [];
-  const bat = monthsAlert(vehicle.lastBatteryChangeDate, vehicle.batteryIntervalMonths);
-  if (bat) out.push({ kind: 'battery', ...bat });
-  const tires = kmAlert(vehicle.currentMileage, vehicle.lastTireChangeMileage, vehicle.tireIntervalKm);
-  if (tires) out.push({ kind: 'tires', ...tires });
-  const maint = monthsAlert(vehicle.lastMaintenanceDate, vehicle.maintenanceIntervalMonths);
-  if (maint) out.push({ kind: 'maintenance', ...maint });
-  const parts = monthsAlert(vehicle.lastPartsDate, vehicle.partsIntervalMonths);
-  if (parts) out.push({ kind: 'parts', ...parts });
+const STATUS_ICONS: Record<StatusKind, typeof Battery> = {
+  battery: Battery,
+  tires: Disc,
+  maintenance: Wrench,
+  parts: Cog,
+};
+
+function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
+  const { t } = useI18n();
+  const items = getMaintenanceStatuses(vehicle);
+
+  const formatValue = (s: MaintenanceStatus): string => {
+    if (s.state === 'soon' && s.value === 0) return t('status.due_now');
+    const key =
+      s.state === 'overdue'
+        ? s.unit === 'km' ? 'status.km_overdue' : 'status.months_overdue'
+        : s.unit === 'km' ? 'status.km_left' : 'status.months_left';
+    const value = s.unit === 'km' ? formatMileage(s.value).replace(' KM', '') : s.value;
+    return t(key, { value });
+  };
+
+  const stateColor: Record<StatusState, string> = {
+    ok: 'text-success',
+    soon: 'text-warning',
+    overdue: 'text-danger',
+  };
+
+  const stateIconBg: Record<StatusState, string> = {
+    ok: 'bg-success/10 text-success',
+    soon: 'bg-warning/10 text-warning',
+    overdue: 'bg-danger/10 text-danger',
+  };
+
+  return (
+    <div className="glass-dark p-6 rounded-[32px] space-y-4">
+      <h4 className="text-lg font-bold">{t('dashboard.maintenance_status')}</h4>
+      {items.length === 0 ? (
+        <p className="text-sm text-black/40 leading-relaxed">{t('status.empty_hint')}</p>
+      ) : (
+        <div className="space-y-3">
+          {items.map((s) => {
+            const Icon = STATUS_ICONS[s.kind];
+            return (
+              <div key={s.kind} className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', stateIconBg[s.state])}>
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <span className="text-sm font-medium">{t(`status.${s.kind}`)}</span>
+                </div>
+                <span className={cn('text-sm font-bold whitespace-nowrap', stateColor[s.state])}>
+                  {formatValue(s)}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function getMaintenanceStatuses(vehicle: Vehicle): MaintenanceStatus[] {
+  const out: MaintenanceStatus[] = [];
+  const bat = statusFromMonths('battery', vehicle.lastBatteryChangeDate, vehicle.batteryIntervalMonths);
+  if (bat) out.push(bat);
+  const tires = statusFromKm('tires', vehicle.currentMileage, vehicle.lastTireChangeMileage, vehicle.tireIntervalKm);
+  if (tires) out.push(tires);
+  const maint = statusFromMonths('maintenance', vehicle.lastMaintenanceDate, vehicle.maintenanceIntervalMonths);
+  if (maint) out.push(maint);
+  const parts = statusFromMonths('parts', vehicle.lastPartsDate, vehicle.partsIntervalMonths);
+  if (parts) out.push(parts);
   return out;
-}
-
-function alertMessageKey(a: MaintenanceAlert): string {
-  if (a.value === 0 && a.state === 'soon') return `alert.${a.kind}_now`;
-  return `alert.${a.kind}_${a.state}`;
 }
 
 import { generateVehicleReport } from './lib/reports';
@@ -656,22 +715,7 @@ export default function App() {
                         </div>
                       )}
 
-                      {getMaintenanceAlerts(selectedVehicle).map((a) => (
-                        <div
-                          key={a.kind}
-                          className="glass-dark p-6 rounded-[32px] border-l-4 border-l-warning"
-                        >
-                          <div className="flex gap-3">
-                            <AlertCircle className="w-5 h-5 text-warning shrink-0" />
-                            <div>
-                              <p className="text-sm font-bold">{t('dashboard.smart_alert')}</p>
-                              <p className="text-xs text-black/40">
-                                {t(alertMessageKey(a), { value: a.value })}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      ))}
+                      <MaintenanceStatusCard vehicle={selectedVehicle} />
 
                       {/* Recent Activity */}
                       <div className="space-y-4">
