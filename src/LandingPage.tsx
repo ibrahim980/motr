@@ -7,7 +7,6 @@ import {
   Menu as MenuIcon,
   Plus,
   Smartphone,
-  TrendingUp,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
@@ -86,14 +85,13 @@ export function LandingPage() {
           <div className="relative">
             {/* dashed connecting line (desktop) */}
             <div
-              className="hidden md:block absolute top-8 left-[12.5%] right-[12.5%] border-t-2 border-dashed border-brand/30"
+              className="hidden md:block absolute top-8 left-[16.7%] right-[16.7%] border-t-2 border-dashed border-brand/30"
               aria-hidden="true"
             />
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative max-w-4xl mx-auto">
               <Step n={1} icon={Camera} title={t('landing.s1_t')} desc={t('landing.s1_d')} />
               <Step n={2} icon={Brain} title={t('landing.s2_t')} desc={t('landing.s2_d')} />
-              <Step n={3} icon={TrendingUp} title={t('landing.s3_t')} desc={t('landing.s3_d')} />
-              <Step n={4} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
+              <Step n={3} icon={Bell} title={t('landing.s4_t')} desc={t('landing.s4_d')} />
             </div>
           </div>
         </div>

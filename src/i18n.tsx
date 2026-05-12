@@ -133,7 +133,7 @@ const ar: Dict = {
   'landing.s3_t': 'نحلل الحالة',
   'landing.s3_d': 'نحلل حالة السيارة ونقدر احتياجات الصيانة.',
   'landing.s4_t': 'ننبهك في الوقت المناسب',
-  'landing.s4_d': 'تصلك تنبيهات ذكية قبل أي مشكلة.',
+  'landing.s4_d': 'تصلك تنبيهات',
   'landing.overview_h': 'نظرة على التطبيق',
   'landing.ov_splash': 'البداية',
   'landing.ov_dashboard': 'لوحة المعلومات',
