@@ -8,11 +8,20 @@ import {
   Plus,
   Smartphone,
 } from 'lucide-react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useI18n, type Lang } from './i18n';
 
 const APP_URL = '/app';
+
+const HERO_SCREENSHOTS = [
+  '/screenshots/02-dashboard.png',
+  '/screenshots/05-alerts.png',
+  '/screenshots/06-camera.png',
+  '/screenshots/03-timeline.png',
+  '/screenshots/04-profile.png',
+  '/screenshots/01-splash.jpeg',
+];
 
 export function LandingPage() {
   const { t } = useI18n();
@@ -57,7 +66,7 @@ export function LandingPage() {
           </div>
 
           <div className="flex justify-center">
-            <PhoneFrame src="/screenshots/02-dashboard.jpeg" alt={t('landing.ov_dashboard')} />
+            <RotatingPhoneFrame images={HERO_SCREENSHOTS} />
           </div>
         </div>
       </section>
@@ -250,15 +259,56 @@ function HeaderMenu() {
   );
 }
 
-function PhoneFrame({ src, alt }: { src: string; alt: string }) {
+function RotatingPhoneFrame({
+  images,
+  interval = 3500,
+}: {
+  images: string[];
+  interval?: number;
+}) {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    if (images.length <= 1) return;
+    const id = window.setInterval(() => {
+      setIndex((i) => (i + 1) % images.length);
+    }, interval);
+    return () => window.clearInterval(id);
+  }, [images.length, interval]);
+
   return (
     <div className="bg-ink rounded-[2.4rem] p-2 shadow-2xl w-full max-w-[280px]">
-      <img
-        src={src}
-        alt={alt}
-        className="w-full rounded-[2rem] block"
-        loading="lazy"
-      />
+      <div
+        className="relative w-full overflow-hidden rounded-[2rem] bg-bg-dark"
+        style={{ aspectRatio: '9 / 19.5' }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={images[index]}
+            src={images[index]}
+            alt=""
+            className="absolute inset-0 w-full h-full object-cover"
+            initial={{ opacity: 0, scale: 1.03 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.97 }}
+            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+            loading="eager"
+          />
+        </AnimatePresence>
+
+        {/* dot indicators */}
+        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+          {images.map((_, i) => (
+            <span
+              key={i}
+              className={
+                'h-1.5 rounded-full transition-all duration-300 ' +
+                (i === index ? 'w-4 bg-brand' : 'w-1.5 bg-white/40')
+              }
+            />
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
