@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
+import { motion, AnimatePresence, animate } from 'motion/react';
 import { 
   Camera, 
   Car, 
@@ -30,6 +30,121 @@ import { scanOdometer } from './lib/gemini';
 import { InstallPrompt } from './InstallPrompt';
 import { useI18n, LanguageToggle } from './i18n';
 import { VehicleSettings } from './VehicleSettings';
+
+function CountUp({ value }: { value: number }) {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    const startValue = Number(node.textContent?.replace(/[^0-9.-]/g, '')) || 0;
+    const controls = animate(startValue, value, {
+      duration: 1.1,
+      ease: [0.16, 1, 0.3, 1],
+      onUpdate: (latest) => {
+        if (node) node.textContent = formatMileage(Math.round(latest));
+      },
+    });
+    return () => controls.stop();
+  }, [value]);
+  return <span ref={ref}>{formatMileage(value)}</span>;
+}
+
+function ScanViewport({
+  scanning,
+  preview,
+  t,
+}: {
+  scanning: boolean;
+  preview: string | null;
+  t: (key: string, vars?: Record<string, string | number>) => string;
+}) {
+  const showPreview = scanning && preview;
+  return (
+    <div className="relative w-56 h-56 flex items-center justify-center">
+      {/* Outer glow ring (always present, intensifies when scanning) */}
+      <div
+        className={cn(
+          'absolute inset-0 rounded-full blur-2xl transition-opacity duration-500',
+          scanning ? 'bg-brand/40 opacity-100' : 'bg-brand/10 opacity-60'
+        )}
+      />
+
+      {/* Frame */}
+      <div className="relative w-48 h-48 rounded-full overflow-hidden border-4 border-brand/20 bg-white/50">
+        {showPreview ? (
+          <>
+            <img
+              src={preview}
+              alt=""
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            {/* dark overlay for contrast */}
+            <div className="absolute inset-0 bg-black/30" />
+
+            {/* corner brackets */}
+            <CornerBracket position="tl" />
+            <CornerBracket position="tr" />
+            <CornerBracket position="bl" />
+            <CornerBracket position="br" />
+
+            {/* sweeping scan line */}
+            <motion.div
+              initial={{ y: '-100%' }}
+              animate={{ y: '100%' }}
+              transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+              className="absolute inset-x-0 h-12 pointer-events-none"
+              style={{
+                background:
+                  'linear-gradient(to bottom, transparent 0%, rgba(242,100,48,0.0) 20%, rgba(242,100,48,0.85) 50%, rgba(242,100,48,0.0) 80%, transparent 100%)',
+                boxShadow: '0 0 24px rgba(242,100,48,0.6)',
+              }}
+            />
+          </>
+        ) : (
+          <motion.div
+            animate={{ scale: [1, 1.08, 1] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="w-full h-full rounded-full bg-brand/5 border border-brand/30 flex items-center justify-center"
+          >
+            <Camera className="w-16 h-16 text-brand" />
+          </motion.div>
+        )}
+      </div>
+
+      {/* Rotating accent ring while scanning */}
+      {scanning && (
+        <motion.div
+          className="absolute inset-0 rounded-full border-4 border-transparent"
+          style={{
+            borderTopColor: 'var(--color-brand, #F26430)',
+            borderRightColor: 'var(--color-brand, #F26430)',
+          }}
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        />
+      )}
+
+      {/* OCR status pill */}
+      <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
+        <span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />
+        <span className="text-[10px] uppercase font-bold text-brand tracking-wider">
+          {t('common.ocr_active')}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CornerBracket({ position }: { position: 'tl' | 'tr' | 'bl' | 'br' }) {
+  const base = 'absolute w-5 h-5 border-brand pointer-events-none';
+  const styles = {
+    tl: 'top-3 left-3 border-t-2 border-l-2 rounded-tl-md',
+    tr: 'top-3 right-3 border-t-2 border-r-2 rounded-tr-md',
+    bl: 'bottom-3 left-3 border-b-2 border-l-2 rounded-bl-md',
+    br: 'bottom-3 right-3 border-b-2 border-r-2 rounded-br-md',
+  };
+  return <span className={`${base} ${styles[position]}`} />;
+}
 
 function getBatteryAlert(vehicle: Vehicle): { state: 'soon' | 'overdue'; months: number } | null {
   if (!vehicle.lastBatteryChangeDate || !vehicle.batteryIntervalMonths) return null;
@@ -137,6 +252,7 @@ export default function App() {
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [scanning, setScanning] = useState(false);
+  const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
 
   const dateLocale = lang === 'ar' ? 'ar-SA' : 'en-US';
@@ -213,9 +329,12 @@ export default function App() {
     }
 
     setScanning(true);
+    setActivePage('camera');
     const reader = new FileReader();
     reader.onload = async () => {
-      const base64 = (reader.result as string).split(',')[1];
+      const dataUrl = reader.result as string;
+      setScanPreview(dataUrl);
+      const base64 = dataUrl.split(',')[1];
       try {
         const result = await scanOdometer(base64);
         toast.success(t('camera.detected', { value: formatMileage(result.mileage) }));
@@ -255,6 +374,8 @@ export default function App() {
         toast.error(t('camera.failed'));
       } finally {
         setScanning(false);
+        setScanPreview(null);
+        if (e.target) e.target.value = '';
       }
     };
     reader.readAsDataURL(file);
@@ -406,7 +527,7 @@ export default function App() {
                         <div className="grid grid-cols-2 gap-4">
                           <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
                             <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.mileage')}</p>
-                            <p className="text-xl font-bold">{formatMileage(selectedVehicle.currentMileage)}</p>
+                            <p className="text-xl font-bold"><CountUp value={selectedVehicle.currentMileage} /></p>
                           </div>
                           <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
                             <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.confidence')}</p>
@@ -543,26 +664,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex flex-col items-center justify-center pt-20 text-center space-y-8"
             >
-              <div className="w-48 h-48 rounded-full border-4 border-brand/20 flex items-center justify-center relative">
-                <motion.div 
-                  animate={{ scale: [1, 1.1, 1] }}
-                  transition={{ duration: 2, repeat: Infinity }}
-                  className="w-40 h-40 rounded-full bg-brand/5 border border-brand/30 flex items-center justify-center"
-                >
-                  <Camera className="w-16 h-16 text-brand" />
-                </motion.div>
-                {scanning && (
-                  <motion.div 
-                    className="absolute inset-0 border-4 border-brand rounded-full"
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  />
-                )}
-                <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap">
-                  <span className="text-[10px] uppercase font-bold text-brand opacity-80 animate-pulse">{t('common.ocr_active')}</span>
-                  <span className="w-1.5 h-1.5 bg-brand rounded-full"></span>
-                </div>
-              </div>
+              <ScanViewport scanning={scanning} preview={scanPreview} t={t} />
 
               <div>
                 <h2 className="text-2xl font-bold mb-2">{t('camera.title')}</h2>

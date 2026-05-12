@@ -10,6 +10,7 @@ import {
   Smartphone,
   TrendingUp,
 } from 'lucide-react';
+import { motion } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useI18n, type Lang } from './i18n';
 
@@ -118,22 +119,30 @@ export function LandingPage() {
                 </div>
               </div>
               <div className="flex flex-col items-center">
-                <div className="bg-white p-4 rounded-2xl border border-black/10 shadow-md">
-                  <QRCodeSVG
-                    value="https://motrs.uk/app"
-                    size={180}
-                    fgColor="#0F1115"
-                    bgColor="#FFFFFF"
-                    level="M"
-                    imageSettings={{
-                      src: '/icon.svg',
-                      height: 32,
-                      width: 32,
-                      excavate: true,
-                    }}
-                  />
-                </div>
-                <p className="mt-3 text-xs font-medium text-black/60">{t('landing.scan_label')}</p>
+                <motion.div
+                  className="relative"
+                  animate={{ y: [0, -10, 0] }}
+                  transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
+                >
+                  {/* Soft halo */}
+                  <div className="absolute inset-0 bg-brand/30 blur-3xl scale-110 rounded-3xl pointer-events-none" />
+                  <div className="relative bg-white p-4 rounded-2xl border border-black/10 shadow-2xl shadow-brand/20">
+                    <QRCodeSVG
+                      value="https://motrs.uk/app"
+                      size={180}
+                      fgColor="#0F1115"
+                      bgColor="#FFFFFF"
+                      level="M"
+                      imageSettings={{
+                        src: '/icon.svg',
+                        height: 32,
+                        width: 32,
+                        excavate: true,
+                      }}
+                    />
+                  </div>
+                </motion.div>
+                <p className="mt-4 text-xs font-medium text-black/60">{t('landing.scan_label')}</p>
               </div>
             </div>
           </div>
