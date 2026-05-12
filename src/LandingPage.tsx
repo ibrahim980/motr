@@ -29,20 +29,16 @@ export function LandingPage() {
       {/* Hero */}
       <section className="max-w-6xl mx-auto px-6 pt-6 pb-20">
         <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div className="order-2 md:order-1 flex justify-center">
-            <PhoneFrame src="/screenshots/02-dashboard.jpeg" alt={t('landing.ov_dashboard')} />
-          </div>
-
-          <div className="order-1 md:order-2 text-center md:text-end">
+          <div className="text-center md:text-start">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] mb-6">
               {t('landing.hero_t1')}
               <br />
               <span className="text-brand">{t('landing.hero_t2')}</span>
             </h1>
-            <p className="text-lg text-black/60 mb-8 max-w-md mx-auto md:ms-auto md:me-0 leading-relaxed">
+            <p className="text-lg text-black/60 mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
               {t('landing.hero_desc')}
             </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-end mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start mb-6">
               <a
                 href={APP_URL}
                 className="bg-brand text-white px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-brand/30 hover:brightness-95 transition"
@@ -59,10 +55,14 @@ export function LandingPage() {
               </a>
             </div>
 
-            <div className="flex items-center gap-3 justify-center md:justify-end">
+            <div className="flex items-center gap-3 justify-center md:justify-start">
               <AvatarStack />
               <p className="text-sm text-black/60 font-medium">{t('landing.social_proof')}</p>
             </div>
+          </div>
+
+          <div className="flex justify-center">
+            <PhoneFrame src="/screenshots/02-dashboard.jpeg" alt={t('landing.ov_dashboard')} />
           </div>
         </div>
       </section>
@@ -109,10 +109,10 @@ export function LandingPage() {
         <div className="max-w-4xl mx-auto px-6">
           <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-black/5">
             <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div className="text-center md:text-end">
+              <div className="text-center md:text-start">
                 <h2 className="text-3xl font-bold mb-3">{t('landing.download_h')}</h2>
                 <p className="text-black/60 mb-6 leading-relaxed">{t('landing.download_d')}</p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-end">
+                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
                   <StoreButton store={t('landing.gplay')} comingSoon={t('landing.coming_soon')} />
                   <StoreButton store={t('landing.appstore')} comingSoon={t('landing.coming_soon')} />
                 </div>
@@ -292,7 +292,7 @@ function Step({ n, icon: Icon, title, desc }: { n: number; icon: IconType; title
         <div className="absolute inset-0 bg-white border-2 border-brand/30 rounded-full flex items-center justify-center">
           <Icon className="w-7 h-7 text-brand" />
         </div>
-        <span className="absolute -bottom-1 -end-1 bg-brand text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md">
+        <span className="absolute -bottom-1 -start-1 bg-brand text-white text-xs font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md">
           {n}
         </span>
       </div>
