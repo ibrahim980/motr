@@ -31,11 +31,22 @@ export async function seedDemoData(userId: string): Promise<void> {
     year: 2023,
     color: 'Black',
     currentMileage: 87250,
+    healthScore: 100,
+    // Oil
     lastOilChangeMileage: 82000,
     oilIntervalKm: 10000,
-    healthScore: 100,
+    // Battery — due in ~2 months (soon)
     lastBatteryChangeDate: isoNMonthsAgo(22),
     batteryIntervalMonths: 24,
+    // Tires — replaced at 75k, interval 60k → next at 135k (no alert)
+    lastTireChangeMileage: 75000,
+    tireIntervalKm: 60000,
+    // Maintenance — last 7 months ago, interval 6 → 1 month overdue
+    lastMaintenanceDate: isoNMonthsAgo(7),
+    maintenanceIntervalMonths: 6,
+    // Parts — last 9 months ago, interval 12 → 3 months left (no alert)
+    lastPartsDate: isoNMonthsAgo(9),
+    partsIntervalMonths: 12,
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   });

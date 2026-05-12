@@ -20,6 +20,12 @@ export interface Vehicle {
   oilIntervalKm: number;
   lastBatteryChangeDate?: string;
   batteryIntervalMonths?: number;
+  lastTireChangeMileage?: number;
+  tireIntervalKm?: number;
+  lastMaintenanceDate?: string;
+  maintenanceIntervalMonths?: number;
+  lastPartsDate?: string;
+  partsIntervalMonths?: number;
   healthScore: number;
   createdAt: any;
   updatedAt: any;

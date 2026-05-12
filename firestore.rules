@@ -38,6 +38,12 @@ service cloud.firestore {
         && (!('oilIntervalKm' in data) || (data.oilIntervalKm is number && data.oilIntervalKm >= 1000 && data.oilIntervalKm <= 100000))
         && (!('batteryIntervalMonths' in data) || (data.batteryIntervalMonths is number && data.batteryIntervalMonths >= 1 && data.batteryIntervalMonths <= 240))
         && (!('lastBatteryChangeDate' in data) || (data.lastBatteryChangeDate is string && data.lastBatteryChangeDate.size() <= 30))
+        && (!('tireIntervalKm' in data) || (data.tireIntervalKm is number && data.tireIntervalKm >= 1000 && data.tireIntervalKm <= 500000))
+        && (!('lastTireChangeMileage' in data) || (data.lastTireChangeMileage is number && data.lastTireChangeMileage >= 0 && data.lastTireChangeMileage <= 10000000))
+        && (!('maintenanceIntervalMonths' in data) || (data.maintenanceIntervalMonths is number && data.maintenanceIntervalMonths >= 1 && data.maintenanceIntervalMonths <= 240))
+        && (!('lastMaintenanceDate' in data) || (data.lastMaintenanceDate is string && data.lastMaintenanceDate.size() <= 30))
+        && (!('partsIntervalMonths' in data) || (data.partsIntervalMonths is number && data.partsIntervalMonths >= 1 && data.partsIntervalMonths <= 240))
+        && (!('lastPartsDate' in data) || (data.lastPartsDate is string && data.lastPartsDate.size() <= 30))
         && data.keys().hasAll(['userId', 'name', 'currentMileage']);
     }
 
@@ -73,7 +79,7 @@ service cloud.firestore {
         && incoming().userId == existing().userId
         && (
           // Action: Manual Update
-          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'make', 'model', 'year', 'color', 'currentMileage', 'lastOilChangeMileage', 'oilIntervalKm', 'healthScore', 'updatedAt', 'lastBatteryChangeDate', 'batteryIntervalMonths'])
+          incoming().diff(existing()).affectedKeys().hasOnly(['name', 'make', 'model', 'year', 'color', 'currentMileage', 'lastOilChangeMileage', 'oilIntervalKm', 'healthScore', 'updatedAt', 'lastBatteryChangeDate', 'batteryIntervalMonths', 'lastTireChangeMileage', 'tireIntervalKm', 'lastMaintenanceDate', 'maintenanceIntervalMonths', 'lastPartsDate', 'partsIntervalMonths'])
         )
         && incoming().updatedAt == request.time;
         

@@ -156,17 +156,60 @@ function timestampToDate(ts: unknown): Date | null {
   return null;
 }
 
-function getBatteryAlert(vehicle: Vehicle): { state: 'soon' | 'overdue'; months: number } | null {
-  if (!vehicle.lastBatteryChangeDate || !vehicle.batteryIntervalMonths) return null;
-  const last = new Date(vehicle.lastBatteryChangeDate);
+type AlertState = 'soon' | 'overdue';
+type AlertKind = 'battery' | 'tires' | 'maintenance' | 'parts';
+interface MaintenanceAlert {
+  kind: AlertKind;
+  state: AlertState;
+  value: number;
+}
+
+function monthsAlert(
+  lastDate: string | undefined,
+  intervalMonths: number | undefined,
+  threshold = 2
+): { state: AlertState; value: number } | null {
+  if (!lastDate || !intervalMonths) return null;
+  const last = new Date(lastDate);
   if (Number.isNaN(last.getTime())) return null;
   const due = new Date(last);
-  due.setMonth(due.getMonth() + vehicle.batteryIntervalMonths);
-  const diffMs = due.getTime() - Date.now();
-  const monthsLeft = Math.round(diffMs / (1000 * 60 * 60 * 24 * 30.44));
-  if (monthsLeft < 0) return { state: 'overdue', months: Math.abs(monthsLeft) };
-  if (monthsLeft <= 2) return { state: 'soon', months: Math.max(0, monthsLeft) };
+  due.setMonth(due.getMonth() + intervalMonths);
+  const monthsLeft = Math.round((due.getTime() - Date.now()) / (1000 * 60 * 60 * 24 * 30.44));
+  if (monthsLeft < 0) return { state: 'overdue', value: Math.abs(monthsLeft) };
+  if (monthsLeft <= threshold) return { state: 'soon', value: Math.max(0, monthsLeft) };
   return null;
+}
+
+function kmAlert(
+  currentMileage: number,
+  lastMileage: number | undefined,
+  intervalKm: number | undefined,
+  threshold = 2000
+): { state: AlertState; value: number } | null {
+  if (lastMileage == null || !intervalKm) return null;
+  const due = lastMileage + intervalKm;
+  const remaining = due - currentMileage;
+  if (remaining < 0) return { state: 'overdue', value: Math.abs(remaining) };
+  if (remaining <= threshold) return { state: 'soon', value: Math.max(0, remaining) };
+  return null;
+}
+
+function getMaintenanceAlerts(vehicle: Vehicle): MaintenanceAlert[] {
+  const out: MaintenanceAlert[] = [];
+  const bat = monthsAlert(vehicle.lastBatteryChangeDate, vehicle.batteryIntervalMonths);
+  if (bat) out.push({ kind: 'battery', ...bat });
+  const tires = kmAlert(vehicle.currentMileage, vehicle.lastTireChangeMileage, vehicle.tireIntervalKm);
+  if (tires) out.push({ kind: 'tires', ...tires });
+  const maint = monthsAlert(vehicle.lastMaintenanceDate, vehicle.maintenanceIntervalMonths);
+  if (maint) out.push({ kind: 'maintenance', ...maint });
+  const parts = monthsAlert(vehicle.lastPartsDate, vehicle.partsIntervalMonths);
+  if (parts) out.push({ kind: 'parts', ...parts });
+  return out;
+}
+
+function alertMessageKey(a: MaintenanceAlert): string {
+  if (a.value === 0 && a.state === 'soon') return `alert.${a.kind}_now`;
+  return `alert.${a.kind}_${a.state}`;
 }
 
 import { generateVehicleReport } from './lib/reports';
@@ -425,11 +468,15 @@ export default function App() {
       if (trimmedNotes) payload.notes = trimmedNotes.slice(0, 1000);
       await addDoc(collection(db, 'events'), payload);
       
-      if (type === ServiceType.OIL_CHANGE) {
-        await updateDoc(doc(db, 'vehicles', tempEventData.vehicleId), {
-          lastOilChangeMileage: tempEventData.mileage,
-          updatedAt: serverTimestamp()
-        });
+      const vehiclePatch: Record<string, unknown> = { updatedAt: serverTimestamp() };
+      const nowIso = new Date().toISOString();
+      if (type === ServiceType.OIL_CHANGE) vehiclePatch.lastOilChangeMileage = tempEventData.mileage;
+      if (type === ServiceType.TIRES) vehiclePatch.lastTireChangeMileage = tempEventData.mileage;
+      if (type === ServiceType.BATTERY) vehiclePatch.lastBatteryChangeDate = nowIso;
+      if (type === ServiceType.MAINTENANCE) vehiclePatch.lastMaintenanceDate = nowIso;
+      if (type === ServiceType.PARTS) vehiclePatch.lastPartsDate = nowIso;
+      if (Object.keys(vehiclePatch).length > 1) {
+        await updateDoc(doc(db, 'vehicles', tempEventData.vehicleId), vehiclePatch);
       }
       
       toast.success(t('service.saved'));
@@ -609,26 +656,22 @@ export default function App() {
                         </div>
                       )}
 
-                      {(() => {
-                        const alert = getBatteryAlert(selectedVehicle);
-                        if (!alert) return null;
-                        const message = alert.state === 'overdue'
-                          ? t('dashboard.battery_overdue', { months: alert.months })
-                          : alert.months === 0
-                            ? t('dashboard.battery_due_now')
-                            : t('dashboard.battery_due_soon', { months: alert.months });
-                        return (
-                          <div className="glass-dark p-6 rounded-[32px] border-l-4 border-l-warning">
-                            <div className="flex gap-3">
-                              <AlertCircle className="w-5 h-5 text-warning shrink-0" />
-                              <div>
-                                <p className="text-sm font-bold">{t('dashboard.smart_alert')}</p>
-                                <p className="text-xs text-black/40">{message}</p>
-                              </div>
+                      {getMaintenanceAlerts(selectedVehicle).map((a) => (
+                        <div
+                          key={a.kind}
+                          className="glass-dark p-6 rounded-[32px] border-l-4 border-l-warning"
+                        >
+                          <div className="flex gap-3">
+                            <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+                            <div>
+                              <p className="text-sm font-bold">{t('dashboard.smart_alert')}</p>
+                              <p className="text-xs text-black/40">
+                                {t(alertMessageKey(a), { value: a.value })}
+                              </p>
                             </div>
                           </div>
-                        );
-                      })()}
+                        </div>
+                      ))}
 
                       {/* Recent Activity */}
                       <div className="space-y-4">

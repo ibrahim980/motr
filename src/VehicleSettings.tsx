@@ -19,12 +19,33 @@ function toDateInput(value?: string): string {
   return d.toISOString().slice(0, 10);
 }
 
+function toNumber(value: number | undefined, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
 export function VehicleSettings({ vehicle, onClose }: Props) {
   const { t } = useI18n();
-  const [oilIntervalKm, setOilIntervalKm] = useState(vehicle.oilIntervalKm || 10000);
-  const [lastOilChangeMileage, setLastOilChangeMileage] = useState(vehicle.lastOilChangeMileage ?? 0);
+
+  // Oil
+  const [oilIntervalKm, setOilIntervalKm] = useState(toNumber(vehicle.oilIntervalKm, 10000));
+  const [lastOilChangeMileage, setLastOilChangeMileage] = useState(toNumber(vehicle.lastOilChangeMileage, 0));
+
+  // Battery
   const [batteryDate, setBatteryDate] = useState(toDateInput(vehicle.lastBatteryChangeDate));
-  const [batteryMonths, setBatteryMonths] = useState(vehicle.batteryIntervalMonths || 36);
+  const [batteryMonths, setBatteryMonths] = useState(toNumber(vehicle.batteryIntervalMonths, 36));
+
+  // Tires
+  const [tireIntervalKm, setTireIntervalKm] = useState(toNumber(vehicle.tireIntervalKm, 60000));
+  const [lastTireChangeMileage, setLastTireChangeMileage] = useState(toNumber(vehicle.lastTireChangeMileage, 0));
+
+  // Maintenance
+  const [maintenanceDate, setMaintenanceDate] = useState(toDateInput(vehicle.lastMaintenanceDate));
+  const [maintenanceMonths, setMaintenanceMonths] = useState(toNumber(vehicle.maintenanceIntervalMonths, 6));
+
+  // Parts
+  const [partsDate, setPartsDate] = useState(toDateInput(vehicle.lastPartsDate));
+  const [partsMonths, setPartsMonths] = useState(toNumber(vehicle.partsIntervalMonths, 12));
+
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
@@ -42,11 +63,16 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
         oilIntervalKm: Number(oilIntervalKm) || 10000,
         lastOilChangeMileage: Number(lastOilChangeMileage) || 0,
         batteryIntervalMonths: Number(batteryMonths) || 36,
+        tireIntervalKm: Number(tireIntervalKm) || 60000,
+        lastTireChangeMileage: Number(lastTireChangeMileage) || 0,
+        maintenanceIntervalMonths: Number(maintenanceMonths) || 6,
+        partsIntervalMonths: Number(partsMonths) || 12,
         updatedAt: serverTimestamp(),
       };
-      if (batteryDate) {
-        updates.lastBatteryChangeDate = new Date(batteryDate).toISOString();
-      }
+      if (batteryDate) updates.lastBatteryChangeDate = new Date(batteryDate).toISOString();
+      if (maintenanceDate) updates.lastMaintenanceDate = new Date(maintenanceDate).toISOString();
+      if (partsDate) updates.lastPartsDate = new Date(partsDate).toISOString();
+
       await updateDoc(doc(db, 'vehicles', vehicle.id), updates);
       toast.success(t('settings.saved'));
       onClose();
@@ -69,10 +95,10 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
       <motion.div
         initial={{ y: 40, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl"
+        className="bg-white w-full max-w-md rounded-3xl shadow-2xl max-h-[90vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between p-6 pb-3">
           <h3 className="text-xl font-bold">{t('settings.title')}</h3>
           <button
             onClick={onClose}
@@ -83,55 +109,90 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
           </button>
         </div>
 
-        <div className="space-y-5">
-          <Field label={t('settings.oil_interval')}>
-            <input
-              type="number"
-              inputMode="numeric"
+        <div className="overflow-y-auto px-6 space-y-6">
+          <Section title={t('settings.section.oil')}>
+            <NumberField
+              label={t('settings.oil_interval')}
+              value={oilIntervalKm}
+              onChange={setOilIntervalKm}
               min={1000}
               max={100000}
               step={500}
-              value={oilIntervalKm}
-              onChange={(e) => setOilIntervalKm(Number(e.target.value))}
-              className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
             />
-          </Field>
-
-          <Field label={t('settings.last_oil')}>
-            <input
-              type="number"
-              inputMode="numeric"
+            <NumberField
+              label={t('settings.last_oil')}
+              value={lastOilChangeMileage}
+              onChange={setLastOilChangeMileage}
               min={0}
               max={10000000}
-              value={lastOilChangeMileage}
-              onChange={(e) => setLastOilChangeMileage(Number(e.target.value))}
-              className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
             />
-          </Field>
+          </Section>
 
-          <Field label={t('settings.battery_date')}>
-            <input
-              type="date"
-              value={batteryDate}
-              onChange={(e) => setBatteryDate(e.target.value)}
-              className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
-            />
-          </Field>
-
-          <Field label={t('settings.battery_interval')}>
-            <input
-              type="number"
-              inputMode="numeric"
+          <Section title={t('settings.section.battery')}>
+            <NumberField
+              label={t('settings.battery_interval')}
+              value={batteryMonths}
+              onChange={setBatteryMonths}
               min={1}
               max={240}
-              value={batteryMonths}
-              onChange={(e) => setBatteryMonths(Number(e.target.value))}
-              className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
             />
-          </Field>
+            <DateField
+              label={t('settings.battery_date')}
+              value={batteryDate}
+              onChange={setBatteryDate}
+            />
+          </Section>
+
+          <Section title={t('settings.section.tires')}>
+            <NumberField
+              label={t('settings.tire_interval')}
+              value={tireIntervalKm}
+              onChange={setTireIntervalKm}
+              min={1000}
+              max={500000}
+              step={1000}
+            />
+            <NumberField
+              label={t('settings.last_tire')}
+              value={lastTireChangeMileage}
+              onChange={setLastTireChangeMileage}
+              min={0}
+              max={10000000}
+            />
+          </Section>
+
+          <Section title={t('settings.section.maintenance')}>
+            <NumberField
+              label={t('settings.maintenance_interval')}
+              value={maintenanceMonths}
+              onChange={setMaintenanceMonths}
+              min={1}
+              max={240}
+            />
+            <DateField
+              label={t('settings.maintenance_date')}
+              value={maintenanceDate}
+              onChange={setMaintenanceDate}
+            />
+          </Section>
+
+          <Section title={t('settings.section.parts')}>
+            <NumberField
+              label={t('settings.parts_interval')}
+              value={partsMonths}
+              onChange={setPartsMonths}
+              min={1}
+              max={240}
+            />
+            <DateField
+              label={t('settings.parts_date')}
+              value={partsDate}
+              onChange={setPartsDate}
+            />
+          </Section>
         </div>
 
-        <div className="flex gap-3 mt-6">
+        <div className="flex gap-3 p-6 pt-4 border-t border-black/5">
           <button
             onClick={onClose}
             className="flex-1 bg-black/5 border border-black/10 py-3 rounded-2xl font-bold text-sm hover:bg-black/10 transition"
@@ -151,11 +212,65 @@ export function VehicleSettings({ vehicle, onClose }: Props) {
   );
 }
 
-function Field({ label, children }: { label: string; children: ReactNode }) {
+function Section({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <div>
+      <h4 className="text-sm font-bold text-brand mb-3 uppercase tracking-wider">{title}</h4>
+      <div className="space-y-3">{children}</div>
+    </div>
+  );
+}
+
+function NumberField({
+  label,
+  value,
+  onChange,
+  min,
+  max,
+  step,
+}: {
+  label: string;
+  value: number;
+  onChange: (n: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+}) {
   return (
     <label className="block">
       <span className="block text-xs font-bold text-black/60 mb-1.5">{label}</span>
-      {children}
+      <input
+        type="number"
+        inputMode="numeric"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(e) => onChange(Number(e.target.value))}
+        className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
+      />
+    </label>
+  );
+}
+
+function DateField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (s: string) => void;
+}) {
+  return (
+    <label className="block">
+      <span className="block text-xs font-bold text-black/60 mb-1.5">{label}</span>
+      <input
+        type="date"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        className="w-full bg-black/5 border border-black/10 rounded-2xl px-4 py-3 text-sm font-medium outline-none focus:border-brand"
+      />
     </label>
   );
 }
