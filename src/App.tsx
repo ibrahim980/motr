@@ -52,11 +52,9 @@ function CountUp({ value }: { value: number }) {
 function ScanViewport({
   scanning,
   preview,
-  t,
 }: {
   scanning: boolean;
   preview: string | null;
-  t: (key: string, vars?: Record<string, string | number>) => string;
 }) {
   const showPreview = scanning && preview;
   return (
@@ -124,13 +122,6 @@ function ScanViewport({
         />
       )}
 
-      {/* OCR status pill */}
-      <div className="absolute -bottom-9 left-1/2 -translate-x-1/2 flex items-center gap-2 whitespace-nowrap bg-white/80 border border-black/10 rounded-full px-3 py-1 shadow-sm">
-        <span className="w-1.5 h-1.5 bg-brand rounded-full animate-pulse" />
-        <span className="text-[10px] uppercase font-bold text-brand tracking-wider">
-          {t('common.ocr_active')}
-        </span>
-      </div>
     </div>
   );
 }
@@ -664,7 +655,7 @@ export default function App() {
               exit={{ opacity: 0, scale: 0.9 }}
               className="flex flex-col items-center justify-center pt-20 text-center space-y-8"
             >
-              <ScanViewport scanning={scanning} preview={scanPreview} t={t} />
+              <ScanViewport scanning={scanning} preview={scanPreview} />
 
               <div>
                 <h2 className="text-2xl font-bold mb-2">{t('camera.title')}</h2>
