@@ -81,10 +81,13 @@ const ar: Dict = {
   'service.save_failed': 'خطأ في الحفظ',
   'service.fuel': 'وقود',
   'service.oil_change': 'تغيير زيت',
-  'service.maintenance': 'صيانة',
-  'service.tires': 'إطارات',
+  'service.maintenance': 'الصيانة الدورية',
+  'service.tires': 'تغيير الكفرات',
   'service.battery': 'بطارية',
+  'service.parts': 'تغيير قطع',
   'service.other': 'أخرى',
+  'service.notes': 'ملاحظات (اختياري)',
+  'service.notes_placeholder': 'أضف أي ملاحظة عن الصيانة...',
 
   // settings (vehicle)
   'settings.title': 'إعدادات المركبة',
@@ -215,10 +218,13 @@ const en: Dict = {
   'service.save_failed': 'Save failed',
   'service.fuel': 'Fuel',
   'service.oil_change': 'Oil change',
-  'service.maintenance': 'Maintenance',
-  'service.tires': 'Tires',
+  'service.maintenance': 'Periodic maintenance',
+  'service.tires': 'Tire change',
   'service.battery': 'Battery',
+  'service.parts': 'Parts replacement',
   'service.other': 'Other',
+  'service.notes': 'Notes (optional)',
+  'service.notes_placeholder': 'Add any note about this service…',
 
   // settings (vehicle)
   'settings.title': 'Vehicle settings',

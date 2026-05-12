@@ -44,7 +44,7 @@ service cloud.firestore {
     function isValidEvent(data) {
       return data.userId == request.auth.uid
         && data.vehicleId is string && isValidId(data.vehicleId)
-        && data.type in ['Fuel', 'Oil Change', 'Maintenance', 'Tires', 'Battery', 'Other']
+        && data.type in ['Fuel', 'Oil Change', 'Maintenance', 'Tires', 'Battery', 'Parts', 'Other']
         && data.mileage is number && data.mileage >= 0 && data.mileage <= 10000000
         && (!('notes' in data) || (data.notes is string && data.notes.size() <= 1000))
         && (!('imageUrl' in data) || (data.imageUrl is string && data.imageUrl.size() <= 1000))

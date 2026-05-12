@@ -12,7 +12,8 @@ import {
   Droplets, 
   Wrench, 
   Disc, 
-  Battery, 
+  Battery,
+  Cog,
   LogOut,
   User as UserIcon,
   ChevronLeft,
@@ -262,6 +263,7 @@ export default function App() {
   const [scanning, setScanning] = useState(false);
   const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [eventNotes, setEventNotes] = useState('');
 
   const dateLocale = lang === 'ar' ? 'ar-u-ca-gregory-nu-latn' : 'en-US';
 
@@ -272,6 +274,7 @@ export default function App() {
       [ServiceType.MAINTENANCE]: t('service.maintenance'),
       [ServiceType.TIRES]: t('service.tires'),
       [ServiceType.BATTERY]: t('service.battery'),
+      [ServiceType.PARTS]: t('service.parts'),
       [ServiceType.OTHER]: t('service.other'),
     };
     return map[type] ?? type;
@@ -408,15 +411,18 @@ export default function App() {
     }
     
     try {
-      await addDoc(collection(db, 'events'), {
+      const trimmedNotes = eventNotes.trim();
+      const payload: Record<string, unknown> = {
         userId: user.uid,
         vehicleId: tempEventData.vehicleId,
         type,
         mileage: tempEventData.mileage,
         date: new Date().toISOString(),
         location,
-        createdAt: serverTimestamp()
-      });
+        createdAt: serverTimestamp(),
+      };
+      if (trimmedNotes) payload.notes = trimmedNotes.slice(0, 1000);
+      await addDoc(collection(db, 'events'), payload);
       
       if (type === ServiceType.OIL_CHANGE) {
         await updateDoc(doc(db, 'vehicles', tempEventData.vehicleId), {
@@ -428,6 +434,7 @@ export default function App() {
       toast.success(t('service.saved'));
       setActivePage('dashboard');
       setTempEventData(null);
+      setEventNotes('');
     } catch (err) {
       console.error(err);
       toast.error(t('service.save_failed'));
@@ -804,6 +811,7 @@ export default function App() {
                   { type: ServiceType.MAINTENANCE, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10' },
                   { type: ServiceType.TIRES, icon: Disc, color: 'text-purple-400', bg: 'bg-purple-400/10' },
                   { type: ServiceType.BATTERY, icon: Battery, color: 'text-danger', bg: 'bg-danger/10' },
+                  { type: ServiceType.PARTS, icon: Cog, color: 'text-sky-500', bg: 'bg-sky-500/10' },
                   { type: ServiceType.OTHER, icon: Plus, color: 'text-black/60', bg: 'bg-black/5' },
                 ].map((s) => (
                   <button
@@ -819,8 +827,20 @@ export default function App() {
                 ))}
               </div>
 
+              <label className="block">
+                <span className="block text-xs font-bold text-black/60 mb-2">{t('service.notes')}</span>
+                <textarea
+                  value={eventNotes}
+                  onChange={(e) => setEventNotes(e.target.value)}
+                  placeholder={t('service.notes_placeholder')}
+                  maxLength={1000}
+                  rows={3}
+                  className="w-full bg-white border border-black/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-brand resize-none"
+                />
+              </label>
+
               <button
-                onClick={() => setActivePage('dashboard')}
+                onClick={() => { setEventNotes(''); setActivePage('dashboard'); }}
                 className="w-full text-black/40 font-medium py-4"
               >
                 {t('service.skip')}
