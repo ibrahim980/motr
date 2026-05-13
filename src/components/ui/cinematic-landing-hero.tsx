@@ -129,17 +129,21 @@ export function CinematicLandingHero({
       ref={rootRef}
       dir="rtl"
       className={cn(
-        'motr-cinema-scroll relative isolate overflow-hidden bg-[#A6D1E5] text-[#0F1115]',
+        'motr-cinema-scroll relative isolate overflow-hidden bg-white text-[#0F1115]',
         className,
       )}
     >
-      {/* soft brand-orange ambient lighting */}
+      {/* subtle silver wash + brand-orange ambient highlights on white */}
       <div
-        className="pointer-events-none absolute -top-32 -end-32 h-[420px] w-[420px] rounded-full bg-[#F26430]/25 blur-[120px]"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-b from-[#F4F5F7] via-white to-white"
         aria-hidden="true"
       />
       <div
-        className="pointer-events-none absolute -bottom-40 -start-32 h-[420px] w-[420px] rounded-full bg-[#FA5306]/20 blur-[120px]"
+        className="pointer-events-none absolute -top-32 -end-32 h-[420px] w-[420px] rounded-full bg-[#F26430]/18 blur-[120px]"
+        aria-hidden="true"
+      />
+      <div
+        className="pointer-events-none absolute -bottom-40 -start-32 h-[420px] w-[420px] rounded-full bg-[#FA5306]/14 blur-[120px]"
         aria-hidden="true"
       />
 
