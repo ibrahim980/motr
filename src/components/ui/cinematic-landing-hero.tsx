@@ -15,10 +15,6 @@ export interface CinematicLandingHeroProps {
   brandName?: string;
   tagline1?: string;
   tagline2?: string;
-  cardHeading?: string;
-  cardDescription?: string;
-  metricValue?: number;
-  metricLabel?: string;
   ctaHeading?: string;
   ctaDescription?: string;
   primaryCta?: CtaButton;
@@ -57,10 +53,6 @@ export function CinematicLandingHero({
   brandName = 'Motr',
   tagline1 = 'سيارتك لها عمر،',
   tagline2 = 'وموتر يحسبه عنك.',
-  cardHeading = 'صيانة سيارتك بدون حوسة.',
-  cardDescription = 'كل ما سويت شي بسيارتك صور العداد وحدد العملية، وخل موتر يحسب لك كم باقي على الزيت والكفرات والفلاتر والقطع الاستهلاكية.',
-  metricValue = 82,
-  metricLabel = 'باقي على الزيت',
   ctaHeading = 'حافظ على وقتك وفلوسك.',
   ctaDescription = 'موتر يساعدك تعرف متى تغير الزيت والكفرات والفلاتر قبل ما تفاجئك السيارة.',
   primaryCta = { label: 'ابدأ الآن', href: '/app' },
@@ -112,12 +104,6 @@ export function CinematicLandingHero({
     return () => mm.revert();
   }, []);
 
-  // SVG ring math
-  const ringRadius = 38;
-  const ringCircumference = 2 * Math.PI * ringRadius;
-  const clamped = Math.max(0, Math.min(100, metricValue));
-  const ringOffset = ringCircumference * (1 - clamped / 100);
-
   return (
     <section
       ref={rootRef}
@@ -149,32 +135,6 @@ export function CinematicLandingHero({
               aria-hidden="true"
               className="absolute inset-0 bg-gradient-to-br from-[#F26430]/12 via-transparent to-[#FA5306]/8"
             />
-            {/* Gradient card behind the phone */}
-            <div
-              className="absolute top-1/2 start-6 hidden w-[280px] -translate-y-1/2 overflow-hidden rounded-[2rem] p-6 text-white shadow-2xl md:block md:start-10 lg:start-16"
-              style={{
-                backgroundImage:
-                  'linear-gradient(145deg, #F26430 0%, #FA5306 42%, #0F1115 100%)',
-              }}
-            >
-              <div className="flex items-start gap-5">
-                <ProgressRing
-                  value={clamped}
-                  label={metricLabel}
-                  radius={ringRadius}
-                  circumference={ringCircumference}
-                  offset={ringOffset}
-                />
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold leading-tight">
-                    <BrandText>{cardHeading}</BrandText>
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
-                    <BrandText>{cardDescription}</BrandText>
-                  </p>
-                </div>
-              </div>
-            </div>
 
             {/* The phone */}
             <div className="relative z-10 mx-6 my-8 md:scale-110 lg:scale-125">
@@ -194,35 +154,6 @@ export function CinematicLandingHero({
                   />
                 ))}
               </PhoneFrame>
-            </div>
-          </div>
-
-          {/* Mobile-only compact gradient card */}
-          <div className="order-3 flex justify-center px-6 md:hidden">
-            <div
-              className="relative w-full max-w-md overflow-hidden rounded-[2rem] p-6 text-white shadow-xl"
-              style={{
-                backgroundImage:
-                  'linear-gradient(145deg, #F26430 0%, #FA5306 42%, #0F1115 100%)',
-              }}
-            >
-              <div className="flex items-start gap-5">
-                <ProgressRing
-                  value={clamped}
-                  label={metricLabel}
-                  radius={ringRadius}
-                  circumference={ringCircumference}
-                  offset={ringOffset}
-                />
-                <div className="min-w-0 flex-1">
-                  <h3 className="text-base font-bold leading-tight">
-                    <BrandText>{cardHeading}</BrandText>
-                  </h3>
-                  <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
-                    <BrandText>{cardDescription}</BrandText>
-                  </p>
-                </div>
-              </div>
             </div>
           </div>
 
@@ -305,48 +236,3 @@ function PhoneFrame({ children }: { children: ReactNode }) {
   );
 }
 
-function ProgressRing({
-  value,
-  label,
-  radius,
-  circumference,
-  offset,
-}: {
-  value: number;
-  label: string;
-  radius: number;
-  circumference: number;
-  offset: number;
-}) {
-  const size = (radius + 6) * 2;
-  return (
-    <div className="relative flex shrink-0 flex-col items-center">
-      <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} aria-hidden="true">
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="rgba(255,255,255,0.18)"
-          strokeWidth={6}
-        />
-        <circle
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="#FFFFFF"
-          strokeWidth={6}
-          strokeDasharray={circumference}
-          strokeDashoffset={offset}
-          strokeLinecap="round"
-          transform={`rotate(-90 ${size / 2} ${size / 2})`}
-        />
-      </svg>
-      <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-xl font-bold leading-none">{value}%</span>
-      </div>
-      <span className="mt-1 text-[10px] text-white/70">{label}</span>
-    </div>
-  );
-}
