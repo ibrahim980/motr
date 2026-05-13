@@ -44,13 +44,19 @@ function buildReportElement(
     return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString(dateLocale);
   };
 
+  // Localize the mileage unit (KM / كم) — formatMileage hardcodes "KM"
+  // so swap the suffix based on the active locale.
+  const kmUnit = t('common.km_unit');
+  const formatMileageLocal = (km: number): string =>
+    formatMileage(km).replace(/\s*KM$/i, ` ${kmUnit}`);
+
   const infoRows: Array<[string, string]> = [
     [t('reports.name'), vehicle.name],
     ...(vehicle.make ? ([[t('reports.make'), vehicle.make]] as Array<[string, string]>) : []),
     ...(vehicle.model ? ([[t('reports.model'), vehicle.model]] as Array<[string, string]>) : []),
     ...(vehicle.year ? ([[t('reports.year'), String(vehicle.year)]] as Array<[string, string]>) : []),
     ...(vehicle.color ? ([[t('reports.color'), vehicle.color]] as Array<[string, string]>) : []),
-    [t('common.mileage'), formatMileage(vehicle.currentMileage)],
+    [t('common.mileage'), formatMileageLocal(vehicle.currentMileage)],
   ];
 
   const eventsSorted = [...events].sort(
@@ -120,7 +126,7 @@ function buildReportElement(
           <tr style="background:${i % 2 ? '#FAFAFA' : '#fff'};">
             <td style="padding:9px 8px;border-top:1px solid #EEE;white-space:nowrap;">${esc(formatDate(e.date))}</td>
             <td style="padding:9px 8px;border-top:1px solid #EEE;font-weight:600;">${esc(t(SERVICE_KEY[e.type] ?? 'service.other'))}</td>
-            <td style="padding:9px 8px;border-top:1px solid #EEE;white-space:nowrap;">${esc(formatMileage(e.mileage))}</td>
+            <td style="padding:9px 8px;border-top:1px solid #EEE;white-space:nowrap;">${esc(formatMileageLocal(e.mileage))}</td>
             <td style="padding:9px 8px;border-top:1px solid #EEE;color:#333;">${esc(e.notes ?? '—')}</td>
           </tr>`
           )
@@ -181,6 +187,12 @@ export async function generateVehicleReport(
 
     const imgData = canvas.toDataURL('image/png');
     const pdf = new jsPDF({ unit: 'pt', format: 'a4', orientation: 'portrait' });
+    pdf.setProperties({
+      title: `${t('reports.title')} — ${vehicle.name}`,
+      subject: t('reports.title'),
+      author: 'MOTR',
+      creator: 'MOTR',
+    });
     const pageWidth = pdf.internal.pageSize.getWidth();
     const pageHeight = pdf.internal.pageSize.getHeight();
     const imgWidth = pageWidth;
