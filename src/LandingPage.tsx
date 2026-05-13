@@ -4,23 +4,14 @@ import {
   Brain,
   Camera,
   Menu as MenuIcon,
-  Plus,
   Smartphone,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useI18n, type Lang } from './i18n';
+import { CinematicLandingHero } from './components/ui/cinematic-landing-hero';
 
 const APP_URL = '/app';
-
-const HERO_SCREENSHOTS = [
-  '/screenshots/02-dashboard.png',
-  '/screenshots/05-alerts.png',
-  '/screenshots/06-camera.png',
-  '/screenshots/03-timeline.png',
-  '/screenshots/04-profile.png',
-  '/screenshots/01-splash.jpeg',
-];
 
 export function LandingPage() {
   const { t } = useI18n();
@@ -33,35 +24,11 @@ export function LandingPage() {
         <HeaderMenu />
       </header>
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-6 pb-20">
-        <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div className="text-center md:text-start">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] mb-6">
-              {t('landing.hero_t1')}
-              <br />
-              <span className="text-brand">{t('landing.hero_t2')}</span>
-            </h1>
-            <p className="text-lg text-black/60 mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
-              {t('landing.hero_desc')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start mb-6">
-              <a
-                href={APP_URL}
-                className="bg-brand text-white px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-brand/30 hover:brightness-95 transition"
-              >
-                <Plus className="w-5 h-5" />
-                {t('landing.start')}
-              </a>
-            </div>
-
-          </div>
-
-          <div className="flex justify-center">
-            <RotatingPhoneFrame images={HERO_SCREENSHOTS} />
-          </div>
-        </div>
-      </section>
+      {/* Hero (cinematic) */}
+      <CinematicLandingHero
+        primaryCta={{ label: 'ابدأ الآن', href: APP_URL }}
+        secondaryCta={{ label: 'جرّب موتر', href: APP_URL }}
+      />
 
       {/* Features */}
       <section id="features" className="bg-white py-20">
