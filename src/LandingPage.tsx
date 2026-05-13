@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useI18n, type Lang } from './i18n';
 import { CinematicLandingHero } from './components/ui/cinematic-landing-hero';
+import { BrandText } from './components/ui/brand-text';
 
 const APP_URL = '/app';
 
@@ -61,7 +62,7 @@ export function LandingPage() {
                   {n}
                 </div>
                 <p className="text-sm sm:text-base font-medium leading-relaxed text-ink">
-                  {t(`landing.why_${n}`)}
+                  <BrandText>{t(`landing.why_${n}`)}</BrandText>
                 </p>
               </div>
             ))}

@@ -2,6 +2,7 @@ import { useEffect, useRef, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { cn } from '../../lib/utils';
+import { BrandText } from './brand-text';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -149,7 +150,7 @@ export function CinematicLandingHero({
             <div className="relative min-h-[300px] md:min-h-[420px]">
               {/* Always-visible brand line */}
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-[#0F1115]/60">
-                {brandName} · {tagline1} {tagline2}
+                <BrandText size="1em">{`${brandName} · ${tagline1} ${tagline2}`}</BrandText>
               </p>
 
               {SCENES.map((scene, i) => (
@@ -168,11 +169,11 @@ export function CinematicLandingHero({
                     {scene.eyebrow}
                   </span>
                   <h2 className="mt-4 text-3xl font-bold leading-[1.15] md:text-5xl">
-                    {scene.heading}
+                    <BrandText>{scene.heading}</BrandText>
                   </h2>
                   {scene.body && (
                     <p className="mt-4 max-w-md text-base leading-relaxed text-[#0F1115]/70 md:text-lg">
-                      {scene.body}
+                      <BrandText>{scene.body}</BrandText>
                     </p>
                   )}
                 </div>
@@ -198,9 +199,11 @@ export function CinematicLandingHero({
                     offset={ringOffset}
                   />
                   <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-bold leading-tight">{cardHeading}</h3>
+                    <h3 className="text-base font-bold leading-tight">
+                      <BrandText>{cardHeading}</BrandText>
+                    </h3>
                     <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
-                      {cardDescription}
+                      <BrandText>{cardDescription}</BrandText>
                     </p>
                   </div>
                 </div>
@@ -230,9 +233,11 @@ export function CinematicLandingHero({
 
       {/* Final CTA panel — sits below the pinned area */}
       <div className="relative mx-auto max-w-4xl px-6 py-20 text-center">
-        <h2 className="text-3xl font-bold leading-tight md:text-5xl">{ctaHeading}</h2>
+        <h2 className="text-3xl font-bold leading-tight md:text-5xl">
+          <BrandText>{ctaHeading}</BrandText>
+        </h2>
         <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-[#0F1115]/70 md:text-lg">
-          {ctaDescription}
+          <BrandText>{ctaDescription}</BrandText>
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
           <a
