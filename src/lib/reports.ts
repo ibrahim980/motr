@@ -84,7 +84,7 @@ function buildReportElement(
         <div style="font-size:22px;font-weight:700;color:#F26430;margin:0 0 4px;">${esc(t('reports.title'))}</div>
         <div style="font-size:12px;color:#666;">${esc(formatDate(new Date().toISOString()))}</div>
       </div>
-      <div style="font-size:20px;font-weight:800;color:#0F1115;letter-spacing:1px;">MOTR</div>
+      <img src="/logo.svg" alt="MOTR" style="height:42px;width:auto;display:block;" />
     </div>
   `;
 
@@ -155,6 +155,17 @@ export async function generateVehicleReport(
   try {
     // Let the browser finish laying out & loading the Arabic webfont.
     if (document.fonts?.ready) await document.fonts.ready;
+    // Wait for any embedded images (e.g. the MOTR logo) to actually load.
+    await Promise.all(
+      Array.from(element.querySelectorAll('img')).map((img) =>
+        img.complete && img.naturalWidth > 0
+          ? Promise.resolve()
+          : new Promise<void>((resolve) => {
+              img.addEventListener('load', () => resolve(), { once: true });
+              img.addEventListener('error', () => resolve(), { once: true });
+            })
+      )
+    );
     await new Promise<void>((resolve) => requestAnimationFrame(() => resolve()));
 
     const canvas = await html2canvas(element, {
