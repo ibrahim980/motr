@@ -12,9 +12,6 @@ interface CtaButton {
 }
 
 export interface CinematicLandingHeroProps {
-  brandName?: string;
-  tagline1?: string;
-  tagline2?: string;
   ctaHeading?: string;
   ctaDescription?: string;
   primaryCta?: CtaButton;
@@ -25,34 +22,31 @@ export interface CinematicLandingHeroProps {
 const SCENES = [
   {
     shot: '/screenshots/02-dashboard.png',
-    eyebrow: 'لوحة المركبة',
+    alt: 'MOTR dashboard',
     heading: 'صيانة سيارتك بدون حوسة.',
     body: 'كل ما سويت شي بسيارتك صور العداد وحدد العملية، وخل موتر يحسب لك كم باقي على الزيت والكفرات والفلاتر والقطع الاستهلاكية.',
   },
   {
     shot: '/screenshots/03-timeline.png',
-    eyebrow: 'سجل كامل',
+    alt: 'MOTR timeline',
     heading: 'سيارتك لها جدول، وموتر يرتبه لك.',
     body: 'كل عملية تنحفظ بتاريخها وعدّادها، فتقدر ترجع لها أي وقت.',
   },
   {
     shot: '/screenshots/05-alerts.png',
-    eyebrow: 'تنبيهات ذكية',
+    alt: 'MOTR alerts',
     heading: 'البطارية ساكته، بس موتر منتبه.',
     body: 'تنبيهات تجي قبل ما تخرب القطعة — للزيت والبطارية والكفرات.',
   },
   {
     shot: '/screenshots/06-camera.png',
-    eyebrow: 'صور وانتهيت',
+    alt: 'MOTR camera',
     heading: 'صور العداد، وخل الباقي علينا.',
     body: 'كاميرتك تقرأ الرقم تلقائياً — أنت تختار العملية فقط.',
   },
 ] as const;
 
 export function CinematicLandingHero({
-  brandName = 'Motr',
-  tagline1 = 'سيارتك لها عمر،',
-  tagline2 = 'وموتر يحسبه عنك.',
   ctaHeading = 'حافظ على وقتك وفلوسك.',
   ctaDescription = 'موتر يساعدك تعرف متى تغير الزيت والكفرات والفلاتر قبل ما تفاجئك السيارة.',
   primaryCta = { label: 'ابدأ الآن', href: '/app' },
@@ -143,7 +137,7 @@ export function CinematicLandingHero({
                   <img
                     key={scene.shot}
                     src={scene.shot}
-                    alt={scene.eyebrow}
+                    alt={scene.alt}
                     loading={i === 0 ? 'eager' : 'lazy'}
                     className={cn(
                       `motr-shot-${i}`,
@@ -160,10 +154,6 @@ export function CinematicLandingHero({
           {/* Text half — comfortable padding */}
           <div className="relative order-1 flex items-center px-6 pt-10 md:order-2 md:px-12 md:pt-0 lg:px-20">
             <div className="relative w-full">
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-[#0F1115]/60">
-                {tagline1} {tagline2}
-              </p>
-
               <div className="relative min-h-[260px] md:min-h-[360px]">
                 {SCENES.map((scene, i) => (
                   <div
@@ -173,14 +163,11 @@ export function CinematicLandingHero({
                       'transition-none',
                       i === 0
                         ? 'relative opacity-100'
-                        : 'absolute inset-0 top-12 opacity-0',
+                        : 'absolute inset-0 opacity-0',
                     )}
                     style={{ willChange: 'opacity, transform' }}
                   >
-                    <span className="inline-block rounded-full bg-[#F26430]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#F26430]">
-                      {scene.eyebrow}
-                    </span>
-                    <h2 className="mt-4 text-3xl font-bold leading-[1.1] md:text-5xl lg:text-6xl">
+                    <h2 className="text-3xl font-bold leading-[1.1] md:text-5xl lg:text-6xl">
                       <BrandText>{scene.heading}</BrandText>
                     </h2>
                     {scene.body && (
