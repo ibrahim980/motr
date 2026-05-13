@@ -1,5 +1,3 @@
-import jsPDF from 'jspdf';
-import html2canvas from 'html2canvas';
 import { ServiceType, type TimelineEvent, type Vehicle } from '../types';
 import { formatMileage } from './utils';
 import type { Lang } from '../i18n';
@@ -146,6 +144,13 @@ export async function generateVehicleReport(
   t: Translator,
   lang: Lang
 ): Promise<void> {
+  // Pull jsPDF + html2canvas only when a report is actually generated,
+  // so they never sit in the initial app bundle.
+  const [{ default: jsPDF }, { default: html2canvas }] = await Promise.all([
+    import('jspdf'),
+    import('html2canvas'),
+  ]);
+
   const element = buildReportElement(vehicle, events, t, lang);
   document.body.appendChild(element);
 
