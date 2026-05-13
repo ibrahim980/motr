@@ -1,4 +1,5 @@
 import express from 'express';
+import rateLimit from 'express-rate-limit';
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -10,6 +11,9 @@ const PORT = Number(process.env.PORT) || 3000;
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY;
 const GEMINI_MODEL = process.env.GEMINI_MODEL || 'gemini-3-flash-preview';
 
+const SCAN_DAILY_LIMIT = Number(process.env.SCAN_DAILY_LIMIT) || 20;
+const SCAN_HOURLY_LIMIT = Number(process.env.SCAN_HOURLY_LIMIT) || 10;
+
 if (!GEMINI_API_KEY) {
   console.warn('[server] GEMINI_API_KEY is not set — /api/scan-odometer will return 503');
 }
@@ -17,13 +21,36 @@ if (!GEMINI_API_KEY) {
 const ai = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 const app = express();
+// Trust the first proxy hop (Coolify / Traefik) so rate limiters see
+// the real client IP via X-Forwarded-For instead of the proxy's IP.
+app.set('trust proxy', 1);
 app.use(express.json({ limit: '12mb' }));
+
+const scanDailyLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000,
+  max: SCAN_DAILY_LIMIT,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'quota_daily', limit: SCAN_DAILY_LIMIT });
+  },
+});
+
+const scanHourlyLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,
+  max: SCAN_HOURLY_LIMIT,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: 'quota_hourly', limit: SCAN_HOURLY_LIMIT });
+  },
+});
 
 app.get('/api/health', (_req, res) => {
   res.json({ ok: true, gemini: Boolean(ai) });
 });
 
-app.post('/api/scan-odometer', async (req, res) => {
+app.post('/api/scan-odometer', scanDailyLimiter, scanHourlyLimiter, async (req, res) => {
   if (!ai) {
     return res.status(503).json({ error: 'GEMINI_API_KEY not configured on server' });
   }

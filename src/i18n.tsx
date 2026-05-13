@@ -64,6 +64,9 @@ const ar: Dict = {
   'camera.open': 'فتح الكاميرا',
   'camera.detected': 'تم اكتشاف {value}',
   'camera.failed': 'لم نتمكن من قراءة العداد، حاول مرة أخرى',
+  'camera.quota_daily': 'تجاوزت حصتك اليومية للمسح. حاول غداً.',
+  'camera.quota_hourly': 'تروّى قليلاً — وصلت لحد الساعة. جرّب بعد قليل.',
+  'camera.unavailable': 'خدمة المسح غير متوفرة حالياً. جرّب لاحقاً.',
 
   // timeline
   'timeline.title': 'سجل المركبة',
@@ -278,6 +281,9 @@ const en: Dict = {
   'camera.open': 'Open camera',
   'camera.detected': 'Detected {value}',
   'camera.failed': 'Couldn’t read the odometer, please try again',
+  'camera.quota_daily': 'Daily scan limit reached. Try again tomorrow.',
+  'camera.quota_hourly': 'Easy there — hourly limit reached. Try again in a bit.',
+  'camera.unavailable': 'Scanning service is unavailable right now. Try later.',
 
   // timeline
   'timeline.title': 'Vehicle history',

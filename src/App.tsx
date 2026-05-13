@@ -33,7 +33,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { ar as arLocale, enUS as enLocale } from 'date-fns/locale';
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
 import { ServiceType, Vehicle, TimelineEvent } from './types';
-import { scanOdometer } from './lib/gemini';
+import { scanOdometer, ScanError } from './lib/gemini';
 import { seedDemoData } from './lib/seedDemo';
 import { InstallPrompt } from './InstallPrompt';
 import { useI18n, LanguageToggle } from './i18n';
@@ -629,7 +629,14 @@ export default function App() {
         
       } catch (err) {
         console.error(err);
-        toast.error(t('camera.failed'));
+        if (err instanceof ScanError) {
+          if (err.code === 'quota_daily') toast.error(t('camera.quota_daily'));
+          else if (err.code === 'quota_hourly') toast.error(t('camera.quota_hourly'));
+          else if (err.code === 'unavailable') toast.error(t('camera.unavailable'));
+          else toast.error(t('camera.failed'));
+        } else {
+          toast.error(t('camera.failed'));
+        }
       } finally {
         setScanning(false);
         setScanPreview(null);
