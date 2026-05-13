@@ -28,12 +28,6 @@ export interface CinematicLandingHeroProps {
 
 const SCENES = [
   {
-    shot: '/screenshots/01-splash.jpeg',
-    eyebrow: 'بداية',
-    heading: 'Motr',
-    body: '',
-  },
-  {
     shot: '/screenshots/02-dashboard.png',
     eyebrow: 'لوحة المركبة',
     heading: 'صيانة سيارتك بدون حوسة.',
@@ -236,7 +230,7 @@ export function CinematicLandingHero({
           <div className="relative order-1 flex items-center px-6 pt-10 md:order-2 md:px-12 md:pt-0 lg:px-20">
             <div className="relative w-full">
               <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-[#0F1115]/60">
-                <BrandText size="1em">{`${brandName} · ${tagline1} ${tagline2}`}</BrandText>
+                {tagline1} {tagline2}
               </p>
 
               <div className="relative min-h-[260px] md:min-h-[360px]">
