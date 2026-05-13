@@ -148,72 +148,42 @@ export function CinematicLandingHero({
       />
 
       <div className="motr-cinema-stage relative min-h-[100svh] w-full">
-        <div className="mx-auto flex h-[100svh] max-w-6xl items-center px-6 py-12">
-          <div className="grid w-full grid-cols-1 items-center gap-10 md:grid-cols-2">
-            {/* Text column (scenes stacked) */}
-            <div className="relative min-h-[300px] md:min-h-[420px]">
-              {/* Always-visible brand line */}
-              <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-[#0F1115]/60">
-                <BrandText size="1em">{`${brandName} · ${tagline1} ${tagline2}`}</BrandText>
-              </p>
-
-              {SCENES.map((scene, i) => (
-                <div
-                  key={i}
-                  className={cn(
-                    `motr-text-${i}`,
-                    'transition-none',
-                    i === 0
-                      ? 'relative opacity-100'
-                      : 'absolute inset-0 top-12 opacity-0',
-                  )}
-                  style={{ willChange: 'opacity, transform' }}
-                >
-                  <span className="inline-block rounded-full bg-[#F26430]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#F26430]">
-                    {scene.eyebrow}
-                  </span>
-                  <h2 className="mt-4 text-3xl font-bold leading-[1.15] md:text-5xl">
-                    <BrandText>{scene.heading}</BrandText>
-                  </h2>
-                  {scene.body && (
-                    <p className="mt-4 max-w-md text-base leading-relaxed text-[#0F1115]/70 md:text-lg">
-                      <BrandText>{scene.body}</BrandText>
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
-
-            {/* Phone column */}
-            <div className="flex flex-col items-center gap-6">
-              {/* Gradient card behind / beside the phone */}
-              <div
-                className="relative w-full max-w-md overflow-hidden rounded-[2rem] p-6 text-white shadow-2xl"
-                style={{
-                  backgroundImage:
-                    'linear-gradient(145deg, #F26430 0%, #FA5306 42%, #0F1115 100%)',
-                }}
-              >
-                <div className="flex items-start gap-5">
-                  <ProgressRing
-                    value={clamped}
-                    label={metricLabel}
-                    radius={ringRadius}
-                    circumference={ringCircumference}
-                    offset={ringOffset}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <h3 className="text-base font-bold leading-tight">
-                      <BrandText>{cardHeading}</BrandText>
-                    </h3>
-                    <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
-                      <BrandText>{cardDescription}</BrandText>
-                    </p>
-                  </div>
+        <div className="grid h-[100svh] w-full grid-cols-1 md:grid-cols-2">
+          {/* Phone half — full-bleed visual on its own tinted panel */}
+          <div className="relative order-2 flex items-center justify-center overflow-hidden md:order-1">
+            <div
+              aria-hidden="true"
+              className="absolute inset-0 bg-gradient-to-br from-[#F26430]/12 via-transparent to-[#FA5306]/8"
+            />
+            {/* Gradient card behind the phone */}
+            <div
+              className="absolute top-1/2 start-6 hidden w-[280px] -translate-y-1/2 overflow-hidden rounded-[2rem] p-6 text-white shadow-2xl md:block md:start-10 lg:start-16"
+              style={{
+                backgroundImage:
+                  'linear-gradient(145deg, #F26430 0%, #FA5306 42%, #0F1115 100%)',
+              }}
+            >
+              <div className="flex items-start gap-5">
+                <ProgressRing
+                  value={clamped}
+                  label={metricLabel}
+                  radius={ringRadius}
+                  circumference={ringCircumference}
+                  offset={ringOffset}
+                />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold leading-tight">
+                    <BrandText>{cardHeading}</BrandText>
+                  </h3>
+                  <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
+                    <BrandText>{cardDescription}</BrandText>
+                  </p>
                 </div>
               </div>
+            </div>
 
-              {/* iPhone-style mockup with cross-fading shots */}
+            {/* The phone */}
+            <div className="relative z-10 mx-6 my-8 md:scale-110 lg:scale-125">
               <PhoneFrame>
                 {SCENES.map((scene, i) => (
                   <img
@@ -230,6 +200,72 @@ export function CinematicLandingHero({
                   />
                 ))}
               </PhoneFrame>
+            </div>
+          </div>
+
+          {/* Mobile-only compact gradient card */}
+          <div className="order-3 flex justify-center px-6 md:hidden">
+            <div
+              className="relative w-full max-w-md overflow-hidden rounded-[2rem] p-6 text-white shadow-xl"
+              style={{
+                backgroundImage:
+                  'linear-gradient(145deg, #F26430 0%, #FA5306 42%, #0F1115 100%)',
+              }}
+            >
+              <div className="flex items-start gap-5">
+                <ProgressRing
+                  value={clamped}
+                  label={metricLabel}
+                  radius={ringRadius}
+                  circumference={ringCircumference}
+                  offset={ringOffset}
+                />
+                <div className="min-w-0 flex-1">
+                  <h3 className="text-base font-bold leading-tight">
+                    <BrandText>{cardHeading}</BrandText>
+                  </h3>
+                  <p className="mt-2 text-xs leading-relaxed text-white/80 line-clamp-4">
+                    <BrandText>{cardDescription}</BrandText>
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Text half — comfortable padding */}
+          <div className="relative order-1 flex items-center px-6 pt-10 md:order-2 md:px-12 md:pt-0 lg:px-20">
+            <div className="relative w-full">
+              <p className="mb-4 text-xs font-bold uppercase tracking-[0.3em] text-[#0F1115]/60">
+                <BrandText size="1em">{`${brandName} · ${tagline1} ${tagline2}`}</BrandText>
+              </p>
+
+              <div className="relative min-h-[260px] md:min-h-[360px]">
+                {SCENES.map((scene, i) => (
+                  <div
+                    key={i}
+                    className={cn(
+                      `motr-text-${i}`,
+                      'transition-none',
+                      i === 0
+                        ? 'relative opacity-100'
+                        : 'absolute inset-0 top-12 opacity-0',
+                    )}
+                    style={{ willChange: 'opacity, transform' }}
+                  >
+                    <span className="inline-block rounded-full bg-[#F26430]/10 px-3 py-1 text-[10px] font-bold uppercase tracking-widest text-[#F26430]">
+                      {scene.eyebrow}
+                    </span>
+                    <h2 className="mt-4 text-3xl font-bold leading-[1.1] md:text-5xl lg:text-6xl">
+                      <BrandText>{scene.heading}</BrandText>
+                    </h2>
+                    {scene.body && (
+                      <p className="mt-4 max-w-md text-base leading-relaxed text-[#0F1115]/70 md:text-lg">
+                        <BrandText>{scene.body}</BrandText>
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
