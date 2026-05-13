@@ -445,6 +445,31 @@ export default function App() {
   const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [eventNotes, setEventNotes] = useState('');
+  const [reportBusy, setReportBusy] = useState(false);
+
+  const runReport = async (vehicle: Vehicle | null) => {
+    if (!vehicle) {
+      toast.error(t('reports.no_vehicle'));
+      return;
+    }
+    setReportBusy(true);
+    const toastId = toast.loading(t('reports.generating'));
+    try {
+      await generateVehicleReport(
+        vehicle,
+        events.filter((e) => e.vehicleId === vehicle.id),
+        t,
+        lang
+      );
+      toast.dismiss(toastId);
+    } catch (err) {
+      console.error(err);
+      toast.dismiss(toastId);
+      toast.error(t('reports.failed'));
+    } finally {
+      setReportBusy(false);
+    }
+  };
 
   const dateLocale = lang === 'ar' ? 'ar-u-ca-gregory-nu-latn' : 'en-US';
 
@@ -747,8 +772,10 @@ export default function App() {
                               <SettingsIcon className="w-5 h-5 text-ink" />
                             </button>
                             <button
-                              onClick={() => generateVehicleReport(selectedVehicle, events.filter(e => e.vehicleId === selectedVehicle.id))}
-                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
+                              onClick={() => runReport(selectedVehicle)}
+                              disabled={reportBusy}
+                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors disabled:opacity-50"
+                              aria-label={t('reports.title')}
                             >
                               <Share2 className="w-5 h-5 text-brand" />
                             </button>
@@ -984,7 +1011,14 @@ export default function App() {
             >
               <div className="flex justify-between items-center">
                 <h2 className="text-3xl font-bold tracking-tight">{t('timeline.title')}</h2>
-                <button className="p-2 glass-dark rounded-full"><Share2 className="w-5 h-5 text-black/60" /></button>
+                <button
+                  onClick={() => runReport(selectedVehicle)}
+                  disabled={reportBusy || !selectedVehicle}
+                  className="p-2 glass-dark rounded-full disabled:opacity-50"
+                  aria-label={t('reports.title')}
+                >
+                  <Share2 className="w-5 h-5 text-black/60" />
+                </button>
               </div>
 
               <div className="space-y-4">
