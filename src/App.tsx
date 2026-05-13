@@ -14,8 +14,10 @@ import {
   Disc, 
   Battery,
   Bell,
+  Calendar,
   CheckCircle2,
   Cog,
+  Palette,
   LogOut,
   User as UserIcon,
   ChevronLeft,
@@ -754,16 +756,21 @@ export default function App() {
               ) : (
                 <div className="space-y-4">
                   {selectedVehicle && (
-                    <div className="space-y-4">
-                      <div className="glass rounded-[40px] p-8 space-y-8 relative overflow-hidden">
-                        <div className="absolute top-0 right-0 w-48 h-48 bg-brand/10 blur-[80px]" />
-                        
-                        <div className="flex justify-between items-start relative z-10">
-                          <div>
-                            <h3 className="text-2xl font-bold mb-1 tracking-tight">{selectedVehicle.name}</h3>
-                            <p className="text-[10px] uppercase tracking-widest text-black/40">{selectedVehicle.make} {selectedVehicle.model} • {selectedVehicle.year}</p>
+                    <div className="space-y-3">
+                      {/* 1. Identity card */}
+                      <div className="bg-white/85 backdrop-blur rounded-[32px] p-7 border border-black/5 shadow-sm">
+                        <div className="flex justify-between items-start gap-3 mb-2">
+                          <div className="min-w-0">
+                            <h3 className="text-3xl sm:text-4xl font-bold tracking-tight leading-[1.1] break-words">
+                              {selectedVehicle.name}
+                            </h3>
+                            {selectedVehicle.model && (
+                              <p className="text-lg font-semibold text-black/40 mt-1">
+                                {selectedVehicle.model}
+                              </p>
+                            )}
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 shrink-0">
                             <button
                               onClick={() => setShowSettings(true)}
                               className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
@@ -782,48 +789,100 @@ export default function App() {
                           </div>
                         </div>
 
-                        <HealthIndicator 
-                          score={calculateOilLife(
-                            selectedVehicle.currentMileage, 
-                            selectedVehicle.lastOilChangeMileage || 0, 
-                            selectedVehicle.oilIntervalKm
-                          )} 
-                        />
+                        {(selectedVehicle.year || selectedVehicle.make || selectedVehicle.color) && (
+                          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-6 pt-5 border-t border-black/5">
+                            {selectedVehicle.year && (
+                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                                <Calendar className="w-4 h-4" />
+                                {selectedVehicle.year}
+                              </span>
+                            )}
+                            {selectedVehicle.make && (
+                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                                <Car className="w-4 h-4" />
+                                {selectedVehicle.make}
+                              </span>
+                            )}
+                            {selectedVehicle.color && (
+                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                                <Palette className="w-4 h-4" />
+                                {selectedVehicle.color}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
 
-                        <div className="grid grid-cols-2 gap-4">
-                          <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
-                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.mileage')}</p>
-                            <p className="text-xl font-bold"><CountUp value={selectedVehicle.currentMileage} /></p>
-                          </div>
-                          <div className="bg-black/5 p-5 rounded-[32px] border border-black/10">
-                            <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">{t('common.last_update')}</p>
-                            <p className="text-xl font-bold">
-                              {(() => {
-                                const d = timestampToDate(selectedVehicle.updatedAt) || timestampToDate(selectedVehicle.createdAt);
-                                if (!d) return t('common.never');
-                                return formatDistanceToNow(d, {
-                                  addSuffix: true,
-                                  locale: lang === 'ar' ? arLocale : enLocale,
-                                });
-                              })()}
-                            </p>
-                          </div>
+                      {/* 2. Health hero card */}
+                      <div className="relative bg-white/85 backdrop-blur rounded-[32px] p-7 border border-black/5 shadow-sm overflow-hidden">
+                        <div className="absolute -top-16 -end-16 w-48 h-48 bg-brand/15 blur-[80px] pointer-events-none" />
+
+                        <div className="relative flex flex-col items-center">
+                          <HealthIndicator
+                            score={calculateOilLife(
+                              selectedVehicle.currentMileage,
+                              selectedVehicle.lastOilChangeMileage || 0,
+                              selectedVehicle.oilIntervalKm
+                            )}
+                          />
                         </div>
 
-                        <div className="space-y-4">
+                        <div className="relative mt-4 space-y-2">
                           <div className="flex justify-between items-center text-xs uppercase tracking-widest">
                             <span className="text-black/40 font-bold">{t('common.oil_life')}</span>
-                            <span className="font-bold text-brand">
-                              {Math.max(0, (selectedVehicle.lastOilChangeMileage || 0) + selectedVehicle.oilIntervalKm - selectedVehicle.currentMileage)} {t('common.km_left')}
-                            </span>
                           </div>
                           <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
-                            <motion.div 
+                            <motion.div
                               initial={{ width: 0 }}
-                              animate={{ width: `${calculateOilLife(selectedVehicle.currentMileage, selectedVehicle.lastOilChangeMileage || 0, selectedVehicle.oilIntervalKm)}%` }}
+                              animate={{
+                                width: `${calculateOilLife(selectedVehicle.currentMileage, selectedVehicle.lastOilChangeMileage || 0, selectedVehicle.oilIntervalKm)}%`,
+                              }}
                               className="h-full bg-brand"
                             />
                           </div>
+                        </div>
+
+                        <div className="absolute bottom-4 end-4 bg-ink text-white px-3.5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md">
+                          <span className="text-white/60 uppercase tracking-wider text-[9px]">
+                            {t('common.km_left')}
+                          </span>
+                          <span className="font-bold">
+                            {Math.max(
+                              0,
+                              (selectedVehicle.lastOilChangeMileage || 0) +
+                                selectedVehicle.oilIntervalKm -
+                                selectedVehicle.currentMileage
+                            )}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* 3. Stats row */}
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white/85 backdrop-blur rounded-2xl p-5 border border-black/5 shadow-sm">
+                          <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">
+                            {t('common.mileage')}
+                          </p>
+                          <p className="text-lg sm:text-xl font-bold">
+                            <CountUp value={selectedVehicle.currentMileage} />
+                          </p>
+                        </div>
+                        <div className="bg-white/85 backdrop-blur rounded-2xl p-5 border border-black/5 shadow-sm">
+                          <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">
+                            {t('common.last_update')}
+                          </p>
+                          <p className="text-sm sm:text-base font-bold">
+                            {(() => {
+                              const d =
+                                timestampToDate(selectedVehicle.updatedAt) ||
+                                timestampToDate(selectedVehicle.createdAt);
+                              if (!d) return t('common.never');
+                              return formatDistanceToNow(d, {
+                                addSuffix: true,
+                                locale: lang === 'ar' ? arLocale : enLocale,
+                              });
+                            })()}
+                          </p>
                         </div>
                       </div>
 
