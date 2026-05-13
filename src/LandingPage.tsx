@@ -77,6 +77,31 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* Why MOTR */}
+      <section id="why" className="py-20">
+        <div className="max-w-6xl mx-auto px-6">
+          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 flex flex-wrap items-center justify-center gap-3">
+            <span>{t('landing.why_prefix')}</span>
+            <img src="/motr2.svg" alt="MOTR" className="inline-block h-10 sm:h-12 w-auto align-middle" />
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
+            {[1, 2, 3, 4, 5, 6].map((n) => (
+              <div
+                key={n}
+                className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm flex gap-4"
+              >
+                <div className="w-9 h-9 rounded-full bg-brand/10 text-brand font-bold text-sm flex items-center justify-center shrink-0">
+                  {n}
+                </div>
+                <p className="text-sm sm:text-base font-medium leading-relaxed text-ink">
+                  {t(`landing.why_${n}`)}
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Download */}
       <section id="download" className="py-20">
         <div className="max-w-4xl mx-auto px-6">
@@ -168,6 +193,7 @@ function HeaderMenu() {
   const items: Array<{ href: string; label: string }> = [
     { href: APP_URL, label: t('landing.start') },
     { href: '#features', label: t('landing.learn') },
+    { href: '#why', label: t('landing.why_short') },
     { href: '#download', label: t('landing.download_h') },
   ];
 
