@@ -84,7 +84,7 @@ function buildReportElement(
         <div style="font-size:22px;font-weight:700;color:#F26430;margin:0 0 4px;">${esc(t('reports.title'))}</div>
         <div style="font-size:12px;color:#666;">${esc(formatDate(new Date().toISOString()))}</div>
       </div>
-      <img src="/logo.svg" alt="MOTR" style="height:28px;width:auto;display:block;" />
+      <img src="/logo.svg" alt="MOTR" style="height:22px;width:auto;display:block;" />
     </div>
   `;
 
