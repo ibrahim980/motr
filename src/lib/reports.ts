@@ -79,12 +79,9 @@ function buildReportElement(
   const tableAlign = isRtl ? 'right' : 'left';
 
   const headerHtml = `
-    <div style="display:flex;align-items:flex-start;justify-content:space-between;border-bottom:3px solid #F26430;padding-bottom:14px;margin-bottom:22px;">
-      <div>
-        <div style="font-size:22px;font-weight:700;color:#F26430;margin:0 0 4px;">${esc(t('reports.title'))}</div>
-        <div style="font-size:12px;color:#666;">${esc(formatDate(new Date().toISOString()))}</div>
-      </div>
-      <img src="/logo.svg" alt="MOTR" style="height:22px;width:auto;display:block;" />
+    <div style="border-bottom:3px solid #F26430;padding-bottom:14px;margin-bottom:22px;">
+      <div style="font-size:22px;font-weight:700;color:#F26430;margin:0 0 4px;">${esc(t('reports.title'))}</div>
+      <div style="font-size:12px;color:#666;">${esc(formatDate(new Date().toISOString()))}</div>
     </div>
   `;
 
