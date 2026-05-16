@@ -64,7 +64,7 @@ service cloud.firestore {
         && incoming().keys().hasAll(['email', 'displayName', 'createdAt'])
         && incoming().email is string && incoming().email.size() <= 255;
       allow update: if isOwner(userId)
-        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']);
+        && incoming().diff(existing()).affectedKeys().hasOnly(['displayName', 'counted']);
     }
 
     // Public stats (e.g., site-wide user count). Anyone can read; only

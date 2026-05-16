@@ -1326,15 +1326,21 @@ export default function App() {
         (async () => {
           try {
             const userRef = doc(db, 'users', u.uid);
+            const statsRef = doc(db, 'stats', 'public');
             const snap = await getDoc(userRef);
+            const alreadyCounted = snap.exists() && snap.data().counted === true;
+            if (alreadyCounted) return;
             if (!snap.exists()) {
               await setDoc(userRef, {
                 email: u.email ?? '',
                 displayName: u.displayName ?? '',
                 createdAt: serverTimestamp(),
+                counted: true,
               });
-              await setDoc(doc(db, 'stats', 'public'), { userCount: increment(1) }, { merge: true });
+            } else {
+              await updateDoc(userRef, { counted: true });
             }
+            await setDoc(statsRef, { userCount: increment(1) }, { merge: true });
           } catch (err) {
             console.warn('user count backfill failed', err);
           }
