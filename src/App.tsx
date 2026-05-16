@@ -27,7 +27,9 @@ import {
   TrendingUp,
   TrendingDown,
   X,
-  ArrowLeft
+  ArrowLeft,
+  Home as HomeIcon,
+  BarChart3
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
@@ -973,10 +975,10 @@ const HealthLabel = () => {
 const Navbar = ({ activePage, setActivePage, alertCount = 0 }: any) => {
   const { t } = useI18n();
   const tabs = [
-    { id: 'dashboard', icon: Car, label: t('nav.vehicles') },
-    { id: 'alerts', icon: Bell, label: t('nav.alerts'), badge: alertCount },
+    { id: 'dashboard', icon: HomeIcon, label: t('nav.home'), badge: alertCount },
+    { id: 'cars', icon: Car, label: t('nav.cars') },
     { id: 'camera', icon: Camera, label: t('nav.camera'), primary: true },
-    { id: 'timeline', icon: History, label: t('nav.timeline') },
+    { id: 'timeline', icon: BarChart3, label: t('nav.stats') },
     { id: 'profile', icon: UserIcon, label: t('nav.profile') },
   ];
 
@@ -1840,7 +1842,7 @@ export default function App() {
                           </h3>
                           <div className="mt-2 flex items-center justify-end gap-2">
                             <button
-                              onClick={() => setActivePage('profile')}
+                              onClick={() => setActivePage('cars')}
                               className="bg-white/10 hover:bg-white/15 transition rounded-full px-3 py-1 text-[10px] font-bold"
                             >
                               {t('dashboard.my_cars')}
@@ -2081,6 +2083,364 @@ export default function App() {
                   })()}
                 </>
               ) : null}
+            </motion.div>
+          )}
+
+          {activePage === 'cars' && (
+            <motion.div
+              key="cars"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              {(() => {
+                const totalKm = vehicles.reduce((acc, v) => acc + (v.currentMileage || 0), 0);
+                const tones = vehicles.map((v) => {
+                  const cta = getNextCta(v);
+                  if (!cta) return 'ok' as const;
+                  return cta.state === 'overdue' ? 'brand' : 'warn' as const;
+                });
+                const toneColor = (k: 'brand' | 'ok' | 'warn') =>
+                  k === 'brand' ? '#F26B1F' : k === 'ok' ? '#3F7A40' : '#B96A1E';
+                const toneBg = (k: 'brand' | 'ok' | 'warn') =>
+                  k === 'brand' ? 'bg-[#FFE6D5]' : k === 'ok' ? 'bg-[#E2EFE3]' : 'bg-[#FBEFE0]';
+
+                return (
+                  <>
+                    <div className="flex items-start justify-between gap-3 pb-2">
+                      <button
+                        onClick={handleAddVehicle}
+                        className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_8px_18px_rgba(242,107,31,0.38)]"
+                        aria-label={t('cars.add_first')}
+                      >
+                        <Plus className="w-5 h-5" strokeWidth={2.4} />
+                      </button>
+                      <h1 className="text-3xl font-extrabold tracking-tight text-end">{t('cars.title')}</h1>
+                    </div>
+
+                    {vehicles.length > 0 && (
+                      <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center justify-between">
+                        <button className="text-xs font-semibold text-brand">{t('cars.sort')}</button>
+                        <p className="text-xs text-[#4A6378] text-end">
+                          {vehicles.length === 1
+                            ? t('cars.counter_one', { total: totalKm.toLocaleString() })
+                            : t('cars.counter', { count: vehicles.length, total: totalKm.toLocaleString() })}
+                        </p>
+                      </div>
+                    )}
+
+                    {vehicles.length === 0 ? (
+                      <div className="bg-white rounded-[28px] border border-[#E1EAF1] p-10 text-center space-y-3">
+                        <Car className="w-12 h-12 text-black/20 mx-auto" />
+                        <p className="text-sm text-black/40">{t('cars.empty')}</p>
+                        <button
+                          onClick={handleAddVehicle}
+                          className="inline-flex items-center gap-2 rounded-full bg-brand text-white px-4 py-2 text-xs font-bold"
+                        >
+                          <Plus className="w-4 h-4" />
+                          {t('cars.add_first')}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {vehicles.map((v, i) => {
+                          const tone = tones[i];
+                          const cta = getNextCta(v);
+                          const statusLabel = cta
+                            ? cta.source === 'oil'
+                              ? cta.state === 'overdue'
+                                ? t('dashboard.next_oil_overdue', { value: cta.value.toLocaleString() })
+                                : t('dashboard.next_oil_in', { value: cta.value.toLocaleString() })
+                              : (() => {
+                                  const lbl = t(`status.${cta.status.kind}`);
+                                  const tplKey =
+                                    cta.status.unit === 'km'
+                                      ? cta.state === 'overdue' ? 'dashboard.next_status_overdue_km' : 'dashboard.next_status_in_km'
+                                      : cta.state === 'overdue' ? 'dashboard.next_status_overdue_months' : 'dashboard.next_status_in_months';
+                                  return t(tplKey, { label: lbl, value: cta.value.toLocaleString() });
+                                })()
+                            : v.currentMileage > 0 ? t('cars.status_ok') : t('cars.status_no_data');
+
+                          return (
+                            <button
+                              key={v.id}
+                              onClick={() => {
+                                setSelectedVehicle(v);
+                                setActivePage('car-details');
+                              }}
+                              className="w-full text-end bg-white rounded-[22px] border border-[#E1EAF1] p-3.5"
+                            >
+                              <div className={cn('relative h-28 rounded-2xl overflow-hidden mb-3 flex items-end justify-center pb-1.5', toneBg(tone))}>
+                                {tone === 'brand' && (
+                                  <div className="absolute inset-x-0 top-[55%] h-5 bg-brand" />
+                                )}
+                                <svg width="160" height="80" viewBox="0 0 160 80" className="relative z-[1]">
+                                  <path d="M14 56 Q24 36 56 32 L104 32 Q130 32 142 48 L146 56 Z" fill={toneColor(tone)}/>
+                                  <path d="M60 32 L70 18 L96 18 L104 32 Z" fill={toneColor(tone)} opacity="0.7"/>
+                                  <circle cx="40" cy="58" r="10" fill="#0E2233"/>
+                                  <circle cx="40" cy="58" r="4" fill="white"/>
+                                  <circle cx="118" cy="58" r="10" fill="#0E2233"/>
+                                  <circle cx="118" cy="58" r="4" fill="white"/>
+                                </svg>
+                                <span
+                                  className="absolute top-2.5 end-2.5 text-[10px] font-bold tracking-widest uppercase bg-white/85 backdrop-blur-sm px-2.5 py-1 rounded-full"
+                                  style={{ color: toneColor(tone) }}
+                                >
+                                  {v.name}
+                                </span>
+                              </div>
+
+                              <div className="flex items-start justify-between gap-2">
+                                <span
+                                  className={cn('inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-bold whitespace-nowrap', toneBg(tone))}
+                                  style={{ color: toneColor(tone) }}
+                                >
+                                  <span className="w-1.5 h-1.5 rounded-full" style={{ background: toneColor(tone) }} />
+                                  {statusLabel}
+                                </span>
+                                <div className="min-w-0 text-end">
+                                  <p className="text-sm font-bold truncate">
+                                    {v.make || ''} {v.model || ''}{' '}
+                                    {v.year && <span className="tabular text-[#4A6378] font-semibold">{v.year}</span>}
+                                  </p>
+                                  <p className="tabular text-xs text-[#4A6378] mt-0.5">
+                                    {(v.currentMileage || 0).toLocaleString()} {t('common.km_unit')}
+                                  </p>
+                                </div>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </>
+                );
+              })()}
+            </motion.div>
+          )}
+
+          {activePage === 'car-details' && selectedVehicle && (
+            <motion.div
+              key="car-details"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="space-y-4"
+            >
+              {(() => {
+                const v = selectedVehicle;
+                const vEvents = events.filter((e) => e.vehicleId === v.id);
+                const fuels = vEvents
+                  .filter((e) => e.type === ServiceType.FUEL && e.liters && Number.isFinite(e.mileage))
+                  .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                const { avg } = computeFuelAverage(vEvents);
+
+                const now = new Date();
+                const monthBuckets: { km: number; liters: number; label: string }[] = [];
+                for (let i = 5; i >= 0; i--) {
+                  const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                  monthBuckets.push({
+                    km: 0,
+                    liters: 0,
+                    label: d.toLocaleDateString(dateLocale, { month: 'short' }).slice(0, 3),
+                  });
+                }
+                const inSameMonth = (a: Date, b: Date) =>
+                  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth();
+                for (let i = 1; i < fuels.length; i++) {
+                  const prev = fuels[i - 1];
+                  const cur = fuels[i];
+                  const dKm = cur.mileage - prev.mileage;
+                  if (dKm <= 0 || !cur.liters) continue;
+                  const curDate = new Date(cur.date);
+                  for (let m = 0; m < 6; m++) {
+                    const md = new Date(now.getFullYear(), now.getMonth() - (5 - m), 1);
+                    if (inSameMonth(curDate, md)) {
+                      monthBuckets[m].km += dKm;
+                      monthBuckets[m].liters += cur.liters;
+                      break;
+                    }
+                  }
+                }
+                const monthAvgs = monthBuckets.map((b) => (b.km > 0 ? (b.liters / b.km) * 100 : null));
+                const maxFuel = Math.max(10, ...monthAvgs.filter((x): x is number => x != null));
+
+                const startOfYear = new Date(now.getFullYear(), 0, 1);
+                const yearEvents = vEvents.filter((e) => new Date(e.date) >= startOfYear);
+                const distanceThisYear = (() => {
+                  const ms = yearEvents.map((e) => e.mileage).filter((m) => Number.isFinite(m));
+                  if (ms.length < 2) return 0;
+                  return Math.max(...ms) - Math.min(...ms);
+                })();
+                const totalSpend = vEvents.reduce((acc, e) => acc + (e.amount ?? 0), 0);
+
+                const catSums = {
+                  fuel: 0,
+                  service: 0,
+                  tires: 0,
+                  other: 0,
+                };
+                vEvents.forEach((e) => {
+                  const a = e.amount ?? 0;
+                  if (e.type === ServiceType.FUEL) catSums.fuel += a;
+                  else if (e.type === ServiceType.TIRES) catSums.tires += a;
+                  else if (
+                    e.type === ServiceType.OIL_CHANGE ||
+                    e.type === ServiceType.MAINTENANCE ||
+                    e.type === ServiceType.BATTERY ||
+                    e.type === ServiceType.PARTS
+                  )
+                    catSums.service += a;
+                  else catSums.other += a;
+                });
+                const catTotal = catSums.fuel + catSums.service + catSums.tires + catSums.other;
+                const pct = (n: number) => (catTotal > 0 ? Math.round((n / catTotal) * 100) : 0);
+
+                return (
+                  <>
+                    <div className="flex items-start justify-between gap-3 pb-2">
+                      <button
+                        onClick={() => setActivePage('cars')}
+                        className="w-10 h-10 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                        aria-label="back"
+                      >
+                        <ChevronRight className="w-4 h-4 text-ink" />
+                      </button>
+                      <div className="text-end min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4A6378]">{t('cardetails.title_sub')}</p>
+                        <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight truncate">
+                          {v.make || v.name} {v.model || ''}{' '}
+                          {v.year && <span className="tabular text-[#4A6378] font-semibold">{v.year}</span>}
+                        </h1>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-2xl border border-[#E1EAF1] p-1 flex gap-1.5">
+                      {[t('cardetails.tab_details'), t('cardetails.tab_stats'), t('cardetails.tab_history')].map((label, i) => (
+                        <button
+                          key={i}
+                          onClick={() => {
+                            if (i === 2) {
+                              setActivePage('timeline');
+                            }
+                          }}
+                          className={cn(
+                            'flex-1 py-2 rounded-xl text-xs font-semibold transition',
+                            i === 1 ? 'bg-ink text-white' : 'text-[#4A6378] hover:text-ink',
+                          )}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+
+                    <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="bg-[#E2EFE3] text-success px-2.5 py-1 rounded-full text-[11px] font-bold tabular">
+                          ▼ 6%
+                        </span>
+                        <div className="text-end">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                            {t('cardetails.consumption_6m')}
+                          </p>
+                          {avg != null ? (
+                            <p dir="ltr" className="mt-1 text-end">
+                              <span className="text-4xl font-extrabold tabular tracking-tight">{avg.toFixed(1)}</span>
+                              <span className="ms-1 text-xs font-bold text-[#4A6378]">{t('dashboard.fuel_avg_unit')}</span>
+                            </p>
+                          ) : (
+                            <p className="mt-1 text-xs text-[#4A6378]">{t('dashboard.fuel_avg_unavailable')}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-5 flex items-end justify-between gap-1.5 h-24">
+                        {monthBuckets.map((b, i) => {
+                          const value = monthAvgs[i];
+                          const h = value != null ? (value / maxFuel) * 70 + 14 : 14;
+                          const isLast = i === monthBuckets.length - 1 && value != null;
+                          return (
+                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                              <div className="w-full relative" style={{ height: h }}>
+                                {isLast && (
+                                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-brand tabular">
+                                    {value!.toFixed(1)}
+                                  </span>
+                                )}
+                                <div
+                                  className={cn('absolute inset-0 rounded-md', isLast ? 'bg-brand' : value != null ? 'bg-[#DCEAF3]' : 'bg-[#EEF3F7]')}
+                                />
+                              </div>
+                              <span className="text-[10px] font-semibold text-[#7B92A6]">{b.label}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                          {t('cardetails.distance_label')}
+                        </p>
+                        <p dir="ltr" className="mt-1 text-end">
+                          <span className="text-xl font-extrabold tabular">{distanceThisYear.toLocaleString()}</span>
+                          <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('common.km_unit')}</span>
+                        </p>
+                        <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.distance_sub')}</p>
+                      </div>
+                      <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
+                        <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                          {t('cardetails.spend_label')}
+                        </p>
+                        <p className="mt-1 text-end">
+                          <span className="text-xl font-extrabold tabular">{totalSpend.toLocaleString()}</span>
+                          <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('timeline.unit_riyal')}</span>
+                        </p>
+                        <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.spend_sub')}</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-4">
+                      <h3 className="text-sm font-bold text-end mb-3">{t('cardetails.breakdown_title')}</h3>
+                      {catTotal > 0 ? (
+                        <>
+                          <div dir="ltr" className="flex h-3.5 rounded-full overflow-hidden mb-3">
+                            <div style={{ width: `${pct(catSums.fuel)}%`, background: '#F26B1F' }} />
+                            <div style={{ width: `${pct(catSums.service)}%`, background: '#1F3A8A' }} />
+                            <div style={{ width: `${pct(catSums.tires)}%`, background: '#3F7A40' }} />
+                            <div style={{ width: `${pct(catSums.other)}%`, background: '#4A6378' }} />
+                          </div>
+                          <div className="space-y-2">
+                            {[
+                              { c: '#F26B1F', n: t('cardetails.cat_fuel'), v: catSums.fuel, p: pct(catSums.fuel) },
+                              { c: '#1F3A8A', n: t('cardetails.cat_service'), v: catSums.service, p: pct(catSums.service) },
+                              { c: '#3F7A40', n: t('cardetails.cat_tires'), v: catSums.tires, p: pct(catSums.tires) },
+                              { c: '#4A6378', n: t('cardetails.cat_other'), v: catSums.other, p: pct(catSums.other) },
+                            ].map((r) => (
+                              <div key={r.n} className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 font-mono">
+                                  <span className="tabular text-[11px] text-[#7B92A6]">{r.p}%</span>
+                                  <span className="tabular text-sm font-bold">
+                                    {r.v.toLocaleString()} {t('timeline.unit_riyal')}
+                                  </span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-semibold">{r.n}</span>
+                                  <span className="w-2 h-2 rounded-full" style={{ background: r.c }} />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <p className="text-xs text-[#7B92A6] text-end">{t('cardetails.no_data')}</p>
+                      )}
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           )}
 
