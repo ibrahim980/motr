@@ -250,7 +250,7 @@ function Header() {
     <header className="sticky top-0 z-30 w-full bg-[#B6CDDB]/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
         <a href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/logo.svg" alt="MOTR" className="h-[2.1rem] w-auto" />
+          <img src="/logo.svg" alt="MOTR" className="h-[3.15rem] w-auto" />
         </a>
         <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-ink/80">
           <a href="#features" className="hover:text-ink transition">
@@ -824,7 +824,7 @@ function Footer() {
     <footer className="bg-[#B6CDDB]">
       <div className="mx-auto max-w-[1280px] px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="text-start">
-          <img src="/logo.svg" alt="MOTR" className="h-[2.1rem] w-auto" />
+          <img src="/logo.svg" alt="MOTR" className="h-[3.15rem] w-auto" />
           <p className="mt-3 text-sm text-ink/65 max-w-md"><WithLogo text={c.footer.tag} /></p>
         </div>
         <div className="flex md:items-center md:justify-end gap-6">
