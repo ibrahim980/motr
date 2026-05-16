@@ -4,29 +4,53 @@
 @theme {
   --font-sans: "Inter", "IBM Plex Sans Arabic", ui-sans-serif, system-ui, sans-serif;
 
-  /* Gulf-inspired palette */
-  --color-brand: #F26430;       /* Gulf orange — primary accent */
-  --color-success: #16A34A;
-  --color-warning: #CA8A04;
-  --color-danger: #DC2626;
-  --color-bg-dark: #A6D1E5;     /* Gulf powder blue — page background */
-  --color-ink: #0F1115;         /* primary dark text */
+  /* MOTR app redesign tokens */
+  --color-brand: #F26B1F;
+  --color-success: #3F7A40;
+  --color-warning: #B96A1E;
+  --color-danger: #B23E3E;
+  --color-bg-dark: #F4F7F9;
+  --color-ink: #0E2233;
 }
 
 @layer base {
+  :root {
+    --brand: #F26B1F;
+    --brand-soft: #FFE6D5;
+    --ink: #0E2233;
+    --ink-2: #1F3A52;
+    --ink-3: #4A6378;
+    --ink-4: #7B92A6;
+    --line: #E1EAF1;
+    --line-soft: #EEF3F7;
+    --paper: #F4F7F9;
+    --paper-2: #E6EEF4;
+    --blue-soft: #DCEAF3;
+    --shadow-md: 0 4px 14px rgba(14,34,51,0.08), 0 2px 6px rgba(14,34,51,0.05);
+    --shadow-lg: 0 30px 60px -20px rgba(14,34,51,0.22), 0 12px 30px -12px rgba(14,34,51,0.10);
+  }
+
   body {
     @apply bg-bg-dark text-ink font-sans selection:bg-brand/30;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-feature-settings: "ss01", "cv11";
+    text-rendering: optimizeLegibility;
   }
 }
 
 .glass {
-  @apply bg-white/70 backdrop-blur-xl border border-black/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.15)];
+  @apply bg-white/90 backdrop-blur-xl border border-[#E1EAF1] shadow-[0_12px_28px_rgba(14,34,51,0.08)];
 }
 
 .glass-dark {
-  @apply bg-white backdrop-blur-xl border border-black/10 shadow-2xl;
+  @apply bg-white border border-[#E1EAF1] shadow-[0_10px_24px_rgba(14,34,51,0.07)];
 }
 
 .pill-nav {
-  @apply bg-white/80 border border-black/10 backdrop-blur-2xl rounded-full p-2 px-3 shadow-[0_20px_50px_rgba(0,0,0,0.15)];
+  @apply bg-white/95 border border-[#E1EAF1] backdrop-blur-2xl rounded-[28px] p-2 px-3 shadow-[0_12px_28px_rgba(14,34,51,0.10)];
+}
+
+.tabular {
+  font-variant-numeric: tabular-nums;
 }

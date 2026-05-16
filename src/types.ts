@@ -39,6 +39,10 @@ export interface TimelineEvent {
   type: ServiceType;
   mileage: number;
   date: string;
+  amount?: number;
+  liters?: number;
+  station?: string;
+  serviceCenter?: string;
   location?: {
     lat: number;
     lng: number;
