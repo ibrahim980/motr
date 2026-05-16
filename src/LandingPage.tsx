@@ -1,336 +1,828 @@
-import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
+  ArrowLeft,
+  ArrowRight,
   Bell,
-  Brain,
   Camera,
-  Menu as MenuIcon,
+  Car,
+  CheckCircle2,
+  Clock,
+  Droplets,
+  Fuel,
+  Home as HomeIcon,
   Plus,
-  Smartphone,
+  Shield,
+  Sparkles,
+  User as UserIcon,
+  BarChart2,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { QRCodeSVG } from 'qrcode.react';
-import { useI18n, type Lang } from './i18n';
+import { useI18n } from './i18n';
 
-const APP_URL = '/app';
+type Lang = 'ar' | 'en';
 
-const HERO_SCREENSHOTS = [
-  '/screenshots/02-dashboard.png',
-  '/screenshots/05-alerts.png',
-  '/screenshots/06-camera.png',
-  '/screenshots/03-timeline.png',
-  '/screenshots/04-profile.png',
-  '/screenshots/01-splash.jpeg',
-];
+const COPY = {
+  ar: {
+    nav: { features: 'المميزات', how: 'كيف يعمل', open: 'افتح التطبيق' },
+    hero: {
+      pill: 'تطبيق ويب · بدون تنزيل',
+      h1Pre: 'صيانة سيارتك،',
+      h1Post: 'ببساطة.',
+      sub: 'افتح التطبيق من المتصفح. صوّر العداد بكاميرتك، سجّل الوقود والزيت، واحصل على تنبيهات صيانة ذكية. تسجيل دخول بحساب Google.',
+      ctaOpen: 'افتح التطبيق',
+      ctaAdd: 'أضِف لسطح المكتب',
+      bullets: ['تسجيل دخول بـ Google', 'يعمل بدون تنزيل', 'بدون إعلانات'],
+    },
+    stats: [
+      { value: '3s', label: 'لقراءة العداد بالكاميرا' },
+      { value: '0 ريال', label: 'لا اشتراك، أبداً' },
+      { value: '+12k', label: 'سائق يعتمد على MOTR' },
+    ],
+    features: {
+      eyebrow: 'المميزات',
+      h1Pre: 'كل ما تحتاجه لسيارتك.',
+      h1Post: 'في تطبيق واحد.',
+      sub: 'صُمّم MOTR للسائق الذي ينسى — أي شخص منا.',
+      cards: {
+        camera: {
+          title: 'صوّر العداد بكاميرتك',
+          desc: 'وجّه الكاميرا للعداد، وسيقرأ التطبيق الأرقام تلقائياً. لا إدخال يدوي ولا أخطاء.',
+        },
+        bell: {
+          title: 'تذكيرات صيانة ذكية',
+          desc: 'تنبيهات قبل تغيير الزيت، الفلاتر، الإطارات، وأي خدمة تختارها. لن تنسى مرة أخرى.',
+        },
+        fuel: {
+          title: 'تتبّع الوقود والاستهلاك',
+          desc: 'احسب معدل استهلاك سيارتك للوقود تلقائياً، تعبئة بعد تعبئة.',
+        },
+        oil: {
+          title: 'الزيت والفلاتر',
+          desc: 'سجّل آخر تغيير وتابع المسافة المتبقّية بدقّة. وقت التغيير القادم؟ ستعرفه.',
+        },
+        history: {
+          title: 'تاريخ كامل للسيارة',
+          desc: 'كل خدمة، كل تعبئة، كل فاتورة — في مكان واحد منظّم وقابل للبحث.',
+        },
+        multi: {
+          title: 'يدعم عدّة سيارات',
+          desc: 'سيارة العائلة، سيارة العمل، سيارة الأبناء — كلها تحت يدك.',
+        },
+        sync: {
+          title: 'مزامنة آمنة مع Google',
+          desc: 'سجّل دخولك بحساب Google لتزامن بياناتك بين الجوال واللابتوب. بدون إعلانات، بدون اشتراك.',
+        },
+      },
+    },
+    how: {
+      eyebrow: 'كيف يعمل',
+      h1: 'ثلاث خطوات. خلصت.',
+      sub: 'من التنزيل إلى التحكم الكامل في صيانة سيارتك — أقل من دقيقتين.',
+      steps: [
+        {
+          n: '01',
+          title: 'افتح التطبيق وسجّل دخول',
+          desc: 'افتح motrs.uk من متصفح جوالك، أو أضِفه لسطح المكتب. سجّل دخول بحساب Google خلال ثوانٍ.',
+        },
+        {
+          n: '02',
+          title: 'أضف سيارتك وصوّر العداد',
+          desc: 'الموديل والسنة فقط. ثم وجّه الكاميرا على العداد — والباقي علينا.',
+        },
+        {
+          n: '03',
+          title: 'تابع كل شيء',
+          desc: 'إحصائيات، تذكيرات، وتاريخ مفصّل. متاح على أي جهاز بنفس الحساب.',
+        },
+      ],
+    },
+    cta: {
+      h1: 'سيارتك تستحق الأفضل.',
+      sub: 'افتح التطبيق الآن من المتصفح — تسجيل دخول بـ Google خلال ثوانٍ.',
+    },
+    footer: {
+      tag: 'صنعنا MOTR لأننا، مثلك تماماً، ننسى تغيير الزيت.',
+      links: { privacy: 'الخصوصية', terms: 'الشروط', contact: 'اتصل بنا' },
+      copy: '© MOTR 2026. جميع الحقوق محفوظة.',
+    },
+  },
+  en: {
+    nav: { features: 'Features', how: 'How it works', open: 'Open app' },
+    hero: {
+      pill: 'Web app · no download',
+      h1Pre: 'Your car maintenance,',
+      h1Post: 'made simple.',
+      sub: 'Open MOTR right from your browser. Scan your odometer with your camera, log fuel and oil changes, and get smart maintenance reminders. Sign in with Google.',
+      ctaOpen: 'Open app',
+      ctaAdd: 'Add to desktop',
+      bullets: ['Sign in with Google', 'Works without install', 'No ads'],
+    },
+    stats: [
+      { value: '3s', label: 'to scan the odometer' },
+      { value: '$0', label: 'no subscription, ever' },
+      { value: '12k+', label: 'drivers trust MOTR' },
+    ],
+    features: {
+      eyebrow: 'Features',
+      h1Pre: 'Everything your car needs.',
+      h1Post: 'In one app.',
+      sub: 'MOTR was built for the driver who forgets — that’s all of us.',
+      cards: {
+        camera: {
+          title: 'Scan with your camera',
+          desc: 'Point your camera at the odometer and MOTR reads the digits automatically. No typing, no mistakes.',
+        },
+        bell: {
+          title: 'Smart maintenance reminders',
+          desc: 'Get pinged before each oil change, filter, tire swap, and any service you set up. Never forget again.',
+        },
+        fuel: {
+          title: 'Fuel and consumption tracking',
+          desc: 'MOTR calculates your fuel economy automatically, fill-up after fill-up.',
+        },
+        oil: {
+          title: 'Oil and filters',
+          desc: 'Log the last change and follow remaining distance precisely. When is the next change due? You’ll know.',
+        },
+        history: {
+          title: 'Full vehicle history',
+          desc: 'Every service, every fill-up, every receipt — in one searchable place.',
+        },
+        multi: {
+          title: 'Multi-vehicle support',
+          desc: 'The family car, the work car, the kids’ car — all in one place.',
+        },
+        sync: {
+          title: 'Secure Google sync',
+          desc: 'Sign in with Google and your data follows you between phone and laptop. No ads, no subscription.',
+        },
+      },
+    },
+    how: {
+      eyebrow: 'How it works',
+      h1: 'Three steps. Done.',
+      sub: 'From install to full control of your car maintenance — under two minutes.',
+      steps: [
+        {
+          n: '01',
+          title: 'Open the app and sign in',
+          desc: 'Open motrs.uk in your mobile browser, or add it to your home screen. Sign in with Google in seconds.',
+        },
+        {
+          n: '02',
+          title: 'Add your car and scan the odometer',
+          desc: 'Just the model and year. Then point the camera at the odometer — we’ll handle the rest.',
+        },
+        {
+          n: '03',
+          title: 'Follow everything',
+          desc: 'Stats, reminders, and a detailed history. Available on any device with the same account.',
+        },
+      ],
+    },
+    cta: {
+      h1: 'Your car deserves better.',
+      sub: 'Open the app right now from your browser — Google sign-in in seconds.',
+    },
+    footer: {
+      tag: 'We built MOTR because we, just like you, forget to change the oil.',
+      links: { privacy: 'Privacy', terms: 'Terms', contact: 'Contact' },
+      copy: '© MOTR 2026. All rights reserved.',
+    },
+  },
+} as const;
 
-export function LandingPage() {
-  const { t } = useI18n();
+function useLP() {
+  const { lang, setLang } = useI18n();
+  const c = COPY[lang as Lang];
+  return { lang: lang as Lang, setLang, c };
+}
 
+function Pill({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
-    <div className="min-h-screen bg-bg-dark text-ink">
-      {/* Header */}
-      <header className="max-w-6xl mx-auto px-6 py-6 flex items-center justify-between">
-        <img src="/logo.svg" alt="MOTR" className="h-14 w-auto drop-shadow-md" />
-        <HeaderMenu />
-      </header>
+    <span
+      className={`inline-flex items-center gap-2 rounded-full bg-white/80 border border-[#E1EAF1] px-3 py-1.5 text-xs font-bold text-ink shadow-[0_2px_8px_rgba(14,34,51,0.04)] ${className}`}
+    >
+      {children}
+    </span>
+  );
+}
 
-      {/* Hero */}
-      <section className="max-w-6xl mx-auto px-6 pt-6 pb-20">
-        <div className="grid md:grid-cols-2 gap-10 items-center">
-          <div className="text-center md:text-start">
-            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold leading-[1.15] mb-6">
-              {t('landing.hero_t1')}
-              <br />
-              <span className="text-brand">{t('landing.hero_t2')}</span>
-            </h1>
-            <p className="text-lg text-black/60 mb-8 max-w-md mx-auto md:mx-0 leading-relaxed">
-              {t('landing.hero_desc')}
-            </p>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start mb-6">
-              <a
-                href={APP_URL}
-                className="bg-brand text-white px-8 py-4 rounded-full font-bold inline-flex items-center justify-center gap-2 shadow-lg shadow-brand/30 hover:brightness-95 transition"
-              >
-                <Plus className="w-5 h-5" />
-                {t('landing.start')}
-              </a>
-            </div>
+function ChevronCta({ children, href, primary = false }: { children: ReactNode; href: string; primary?: boolean }) {
+  const { lang } = useLP();
+  const Arrow = lang === 'ar' ? ArrowLeft : ArrowRight;
+  return (
+    <a
+      href={href}
+      className={
+        primary
+          ? 'inline-flex items-center gap-2 rounded-full bg-brand text-white px-6 py-3 text-sm font-bold shadow-[0_12px_28px_rgba(242,107,31,0.35)] hover:brightness-95 transition'
+          : 'inline-flex items-center gap-2 rounded-full bg-white text-ink border border-[#E1EAF1] px-6 py-3 text-sm font-bold hover:bg-white/90 transition'
+      }
+    >
+      <Arrow className="w-4 h-4" />
+      <span>{children}</span>
+    </a>
+  );
+}
 
-          </div>
+function AddDesktopCta({ children, primary = false }: { children: ReactNode; primary?: boolean }) {
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (typeof window !== 'undefined') {
+          window.alert(
+            COPY.ar.hero.bullets[1] /* placeholder; install prompt handled in app */,
+          );
+        }
+      }}
+      className={
+        primary
+          ? 'inline-flex items-center gap-2 rounded-full bg-brand text-white px-6 py-3 text-sm font-bold shadow-[0_12px_28px_rgba(242,107,31,0.35)] hover:brightness-95 transition'
+          : 'inline-flex items-center gap-2 rounded-full bg-white text-ink border border-[#E1EAF1] px-6 py-3 text-sm font-bold hover:bg-white/90 transition'
+      }
+    >
+      <Plus className="w-4 h-4" />
+      <span>{children}</span>
+    </button>
+  );
+}
 
-          <div className="flex justify-center">
-            <RotatingPhoneFrame images={HERO_SCREENSHOTS} />
-          </div>
+function Header() {
+  const { lang, setLang, c } = useLP();
+  return (
+    <header className="sticky top-0 z-30 w-full bg-[#B6CDDB]/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
+        <a href="/" className="flex items-center gap-2 shrink-0">
+          <img src="/logo.svg" alt="MOTR" className="h-7 w-auto" />
+        </a>
+        <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-ink/80">
+          <a href="#features" className="hover:text-ink transition">
+            {c.nav.features}
+          </a>
+          <a href="#how" className="hover:text-ink transition">
+            {c.nav.how}
+          </a>
+        </nav>
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setLang(lang === 'ar' ? 'en' : 'ar')}
+            className="inline-flex items-center gap-1 rounded-full bg-white border border-[#E1EAF1] px-2 py-1 text-[11px] font-bold text-ink"
+            aria-label="Switch language"
+          >
+            <span className={lang === 'ar' ? 'bg-ink text-white rounded-full px-1.5 py-0.5' : 'px-1.5'}>
+              ع
+            </span>
+            <span className={lang === 'en' ? 'bg-ink text-white rounded-full px-1.5 py-0.5' : 'px-1.5'}>
+              EN
+            </span>
+          </button>
+          <a
+            href="/app"
+            className="rounded-full bg-ink text-white px-4 py-2 text-xs font-bold hover:brightness-110 transition"
+          >
+            {c.nav.open}
+          </a>
         </div>
-      </section>
+      </div>
+    </header>
+  );
+}
 
-      {/* Features */}
-      <section id="features" className="bg-white py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">
-            {t('landing.features_h')}
-          </h2>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 max-w-4xl mx-auto">
-            <FeatureCard icon={Camera} title={t('landing.f1_t')} desc={t('landing.f1_d')} />
-            <FeatureCard icon={Brain} title={t('landing.f2_t')} desc={t('landing.f2_d')} />
-            <FeatureCard icon={Bell} title={t('landing.f3_t')} desc={t('landing.f3_d')} />
-          </div>
+function HeroPhoneMockup() {
+  const { c } = useLP();
+  return (
+    <div className="relative mx-auto w-[280px] sm:w-[320px]">
+      {/* Floating reminder bubble */}
+      <div className="absolute -start-6 top-6 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2 max-w-[180px]">
+        <div className="w-7 h-7 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0">
+          <Bell className="w-3.5 h-3.5" />
         </div>
-      </section>
+        <div className="text-end">
+          <p className="text-[9px] font-bold text-black/40 uppercase tracking-wide">
+            {c.how.eyebrow === 'كيف يعمل' ? 'تذكير' : 'Reminder'}
+          </p>
+          <p className="text-[11px] font-bold text-ink leading-tight whitespace-nowrap">
+            {c.how.eyebrow === 'كيف يعمل' ? 'تغيير زيت بعد 1,200 كم' : 'Oil change in 1,200 km'}
+          </p>
+        </div>
+      </div>
 
-      {/* Why MOTR */}
-      <section id="why" className="py-20">
-        <div className="max-w-6xl mx-auto px-6">
-          <h2 className="text-3xl md:text-4xl font-bold text-center mb-12 flex flex-wrap items-center justify-center gap-3">
-            <span>{t('landing.why_prefix')}</span>
-            <img src="/motr2.svg" alt="MOTR" className="inline-block h-10 sm:h-12 w-auto align-middle" />
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
-            {[1, 2, 3, 4, 5, 6].map((n) => (
-              <div
-                key={n}
-                className="bg-white rounded-3xl p-6 border border-black/5 shadow-sm flex gap-4"
-              >
-                <div className="w-9 h-9 rounded-full bg-brand/10 text-brand font-bold text-sm flex items-center justify-center shrink-0">
-                  {n}
-                </div>
-                <p className="text-sm sm:text-base font-medium leading-relaxed text-ink">
-                  {t(`landing.why_${n}`)}
-                </p>
+      {/* Floating reading bubble */}
+      <div className="absolute -end-4 bottom-28 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2">
+        <div className="w-7 h-7 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
+          <Camera className="w-3.5 h-3.5" />
+        </div>
+        <div>
+          <p className="text-[9px] font-bold text-black/40 uppercase tracking-wide">
+            {c.how.eyebrow === 'كيف يعمل' ? 'تم القراءة' : 'Captured'}
+          </p>
+          <p dir="ltr" className="text-[11px] font-bold text-ink tabular">
+            212,450 km
+          </p>
+        </div>
+      </div>
+
+      {/* Phone */}
+      <div className="relative rounded-[44px] bg-[#0E2233] p-2 shadow-[0_40px_80px_-30px_rgba(14,34,51,0.45)]">
+        <div className="rounded-[36px] bg-[#F4F7F9] p-4 pb-2 overflow-hidden">
+          {/* status bar */}
+          <div className="flex items-center justify-between text-[10px] font-bold text-ink/70 mb-3">
+            <span>9:41</span>
+            <div className="h-5 w-16 rounded-full bg-ink" />
+            <span dir="ltr">●●● ●</span>
+          </div>
+          {/* greeting */}
+          <div className="text-end mb-3">
+            <p className="text-[10px] text-black/40">سيارتك في حالة ممتازة</p>
+            <p className="text-base font-extrabold text-ink">مرحباً يوسف</p>
+          </div>
+          {/* dark vehicle card */}
+          <div className="rounded-2xl bg-ink text-white p-3 mb-2">
+            <div className="flex items-start justify-between">
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">
+                OK ●
+              </span>
+              <div className="text-end">
+                <p className="text-[9px] text-white/50">تويوتا كامري</p>
+                <p className="text-xs font-bold">2022</p>
               </div>
+            </div>
+            <div className="mt-2 text-end">
+              <p className="text-[9px] text-white/50">العداد الحالي</p>
+              <p dir="ltr" className="text-2xl font-extrabold tabular text-end mt-0.5">
+                212,450
+                <span className="ms-1 text-[9px] text-white/60">كم</span>
+              </p>
+            </div>
+            <svg viewBox="0 0 200 30" className="mt-1 w-full">
+              <path d="M0 22 Q40 4 100 16 T200 8" stroke="#F26B1F" strokeWidth="1.5" fill="none" />
+            </svg>
+          </div>
+          {/* orange cta */}
+          <div className="rounded-2xl bg-brand text-white p-3 mb-2 flex items-center gap-2">
+            <ArrowLeft className="w-3 h-3" />
+            <div className="flex-1 text-end">
+              <p className="text-[9px] font-bold text-white/85">الصيانة القادمة</p>
+              <p className="text-[11px] font-extrabold">تغيير الزيت بعد 1,200 كم</p>
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-white/15 flex items-center justify-center">
+              <Droplets className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          {/* stats */}
+          <div className="grid grid-cols-2 gap-2 mb-2">
+            <div className="rounded-2xl bg-white p-2.5 text-end">
+              <p className="text-[8px] font-bold text-black/40">متوسط الوقود</p>
+              <p dir="ltr" className="mt-1 text-base font-extrabold tabular text-end">
+                8.2
+                <span className="ms-1 text-[8px] text-black/40">لتر/100كم</span>
+              </p>
+            </div>
+            <div className="rounded-2xl bg-white p-2.5 text-end">
+              <p className="text-[8px] font-bold text-black/40">آخر تعبئة</p>
+              <p className="mt-1 text-base font-extrabold tabular">
+                52
+                <span className="ms-1 text-[8px] text-black/40">ريال</span>
+              </p>
+              <p className="text-[8px] text-black/40 mt-0.5">قبل 4 أيام</p>
+            </div>
+          </div>
+          {/* activity */}
+          <div className="rounded-2xl bg-white p-2.5 flex items-center gap-2">
+            <div className="w-7 h-7 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
+              <Fuel className="w-3.5 h-3.5" />
+            </div>
+            <div className="flex-1 min-w-0 text-end">
+              <p className="text-[10px] font-bold text-ink truncate">تعبئة وقود</p>
+              <p className="text-[8px] text-black/40 truncate">محطة أرامكو · الرياض</p>
+            </div>
+            <div className="shrink-0 text-end">
+              <p className="text-[10px] font-bold">52<span className="ms-0.5 text-[8px] text-black/40">ريال</span></p>
+              <p dir="ltr" className="text-[8px] text-black/40 text-end">212,398 كم</p>
+            </div>
+          </div>
+          {/* bottom nav */}
+          <div className="mt-3 -mx-2 px-4 py-2 flex items-center justify-around text-ink/40">
+            <HomeIcon className="w-4 h-4 text-brand" />
+            <Car className="w-4 h-4" />
+            <div className="-mt-4 w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center shadow-md">
+              <Camera className="w-4 h-4" />
+            </div>
+            <BarChart2 className="w-4 h-4" />
+            <UserIcon className="w-4 h-4" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function HeroSection() {
+  const { c } = useLP();
+  return (
+    <section className="mx-auto max-w-[1280px] px-6 pt-10 pb-16">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+        {/* Phone (right in LTR DOM = left visually in RTL) */}
+        <div className="order-1 md:order-2">
+          <HeroPhoneMockup />
+        </div>
+        {/* Text */}
+        <div className="order-2 md:order-1 text-center md:text-end">
+          <Pill>
+            <Sparkles className="w-3 h-3 text-brand" />
+            <span>{c.hero.pill}</span>
+          </Pill>
+          <h1 className="mt-6 text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-ink leading-[1.05]">
+            <span className="block">{c.hero.h1Pre}</span>
+            <span className="block">
+              {c.hero.h1Post.replace('.', '')}
+              <span className="text-brand">.</span>
+            </span>
+          </h1>
+          <p className="mt-5 text-base md:text-lg leading-relaxed text-ink/75 max-w-xl md:ms-auto">
+            {c.hero.sub}
+          </p>
+          <div className="mt-7 flex flex-wrap items-center gap-3 md:justify-end justify-center">
+            <ChevronCta href="/app" primary>
+              {c.hero.ctaOpen}
+            </ChevronCta>
+            <AddDesktopCta>{c.hero.ctaAdd}</AddDesktopCta>
+          </div>
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 md:justify-end justify-center text-sm text-ink/70 font-medium">
+            {c.hero.bullets.map((b) => (
+              <span key={b} className="inline-flex items-center gap-1.5">
+                <CheckCircle2 className="w-4 h-4 text-success" />
+                {b}
+              </span>
             ))}
           </div>
         </div>
-      </section>
+      </div>
+    </section>
+  );
+}
 
-      {/* Download */}
-      <section id="download" className="py-20">
-        <div className="max-w-4xl mx-auto px-6">
-          <div className="bg-white rounded-3xl p-8 md:p-12 shadow-xl border border-black/5">
-            <div className="grid md:grid-cols-2 gap-10 items-center">
-              <div className="text-center md:text-start">
-                <h2 className="text-3xl font-bold mb-3">{t('landing.download_h')}</h2>
-                <p className="text-black/60 mb-6 leading-relaxed">{t('landing.download_d')}</p>
-                <div className="flex flex-col sm:flex-row gap-3 justify-center md:justify-start">
-                  <StoreButton store={t('landing.gplay')} comingSoon={t('landing.coming_soon')} />
-                  <StoreButton store={t('landing.appstore')} comingSoon={t('landing.coming_soon')} />
+function StatsStrip() {
+  const { c } = useLP();
+  return (
+    <section className="bg-white">
+      <div className="mx-auto max-w-[1280px] px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
+        {c.stats.map((s) => (
+          <div key={s.label} className="space-y-1">
+            <p className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink tabular">
+              {s.value}
+            </p>
+            <p className="text-xs font-bold text-ink/55">{s.label}</p>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function FeatureCard({
+  icon: Icon,
+  title,
+  desc,
+  iconTone = 'soft',
+  className = '',
+  children,
+  dark = false,
+}: {
+  icon: typeof Camera;
+  title: string;
+  desc: string;
+  iconTone?: 'soft' | 'brand';
+  className?: string;
+  children?: ReactNode;
+  dark?: boolean;
+}) {
+  const iconBg = dark
+    ? 'bg-white/10 text-white'
+    : iconTone === 'brand'
+      ? 'bg-brand text-white'
+      : 'bg-[#DCEAF3] text-ink/80';
+  return (
+    <div
+      className={`rounded-[28px] p-7 ${dark ? 'bg-ink text-white' : 'bg-white text-ink'} shadow-[0_8px_24px_rgba(14,34,51,0.06)] ${className}`}
+    >
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex-1 min-w-0 text-end">
+          <h3 className={`text-xl font-extrabold tracking-tight ${dark ? 'text-white' : 'text-ink'}`}>{title}</h3>
+          <p className={`mt-2 text-sm leading-relaxed ${dark ? 'text-white/70' : 'text-ink/65'}`}>{desc}</p>
+          {children}
+        </div>
+        <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+          <Icon className="w-5 h-5" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function FuelMiniChart() {
+  return (
+    <svg viewBox="0 0 240 60" className="mt-5 w-full">
+      <defs>
+        <linearGradient id="fg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="#F26B1F" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#F26B1F" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      <path
+        d="M0 46 C 30 42, 60 40, 90 38 S 150 32, 180 26 S 220 14, 240 10 L 240 60 L 0 60 Z"
+        fill="url(#fg)"
+      />
+      <path
+        d="M0 46 C 30 42, 60 40, 90 38 S 150 32, 180 26 S 220 14, 240 10"
+        stroke="#F26B1F"
+        strokeWidth="2"
+        fill="none"
+      />
+    </svg>
+  );
+}
+
+function HistoryMiniTimeline() {
+  return (
+    <ul className="mt-5 space-y-2 text-end">
+      {[
+        { d: 'Mar 12', active: true },
+        { d: 'Feb 04', active: false },
+        { d: 'Dec 18', active: false },
+      ].map((row) => (
+        <li key={row.d} className="flex items-center justify-between text-[11px] font-bold text-ink/55">
+          <span className={`inline-block w-2 h-2 rounded-full ${row.active ? 'bg-brand' : 'bg-ink/15'}`} />
+          <span>{row.d}</span>
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function FeaturesSection() {
+  const { c } = useLP();
+  const f = c.features.cards;
+  return (
+    <section id="features" className="mx-auto max-w-[1280px] px-6 py-20">
+      <div className="text-end max-w-2xl ms-auto">
+        <p className="text-sm font-bold text-brand">{c.features.eyebrow}</p>
+        <h2 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-ink leading-tight">
+          <span className="block">{c.features.h1Pre}</span>
+          <span className="block">{c.features.h1Post}</span>
+        </h2>
+        <p className="mt-4 text-base text-ink/70 leading-relaxed">{c.features.sub}</p>
+      </div>
+
+      <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <FeatureCard icon={Camera} title={f.camera.title} desc={f.camera.desc} iconTone="brand" />
+        <FeatureCard icon={Bell} title={f.bell.title} desc={f.bell.desc} />
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-3 gap-5">
+        <FeatureCard icon={Fuel} title={f.fuel.title} desc={f.fuel.desc}>
+          <FuelMiniChart />
+        </FeatureCard>
+        <FeatureCard icon={Droplets} title={f.oil.title} desc={f.oil.desc} />
+        <FeatureCard icon={Clock} title={f.history.title} desc={f.history.desc}>
+          <HistoryMiniTimeline />
+        </FeatureCard>
+      </div>
+
+      <div className="mt-5 grid grid-cols-1 md:grid-cols-2 gap-5">
+        <FeatureCard icon={Shield} title={f.sync.title} desc={f.sync.desc} dark className="md:col-span-1" />
+        <FeatureCard icon={Car} title={f.multi.title} desc={f.multi.desc} />
+      </div>
+    </section>
+  );
+}
+
+function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capture' | 'vehicles' }) {
+  return (
+    <div className="relative w-[220px] sm:w-[240px] mx-auto">
+      <div className="rounded-[36px] bg-[#0E2233] p-2 shadow-[0_24px_60px_-24px_rgba(14,34,51,0.45)]">
+        <div className={`rounded-[28px] p-3 overflow-hidden ${kind === 'capture' ? 'bg-[#0E2233]' : 'bg-[#F4F7F9]'}`}>
+          {/* status bar */}
+          <div className={`flex items-center justify-between text-[9px] font-bold mb-3 ${kind === 'capture' ? 'text-white/60' : 'text-ink/70'}`}>
+            <span>9:41</span>
+            <div className={`h-4 w-12 rounded-full ${kind === 'capture' ? 'bg-white/10' : 'bg-ink'}`} />
+            <span dir="ltr">●● ●</span>
+          </div>
+
+          {kind === 'welcome' && (
+            <>
+              <div className="text-end mb-2">
+                <p className="text-[9px] text-black/40">سيارتك في حالة ممتازة</p>
+                <p className="text-base font-extrabold text-ink">مرحباً يوسف</p>
+              </div>
+              <div className="rounded-2xl bg-ink text-white p-3 mb-2">
+                <div className="flex items-start justify-between">
+                  <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">OK ●</span>
+                  <div className="text-end">
+                    <p className="text-[9px] text-white/50">تويوتا كامري</p>
+                    <p className="text-xs font-bold">2022</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-end">
+                  <p className="text-[9px] text-white/50">العداد الحالي</p>
+                  <p dir="ltr" className="text-xl font-extrabold tabular text-end mt-0.5">
+                    212,450<span className="ms-1 text-[8px] text-white/60">كم</span>
+                  </p>
                 </div>
               </div>
-              <div className="flex flex-col items-center">
-                <motion.div
-                  className="relative"
-                  animate={{ y: [0, -10, 0] }}
-                  transition={{ duration: 4.2, repeat: Infinity, ease: 'easeInOut' }}
-                >
-                  {/* Soft halo */}
-                  <div className="absolute inset-0 bg-brand/30 blur-3xl scale-110 rounded-3xl pointer-events-none" />
-                  <div className="relative bg-white p-4 rounded-2xl border border-black/10 shadow-2xl shadow-brand/20">
-                    <QRCodeSVG
-                      value="https://motrs.uk/app"
-                      size={180}
-                      fgColor="#0F1115"
-                      bgColor="#FFFFFF"
-                      level="M"
-                      imageSettings={{
-                        src: '/icon.svg',
-                        height: 32,
-                        width: 32,
-                        excavate: true,
-                      }}
-                    />
-                  </div>
-                </motion.div>
-                <p className="mt-4 text-xs font-medium text-black/60">{t('landing.scan_label')}</p>
+              <div className="rounded-2xl bg-brand text-white p-2.5 mb-2 flex items-center gap-2">
+                <ArrowLeft className="w-3 h-3" />
+                <div className="flex-1 text-end">
+                  <p className="text-[8px] text-white/85 font-bold">الصيانة القادمة</p>
+                  <p className="text-[10px] font-extrabold">تغيير الزيت بعد 1,200 كم</p>
+                </div>
+                <div className="w-6 h-6 rounded-lg bg-white/15 flex items-center justify-center">
+                  <Droplets className="w-3 h-3" />
+                </div>
               </div>
-            </div>
-          </div>
-        </div>
-      </section>
+              <div className="grid grid-cols-2 gap-1.5">
+                <div className="rounded-xl bg-white p-2 text-end">
+                  <p className="text-[8px] font-bold text-black/40">متوسط الوقود</p>
+                  <p dir="ltr" className="mt-0.5 text-sm font-extrabold tabular text-end">
+                    8.2<span className="ms-0.5 text-[7px] text-black/40">لتر/100كم</span>
+                  </p>
+                </div>
+                <div className="rounded-xl bg-white p-2 text-end">
+                  <p className="text-[8px] font-bold text-black/40">آخر تعبئة</p>
+                  <p className="mt-0.5 text-sm font-extrabold tabular">
+                    52<span className="ms-0.5 text-[7px] text-black/40">ريال</span>
+                  </p>
+                  <p className="text-[7px] text-black/40">قبل 4 أيام</p>
+                </div>
+              </div>
+            </>
+          )}
 
-      {/* Footer */}
-      <footer className="bg-white py-8 border-t border-black/5">
-        <div className="max-w-6xl mx-auto px-6 text-center text-sm text-black/50 space-y-2">
-          <div className="flex flex-wrap items-center justify-center gap-1">
-            <span>{t('landing.rights')}</span>
-            <img src="/logo.svg" alt="MOTR" className="inline-block h-5 w-auto align-middle" />
-            <span>{t('landing.rights_after')}</span>
-          </div>
-          <div>
-            {t('landing.support_label')}:{' '}
-            <a
-              href="mailto:support@motrs.uk"
-              className="text-brand font-medium hover:underline"
-            >
-              support@motrs.uk
-            </a>
-          </div>
-        </div>
-      </footer>
-    </div>
-  );
-}
+          {kind === 'capture' && (
+            <>
+              <div className="flex items-center justify-between mb-4 text-white">
+                <button className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
+                  <Plus className="w-3 h-3 rotate-45" />
+                </button>
+                <p className="text-xs font-bold">صوّر العداد</p>
+                <span className="w-5" />
+              </div>
+              <div className="relative h-44 rounded-xl border-2 border-dashed border-brand/60 bg-black/40 flex items-center justify-center">
+                <div className="absolute inset-3 border-2 border-brand rounded-md" />
+                <p dir="ltr" className="text-2xl font-extrabold text-brand tabular tracking-tight">
+                  212,450
+                </p>
+              </div>
+              <p className="mt-3 text-center text-[9px] text-white/50">ضع العداد داخل الإطار</p>
+              <div className="mt-4 rounded-xl bg-white p-2 text-end">
+                <p className="text-[9px] text-black/40">تم التعرّف على</p>
+                <p className="text-base font-extrabold tabular">
+                  212,450
+                  <span className="ms-1 text-[8px] text-black/40">كم</span>
+                </p>
+              </div>
+            </>
+          )}
 
-function HeaderMenu() {
-  const { t, lang, setLang } = useI18n();
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const onClick = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') setOpen(false);
-    };
-    window.addEventListener('mousedown', onClick);
-    window.addEventListener('keydown', onKey);
-    return () => {
-      window.removeEventListener('mousedown', onClick);
-      window.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
-  const items: Array<{ href: string; label: string }> = [
-    { href: APP_URL, label: t('landing.start') },
-    { href: '#features', label: t('landing.learn') },
-    { href: '#why', label: t('landing.why_short') },
-    { href: '#download', label: t('landing.download_h') },
-  ];
-
-  const toggleLang = (l: Lang) => {
-    setLang(l);
-    setOpen(false);
-  };
-
-  return (
-    <div className="relative" ref={ref}>
-      <button
-        type="button"
-        onClick={() => setOpen((v) => !v)}
-        className="w-12 h-12 rounded-full bg-white border border-black/10 flex items-center justify-center hover:bg-black/5 transition shadow-sm"
-        aria-label={t('landing.menu_label')}
-        aria-expanded={open}
-      >
-        <MenuIcon className="w-5 h-5 text-ink" />
-      </button>
-
-      {open && (
-        <div className="absolute end-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-black/10 p-2 z-30">
-          {items.map((it) => (
-            <a
-              key={it.href}
-              href={it.href}
-              onClick={() => setOpen(false)}
-              className="block px-4 py-2.5 text-sm font-medium rounded-xl hover:bg-black/5 text-end"
-            >
-              {it.label}
-            </a>
-          ))}
-          <div className="my-1 border-t border-black/10" />
-          <div className="flex gap-1 p-1">
-            <button
-              type="button"
-              onClick={() => toggleLang('ar')}
-              className={
-                'flex-1 py-2 rounded-xl text-xs font-bold transition ' +
-                (lang === 'ar' ? 'bg-brand text-white' : 'hover:bg-black/5 text-ink')
-              }
-            >
-              العربية
-            </button>
-            <button
-              type="button"
-              onClick={() => toggleLang('en')}
-              className={
-                'flex-1 py-2 rounded-xl text-xs font-bold transition ' +
-                (lang === 'en' ? 'bg-brand text-white' : 'hover:bg-black/5 text-ink')
-              }
-            >
-              English
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function RotatingPhoneFrame({
-  images,
-  interval = 3500,
-}: {
-  images: string[];
-  interval?: number;
-}) {
-  const [index, setIndex] = useState(0);
-
-  useEffect(() => {
-    if (images.length <= 1) return;
-    const id = window.setInterval(() => {
-      setIndex((i) => (i + 1) % images.length);
-    }, interval);
-    return () => window.clearInterval(id);
-  }, [images.length, interval]);
-
-  return (
-    <div className="bg-ink rounded-[2.2rem] p-1.5 shadow-2xl w-full max-w-[240px]">
-      <div
-        className="relative w-full overflow-hidden rounded-[1.8rem] bg-bg-dark"
-        style={{ aspectRatio: '9 / 18.5' }}
-      >
-        <AnimatePresence mode="wait">
-          <motion.img
-            key={images[index]}
-            src={images[index]}
-            alt=""
-            className="absolute inset-0 w-full h-full object-contain"
-            initial={{ opacity: 0, scale: 1.03 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.97 }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            loading="eager"
-          />
-        </AnimatePresence>
-
-        {/* dot indicators */}
-        <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
-          {images.map((_, i) => (
-            <span
-              key={i}
-              className={
-                'h-1.5 rounded-full transition-all duration-300 ' +
-                (i === index ? 'w-4 bg-brand' : 'w-1.5 bg-white/40')
-              }
-            />
-          ))}
+          {kind === 'vehicles' && (
+            <>
+              <div className="flex items-center justify-between mb-3">
+                <span className="rounded-full bg-success/15 text-success px-2 py-0.5 text-[9px] font-bold">
+                  + إضافة سيارة
+                </span>
+                <p className="text-base font-extrabold text-ink">سياراتي</p>
+              </div>
+              {[
+                { name: 'كامري 2022', km: '212,450', sub: 'الخدمة بعد 1,200 كم', tag: 'سياراتي', tone: 'brand' as const },
+                { name: 'هايلكس 2019', km: '156,820', sub: 'الخدمة بعد 4,500 كم', tag: 'العمل', tone: 'success' as const },
+              ].map((v) => (
+                <div key={v.name} className={`rounded-2xl p-3 mb-2 ${v.tone === 'brand' ? 'bg-[#FFE8D6]' : 'bg-[#DBEFD9]'}`}>
+                  <div className="flex items-start justify-between">
+                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${v.tone === 'brand' ? 'bg-brand text-white' : 'bg-success text-white'}`}>
+                      {v.tag}
+                    </span>
+                    <div className="text-end">
+                      <svg viewBox="0 0 60 24" className="w-12">
+                        <path d="M4 18 Q10 8 22 8 L42 8 Q54 8 56 18 Z" fill={v.tone === 'brand' ? '#F26B1F' : '#3F7A40'} />
+                        <circle cx="16" cy="20" r="3" fill="#0E2233" />
+                        <circle cx="46" cy="20" r="3" fill="#0E2233" />
+                      </svg>
+                    </div>
+                  </div>
+                  <div className="mt-2 text-end">
+                    <p className="text-[11px] font-extrabold">{v.name}</p>
+                    <p dir="ltr" className="text-[9px] text-ink/50 text-end">{v.km} كم</p>
+                    <p className="text-[9px] text-ink/50">{v.sub}</p>
+                  </div>
+                </div>
+              ))}
+            </>
+          )}
         </div>
       </div>
     </div>
   );
 }
 
-type IconType = typeof Camera;
-
-function FeatureCard({ icon: Icon, title, desc }: { icon: IconType; title: string; desc: string }) {
+function HowItWorksSection() {
+  const { c } = useLP();
   return (
-    <div className="text-center">
-      <div className="w-16 h-16 mx-auto mb-4 bg-brand/10 rounded-2xl flex items-center justify-center">
-        <Icon className="w-8 h-8 text-brand" />
+    <section id="how" className="bg-[#B6CDDB]">
+      <div className="mx-auto max-w-[1280px] px-6 py-20">
+        <div className="text-end max-w-2xl ms-auto">
+          <p className="text-sm font-bold text-brand">{c.how.eyebrow}</p>
+          <h2 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-ink leading-tight">
+            {c.how.h1}
+          </h2>
+          <p className="mt-4 text-base text-ink/70 leading-relaxed">{c.how.sub}</p>
+        </div>
+
+        <div className="mt-14 grid grid-cols-1 md:grid-cols-3 gap-10">
+          {c.how.steps.map((s, i) => {
+            const kind = (['vehicles', 'capture', 'welcome'] as const)[i];
+            return (
+              <div key={s.n} className="text-end space-y-5">
+                <div className="rounded-[28px] bg-white p-6 shadow-[0_8px_24px_rgba(14,34,51,0.06)]">
+                  <StepPhone n={s.n as '01' | '02' | '03'} kind={kind} />
+                </div>
+                <div>
+                  <p className="text-[11px] font-bold text-ink/40 tracking-wider">{s.n}</p>
+                  <h3 className="mt-1 text-xl font-extrabold tracking-tight">{s.title}</h3>
+                  <p className="mt-2 text-sm text-ink/65 leading-relaxed">{s.desc}</p>
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </div>
-      <h3 className="font-bold text-lg mb-2">{title}</h3>
-      <p className="text-sm text-black/60 leading-relaxed">{desc}</p>
-    </div>
+    </section>
   );
 }
 
-function StoreButton({ store, comingSoon }: { store: string; comingSoon: string }) {
+function BottomCta() {
+  const { c } = useLP();
   return (
-    <div className="bg-ink text-white px-5 py-3 rounded-2xl flex items-center gap-3">
-      <Smartphone className="w-7 h-7 shrink-0" />
-      <div className="text-start leading-tight">
-        <div className="text-[10px] opacity-70">{comingSoon}</div>
-        <div className="font-bold text-sm">{store}</div>
+    <section className="mx-auto max-w-[1280px] px-6 py-16">
+      <div className="relative overflow-hidden rounded-[40px] bg-ink text-white px-8 py-16 md:px-16 md:py-20 text-center">
+        <div className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-40 bg-brand/25 blur-[120px] pointer-events-none" />
+        <h2 className="relative text-4xl md:text-5xl font-extrabold tracking-tight">
+          {c.cta.h1.replace('.', '')}
+          <span className="text-brand">.</span>
+        </h2>
+        <p className="relative mt-4 text-sm md:text-base text-white/70 max-w-xl mx-auto">
+          {c.cta.sub}
+        </p>
+        <div className="relative mt-8 flex flex-wrap items-center justify-center gap-3">
+          <ChevronCta href="/app" primary>
+            {c.hero.ctaOpen}
+          </ChevronCta>
+          <AddDesktopCta>{c.hero.ctaAdd}</AddDesktopCta>
+        </div>
       </div>
+    </section>
+  );
+}
+
+function Footer() {
+  const { c } = useLP();
+  return (
+    <footer className="bg-[#B6CDDB]">
+      <div className="mx-auto max-w-[1280px] px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="flex md:items-center gap-6">
+          <a href="#" className="text-sm font-bold text-ink/70 hover:text-ink transition">
+            {c.footer.links.contact}
+          </a>
+          <a href="#" className="text-sm font-bold text-ink/70 hover:text-ink transition">
+            {c.footer.links.terms}
+          </a>
+          <a href="#" className="text-sm font-bold text-ink/70 hover:text-ink transition">
+            {c.footer.links.privacy}
+          </a>
+        </div>
+        <div className="text-end">
+          <img src="/logo.svg" alt="MOTR" className="h-7 w-auto md:ms-auto" />
+          <p className="mt-3 text-sm text-ink/65 max-w-md md:ms-auto">{c.footer.tag}</p>
+        </div>
+      </div>
+      <div className="mx-auto max-w-[1280px] px-6 pb-8 text-end text-xs text-ink/50">
+        {c.footer.copy}
+      </div>
+    </footer>
+  );
+}
+
+export function LandingPage() {
+  return (
+    <div className="min-h-screen bg-[#B6CDDB] text-ink">
+      <Header />
+      <HeroSection />
+      <StatsStrip />
+      <FeaturesSection />
+      <HowItWorksSection />
+      <BottomCta />
+      <Footer />
     </div>
   );
 }
