@@ -206,7 +206,7 @@ function WithLogo({ text }: { text: string }) {
             <img
               src="/motr2.svg"
               alt="MOTR"
-              className="inline-block w-auto align-[-0.6em] mx-1"
+              className="inline-block w-auto align-middle mx-1.5"
               style={{ height: '2em' }}
             />
           )}
