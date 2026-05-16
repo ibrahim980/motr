@@ -233,6 +233,122 @@ function useFormatStatusValue() {
   };
 }
 
+type AlertEntry = { vehicle: Vehicle; status: MaintenanceStatus };
+
+function FeaturedAlertCard({
+  entry,
+  onMarkDone,
+  onSnooze,
+}: {
+  entry: AlertEntry;
+  onMarkDone: (vehicle: Vehicle, kind: StatusKind) => Promise<void>;
+  onSnooze: (vehicle: Vehicle, kind: StatusKind) => void;
+}) {
+  const { t } = useI18n();
+  const formatValue = useFormatStatusValue();
+  const [busy, setBusy] = useState(false);
+  const { vehicle, status } = entry;
+  const eyebrow =
+    status.state === 'overdue'
+      ? t('alerts.featured_overdue_eyebrow')
+      : t('alerts.featured_soon_eyebrow');
+  return (
+    <div className="bg-brand text-white rounded-[28px] p-5 space-y-4 shadow-[0_12px_28px_rgba(242,107,31,0.25)]">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">{eyebrow}</p>
+          <h3 className="text-xl font-extrabold mt-1 truncate">{t(`status.${status.kind}`)}</h3>
+          <p className="text-xs text-white/80 mt-1 truncate">
+            {vehicle.name} · {formatValue(status)}
+          </p>
+        </div>
+        <div className="w-10 h-10 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+          <Bell className="w-5 h-5" />
+        </div>
+      </div>
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSnooze(vehicle, status.kind)}
+          disabled={busy}
+          className="flex-1 bg-white/15 hover:bg-white/25 transition py-3 rounded-2xl text-sm font-bold disabled:opacity-60"
+        >
+          {t('alerts.snooze')}
+        </button>
+        <button
+          onClick={async () => {
+            if (busy) return;
+            setBusy(true);
+            try {
+              await onMarkDone(vehicle, status.kind);
+            } finally {
+              setBusy(false);
+            }
+          }}
+          disabled={busy}
+          className="flex-1 bg-white text-brand hover:bg-white/90 transition py-3 rounded-2xl text-sm font-bold disabled:opacity-60"
+        >
+          {t('alerts.featured_mark_done')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function AlertCompactRow({
+  entry,
+  onMarkDone,
+}: {
+  entry: AlertEntry;
+  onMarkDone: (vehicle: Vehicle, kind: StatusKind) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const formatValue = useFormatStatusValue();
+  const [busy, setBusy] = useState(false);
+  const { vehicle, status } = entry;
+  const Icon = STATUS_ICONS[status.kind];
+  return (
+    <div className="bg-white rounded-2xl px-4 py-3 flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={cn(
+            'w-10 h-10 rounded-xl flex items-center justify-center shrink-0',
+            STATE_ICON_BG[status.state],
+          )}
+        >
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="min-w-0">
+          <p className="text-sm font-bold truncate">{t(`status.${status.kind}`)}</p>
+          <p className="text-xs text-black/40 truncate">{vehicle.name}</p>
+        </div>
+      </div>
+      <div className="flex items-center gap-2 shrink-0">
+        <span className={cn('text-xs font-bold whitespace-nowrap', STATE_COLOR[status.state])}>
+          {formatValue(status)}
+        </span>
+        {status.state !== 'ok' && (
+          <button
+            onClick={async () => {
+              if (busy) return;
+              setBusy(true);
+              try {
+                await onMarkDone(vehicle, status.kind);
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+            aria-label={t('alerts.mark_done')}
+            className="w-7 h-7 rounded-full bg-success/10 text-success flex items-center justify-center hover:bg-success/20 transition disabled:opacity-60"
+          >
+            <CheckCircle2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AlertItemRow({
   status,
   vehicle,
@@ -927,14 +1043,30 @@ export default function App() {
     }
   };
 
+  const [snoozedAlerts, setSnoozedAlerts] = useState<Set<string>>(new Set());
+  const snoozeKey = (vehicleId: string, kind: StatusKind) => `${vehicleId}:${kind}`;
+
   const alertCount = useMemo(
     () =>
       vehicles.reduce(
-        (acc, v) => acc + getMaintenanceStatuses(v).filter((s) => s.state !== 'ok').length,
+        (acc, v) =>
+          acc +
+          getMaintenanceStatuses(v).filter(
+            (s) => s.state !== 'ok' && !snoozedAlerts.has(snoozeKey(v.id, s.kind)),
+          ).length,
         0,
       ),
-    [vehicles],
+    [vehicles, snoozedAlerts],
   );
+
+  const handleSnoozeReminder = (vehicle: Vehicle, kind: StatusKind) => {
+    setSnoozedAlerts((prev) => {
+      const next = new Set(prev);
+      next.add(snoozeKey(vehicle.id, kind));
+      return next;
+    });
+    toast.success(t('alerts.snoozed_toast'));
+  };
 
   const handleMarkReminderDone = async (vehicle: Vehicle, kind: StatusKind) => {
     try {
@@ -945,6 +1077,13 @@ export default function App() {
       else if (kind === 'maintenance') patch.lastMaintenanceDate = nowIso;
       else if (kind === 'parts') patch.lastPartsDate = nowIso;
       await updateDoc(doc(db, 'vehicles', vehicle.id), patch);
+      setSnoozedAlerts((prev) => {
+        const k = snoozeKey(vehicle.id, kind);
+        if (!prev.has(k)) return prev;
+        const next = new Set(prev);
+        next.delete(k);
+        return next;
+      });
       toast.success(t('alerts.done_toast'));
     } catch (err) {
       console.error(err);
@@ -1539,67 +1678,79 @@ export default function App() {
             >
               {(() => {
                 const urgencyRank: Record<StatusState, number> = { overdue: 0, soon: 1, ok: 2 };
-                const groups = vehicles
-                  .map((v) => ({
-                    vehicle: v,
-                    items: getMaintenanceStatuses(v)
-                      .filter((s) => s.state !== 'ok')
-                      .sort((a, b) => urgencyRank[a.state] - urgencyRank[b.state]),
-                  }))
-                  .filter((g) => g.items.length > 0);
+                const all: AlertEntry[] = [];
+                vehicles.forEach((v) => {
+                  getMaintenanceStatuses(v).forEach((s) => {
+                    if (snoozedAlerts.has(snoozeKey(v.id, s.kind))) return;
+                    all.push({ vehicle: v, status: s });
+                  });
+                });
+                all.sort((a, b) => urgencyRank[a.status.state] - urgencyRank[b.status.state]);
 
-                const totalCount = groups.reduce((acc, g) => acc + g.items.length, 0);
+                const active = all.filter((a) => a.status.state !== 'ok');
+                const later = all.filter((a) => a.status.state === 'ok');
+                const featured = active[0] ?? null;
+                const upcoming = active.slice(1);
 
                 return (
                   <>
                     <div className="flex items-baseline justify-between gap-3">
                       <h2 className="text-3xl font-bold tracking-tight">{t('alerts.title')}</h2>
-                      {totalCount > 0 && (
+                      {active.length > 0 && (
                         <span className="text-xs font-bold text-black/50 whitespace-nowrap">
-                          {t('alerts.count', { count: totalCount })}
+                          {t('alerts.count', { count: active.length })}
                         </span>
                       )}
                     </div>
 
-                    {groups.length === 0 ? (
+                    {featured ? (
+                      <FeaturedAlertCard
+                        entry={featured}
+                        onMarkDone={handleMarkReminderDone}
+                        onSnooze={handleSnoozeReminder}
+                      />
+                    ) : null}
+
+                    {!featured && later.length === 0 ? (
                       <div className="glass-dark p-12 rounded-[32px] text-center space-y-3">
                         <CheckCircle2 className="w-14 h-14 text-success mx-auto" />
                         <p className="text-lg font-bold">{t('alerts.all_good_title')}</p>
                         <p className="text-sm text-black/40">{t('alerts.all_good_desc')}</p>
                       </div>
-                    ) : (
-                      <div className="space-y-5">
-                        {groups.map(({ vehicle, items }) => (
-                          <div key={vehicle.id} className="glass-dark p-6 rounded-[32px] space-y-4">
-                            <div className="flex items-center justify-between">
-                              <div className="min-w-0">
-                                <h3 className="text-lg font-bold truncate">{vehicle.name}</h3>
-                                {(vehicle.make || vehicle.model) && (
-                                  <p className="text-[10px] uppercase tracking-widest text-black/40">
-                                    {vehicle.make} {vehicle.model}
-                                  </p>
-                                )}
-                              </div>
-                              <button
-                                onClick={() => {
-                                  setSelectedVehicle(vehicle);
-                                  setActivePage('dashboard');
-                                }}
-                                className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full"
-                              >
-                                {t('alerts.open_vehicle')}
-                              </button>
-                            </div>
-                            <div className="space-y-3">
-                              {items.map((s) => (
-                                <div key={s.kind}>
-                                  <AlertItemRow status={s} vehicle={vehicle} onMarkDone={handleMarkReminderDone} />
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
+                    ) : null}
+
+                    {upcoming.length > 0 && (
+                      <section className="space-y-3">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-black/40">
+                          {t('alerts.section_upcoming')}
+                        </h3>
+                        <div className="space-y-2">
+                          {upcoming.map((entry) => (
+                            <AlertCompactRow
+                              key={`${entry.vehicle.id}:${entry.status.kind}`}
+                              entry={entry}
+                              onMarkDone={handleMarkReminderDone}
+                            />
+                          ))}
+                        </div>
+                      </section>
+                    )}
+
+                    {later.length > 0 && (
+                      <section className="space-y-3">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-black/40">
+                          {t('alerts.section_later')}
+                        </h3>
+                        <div className="space-y-2">
+                          {later.map((entry) => (
+                            <AlertCompactRow
+                              key={`${entry.vehicle.id}:${entry.status.kind}`}
+                              entry={entry}
+                              onMarkDone={handleMarkReminderDone}
+                            />
+                          ))}
+                        </div>
+                      </section>
                     )}
                   </>
                 );
