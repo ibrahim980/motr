@@ -573,6 +573,107 @@ function TimelineEventRow({
   );
 }
 
+const EVENT_TONE: Record<ServiceType, { bg: string; fg: string }> = {
+  [ServiceType.FUEL]: { bg: 'bg-brand/15', fg: 'text-brand' },
+  [ServiceType.OIL_CHANGE]: { bg: 'bg-sky-500/15', fg: 'text-sky-600' },
+  [ServiceType.MAINTENANCE]: { bg: 'bg-warning/15', fg: 'text-warning' },
+  [ServiceType.TIRES]: { bg: 'bg-warning/15', fg: 'text-warning' },
+  [ServiceType.BATTERY]: { bg: 'bg-danger/15', fg: 'text-danger' },
+  [ServiceType.PARTS]: { bg: 'bg-sky-500/15', fg: 'text-sky-600' },
+  [ServiceType.OTHER]: { bg: 'bg-success/15', fg: 'text-success' },
+};
+
+function eventIcon(type: ServiceType) {
+  switch (type) {
+    case ServiceType.FUEL: return Fuel;
+    case ServiceType.OIL_CHANGE: return Droplets;
+    case ServiceType.MAINTENANCE: return Wrench;
+    case ServiceType.TIRES: return Disc;
+    case ServiceType.BATTERY: return Battery;
+    case ServiceType.PARTS: return Cog;
+    case ServiceType.OTHER: return CheckCircle2;
+    default: return Plus;
+  }
+}
+
+function EventCardV2({
+  event,
+  serviceLabel,
+  dateLocale,
+  onDelete,
+}: {
+  event: TimelineEvent;
+  serviceLabel: (type: ServiceType) => string;
+  dateLocale: string;
+  onDelete: (eventId: string) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const tone = EVENT_TONE[event.type] ?? EVENT_TONE[ServiceType.OTHER];
+  const Icon = eventIcon(event.type);
+  const dateStr = new Date(event.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
+  const isFuel = event.type === ServiceType.FUEL;
+  const title = isFuel && event.liters
+    ? `${serviceLabel(event.type)} · ${event.liters} ${t('timeline.unit_liters')}`
+    : serviceLabel(event.type);
+
+  return (
+    <div className="bg-white rounded-2xl p-4 group relative shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+      <div className="flex items-center gap-3">
+        <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', tone.bg, tone.fg)}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-bold truncate">{title}</p>
+          <p className="text-xs text-black/40 truncate mt-0.5">
+            {dateStr} · {t('timeline.odometer_label')} {event.mileage.toLocaleString()} {t('timeline.unit_km')}
+          </p>
+        </div>
+        <div className="shrink-0 text-end">
+          {event.amount != null ? (
+            <p className="whitespace-nowrap">
+              <span className="text-base font-extrabold tabular">{event.amount}</span>
+              <span className="text-[10px] text-black/40 ms-1">{t('timeline.unit_riyal')}</span>
+            </p>
+          ) : null}
+        </div>
+        <button
+          onClick={() => setConfirming(true)}
+          className="absolute top-2 end-2 w-6 h-6 rounded-full bg-black/5 text-black/50 flex items-center justify-center hover:bg-danger/10 hover:text-danger transition opacity-0 group-hover:opacity-100 sm:opacity-100"
+          aria-label={t('timeline.delete')}
+        >
+          <Trash2 className="w-3 h-3" />
+        </button>
+      </div>
+      {confirming && (
+        <div className="bg-danger/5 border border-danger/20 rounded-xl p-3 space-y-2 mt-3">
+          <p className="text-xs font-bold text-danger">{t('timeline.delete_confirm')}</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setConfirming(false)}
+              disabled={busy}
+              className="flex-1 bg-black/5 border border-black/10 py-2 rounded-xl text-xs font-bold hover:bg-black/10 transition"
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              onClick={async () => {
+                setBusy(true);
+                try { await onDelete(event.id); } finally { setBusy(false); }
+              }}
+              disabled={busy}
+              className="flex-1 bg-danger text-white py-2 rounded-xl text-xs font-bold hover:brightness-95 transition disabled:opacity-60"
+            >
+              {t('timeline.delete')}
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function VehicleManageRow({
   vehicle,
   onDelete,
@@ -868,6 +969,7 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [eventNotes, setEventNotes] = useState('');
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+  const [timelineFilter, setTimelineFilter] = useState<'all' | 'fuel' | 'service' | 'inspection'>('all');
 
   const serviceIcon = (type: ServiceType) => {
     switch (type) {
@@ -1045,6 +1147,41 @@ export default function App() {
 
   const [snoozedAlerts, setSnoozedAlerts] = useState<Set<string>>(new Set());
   const snoozeKey = (vehicleId: string, kind: StatusKind) => `${vehicleId}:${kind}`;
+
+  const timelineData = useMemo(() => {
+    const empty = {
+      counts: { all: 0, fuel: 0, service: 0, inspection: 0 },
+      filtered: [] as TimelineEvent[],
+      monthSpend: 0,
+      distance: 0,
+    };
+    if (!selectedVehicle) return empty;
+    const forVehicle = events.filter((e) => e.vehicleId === selectedVehicle.id);
+    const counts = { all: forVehicle.length, fuel: 0, service: 0, inspection: 0 };
+    forVehicle.forEach((e) => {
+      if (e.type === ServiceType.FUEL) counts.fuel++;
+      else if (e.type === ServiceType.OTHER) counts.inspection++;
+      else counts.service++;
+    });
+    const filtered = forVehicle.filter((e) => {
+      if (timelineFilter === 'all') return true;
+      if (timelineFilter === 'fuel') return e.type === ServiceType.FUEL;
+      if (timelineFilter === 'inspection') return e.type === ServiceType.OTHER;
+      return e.type !== ServiceType.FUEL && e.type !== ServiceType.OTHER;
+    });
+    const now = new Date();
+    const monthSpend = forVehicle.reduce((acc, e) => {
+      if (e.amount == null) return acc;
+      const d = new Date(e.date);
+      if (d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()) {
+        return acc + e.amount;
+      }
+      return acc;
+    }, 0);
+    const mileages = forVehicle.map((e) => e.mileage).filter((m) => Number.isFinite(m));
+    const distance = mileages.length >= 2 ? Math.max(...mileages) - Math.min(...mileages) : 0;
+    return { counts, filtered, monthSpend, distance };
+  }, [events, selectedVehicle, timelineFilter]);
 
   const alertCount = useMemo(
     () =>
@@ -1784,41 +1921,121 @@ export default function App() {
           )}
 
           {activePage === 'timeline' && (
-            <motion.div 
+            <motion.div
               key="timeline"
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="space-y-6"
+              className="space-y-5"
             >
-              <div className="flex justify-between items-center">
-                <h2 className="text-3xl font-bold tracking-tight">{t('timeline.title')}</h2>
+              <div className="flex items-start justify-between gap-3">
                 <button
                   onClick={() => runReport(selectedVehicle)}
                   disabled={reportBusy || !selectedVehicle}
-                  className="p-2 glass-dark rounded-full disabled:opacity-50"
+                  className="w-10 h-10 rounded-full bg-white border border-[#E1EAF1] shadow-[0_2px_8px_rgba(14,34,51,0.04)] flex items-center justify-center disabled:opacity-50"
                   aria-label={t('reports.title')}
                 >
-                  <Share2 className="w-5 h-5 text-black/60" />
+                  <Share2 className="w-4 h-4 text-black/60" />
                 </button>
+                <div className="text-end min-w-0 flex-1">
+                  {selectedVehicle && (
+                    <p className="text-xs font-bold text-black/40 truncate">
+                      {selectedVehicle.name}
+                      {selectedVehicle.year ? ` · ${selectedVehicle.year}` : ''}
+                    </p>
+                  )}
+                  <div className="flex items-center justify-end gap-2 mt-0.5">
+                    {vehicles.length > 1 && (
+                      <button
+                        onClick={() => {
+                          if (!selectedVehicle) {
+                            setSelectedVehicle(vehicles[0]);
+                            return;
+                          }
+                          const idx = vehicles.findIndex((v) => v.id === selectedVehicle.id);
+                          const next = vehicles[(idx + 1) % vehicles.length];
+                          setSelectedVehicle(next);
+                        }}
+                        className="w-7 h-7 rounded-full bg-black/5 flex items-center justify-center hover:bg-black/10 transition"
+                        aria-label={t('alerts.open_vehicle')}
+                      >
+                        <ChevronLeft className="w-4 h-4 text-black/60" />
+                      </button>
+                    )}
+                    <h2 className="text-2xl font-extrabold tracking-tight truncate">{t('timeline.title')}</h2>
+                  </div>
+                </div>
               </div>
 
-              <div className="space-y-4">
-                {events.length === 0 ? (
-                  <div className="py-20 text-center text-black/20">{t('timeline.empty')}</div>
-                ) : (
-                  events.map((event, i) => (
-                    <TimelineEventRow
-                      key={event.id}
-                      event={event}
-                      isLast={i === events.length - 1}
-                      serviceLabel={serviceLabel}
-                      dateLocale={dateLocale}
-                      onDelete={handleDeleteEvent}
-                    />
-                  ))
-                )}
-              </div>
+              {!selectedVehicle ? (
+                <div className="glass-dark p-12 rounded-[32px] text-center text-sm text-black/40">
+                  {t('timeline.no_vehicle')}
+                </div>
+              ) : (
+                <>
+                  <div className="flex gap-2 overflow-x-auto -mx-1 px-1 pb-1 scrollbar-none">
+                    {([
+                      { id: 'all', label: t('timeline.filter_all'), count: timelineData.counts.all, idle: 'bg-black/5 text-ink' },
+                      { id: 'fuel', label: t('timeline.filter_fuel'), count: timelineData.counts.fuel, idle: 'bg-brand/10 text-brand' },
+                      { id: 'service', label: t('timeline.filter_service'), count: timelineData.counts.service, idle: 'bg-sky-500/10 text-sky-600' },
+                      { id: 'inspection', label: t('timeline.filter_inspection'), count: timelineData.counts.inspection, idle: 'bg-success/10 text-success' },
+                    ] as const).map((f) => {
+                      const active = timelineFilter === f.id;
+                      return (
+                        <button
+                          key={f.id}
+                          onClick={() => setTimelineFilter(f.id)}
+                          className={cn(
+                            'shrink-0 px-3.5 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition',
+                            active ? 'bg-ink text-white' : f.idle,
+                          )}
+                        >
+                          {f.label} · {f.count}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  <div className="bg-white rounded-2xl p-5 flex items-start justify-between gap-3 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+                    <div className="min-w-0">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+                        {t('timeline.month_spend_label')}
+                      </p>
+                      <p className="text-2xl font-extrabold tabular mt-1 truncate">
+                        {timelineData.monthSpend.toFixed(2)}
+                        <span className="text-[10px] text-black/40 ms-1 font-bold">{t('timeline.unit_riyal')}</span>
+                      </p>
+                    </div>
+                    <div className="min-w-0 text-end">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+                        {t('timeline.distance_label')}
+                      </p>
+                      <p className="text-2xl font-extrabold tabular mt-1 truncate">
+                        {timelineData.distance.toLocaleString()}
+                        <span className="text-[10px] text-black/40 ms-1 font-bold">{t('timeline.unit_km')}</span>
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    {timelineData.filtered.length === 0 ? (
+                      <div className="py-20 text-center text-sm text-black/30">
+                        {timelineData.counts.all === 0 ? t('timeline.empty') : t('timeline.empty_filter')}
+                      </div>
+                    ) : (
+                      timelineData.filtered.map((event) => (
+                        <EventCardV2
+                          key={event.id}
+                          event={event}
+                          serviceLabel={serviceLabel}
+                          dateLocale={dateLocale}
+                          onDelete={handleDeleteEvent}
+                        />
+                      ))
+                    )}
+                  </div>
+                </>
+              )}
             </motion.div>
           )}
 

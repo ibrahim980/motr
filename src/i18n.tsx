@@ -84,12 +84,24 @@ const ar: Dict = {
   'camera.unavailable': 'خدمة المسح غير متوفرة حالياً. جرّب لاحقاً.',
 
   // timeline
-  'timeline.title': 'سجل المركبة',
+  'timeline.title': 'سجل السيارة',
   'timeline.empty': 'لا يوجد سجلات حتى الآن',
   'timeline.delete': 'حذف',
   'timeline.delete_confirm': 'حذف هذا السجل نهائياً؟',
   'timeline.deleted': 'تم حذف السجل',
   'timeline.delete_failed': 'فشل حذف السجل',
+  'timeline.no_vehicle': 'أضف مركبة أولاً لعرض سجلها',
+  'timeline.filter_all': 'الكل',
+  'timeline.filter_fuel': 'وقود',
+  'timeline.filter_service': 'صيانة',
+  'timeline.filter_inspection': 'فحص',
+  'timeline.month_spend_label': 'إنفاق هذا الشهر',
+  'timeline.distance_label': 'المسافة',
+  'timeline.odometer_label': 'العداد',
+  'timeline.unit_riyal': 'ريال',
+  'timeline.unit_liters': 'لتر',
+  'timeline.unit_km': 'كم',
+  'timeline.empty_filter': 'لا سجلات في هذا التصنيف',
 
   // profile
   'profile.guest': 'ضيف',
@@ -318,12 +330,24 @@ const en: Dict = {
   'camera.unavailable': 'Scanning service is unavailable right now. Try later.',
 
   // timeline
-  'timeline.title': 'Vehicle history',
+  'timeline.title': 'Vehicle log',
   'timeline.empty': 'No entries yet',
   'timeline.delete': 'Delete',
   'timeline.delete_confirm': 'Delete this entry permanently?',
   'timeline.deleted': 'Entry deleted',
   'timeline.delete_failed': 'Failed to delete entry',
+  'timeline.no_vehicle': 'Add a vehicle to see its log',
+  'timeline.filter_all': 'All',
+  'timeline.filter_fuel': 'Fuel',
+  'timeline.filter_service': 'Service',
+  'timeline.filter_inspection': 'Inspection',
+  'timeline.month_spend_label': 'Spend this month',
+  'timeline.distance_label': 'Distance',
+  'timeline.odometer_label': 'Odometer',
+  'timeline.unit_riyal': 'SAR',
+  'timeline.unit_liters': 'L',
+  'timeline.unit_km': 'KM',
+  'timeline.empty_filter': 'No entries in this category',
 
   // profile
   'profile.guest': 'Guest',
