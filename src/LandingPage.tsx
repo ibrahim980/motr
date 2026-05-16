@@ -293,9 +293,9 @@ function Header() {
 function HeroPhoneMockup() {
   const { c } = useLP();
   return (
-    <div className="relative mx-auto w-[280px] sm:w-[320px]">
+    <div className="relative mx-auto w-[300px] sm:w-[320px]">
       {/* Floating reminder bubble */}
-      <div className="absolute -start-6 top-6 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2 max-w-[180px]">
+      <div className="absolute -start-6 top-10 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2 max-w-[200px]">
         <div className="w-7 h-7 rounded-full bg-brand/15 text-brand flex items-center justify-center shrink-0">
           <Bell className="w-3.5 h-3.5" />
         </div>
@@ -310,7 +310,7 @@ function HeroPhoneMockup() {
       </div>
 
       {/* Floating reading bubble */}
-      <div className="absolute -end-4 bottom-28 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2">
+      <div className="absolute -end-4 top-1/2 z-20 bg-white rounded-2xl px-3 py-2 shadow-[0_12px_28px_rgba(14,34,51,0.18)] flex items-center gap-2">
         <div className="w-7 h-7 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
           <Camera className="w-3.5 h-3.5" />
         </div>
@@ -324,36 +324,33 @@ function HeroPhoneMockup() {
         </div>
       </div>
 
-      {/* Phone */}
-      <div className="relative rounded-[44px] bg-[#0E2233] p-2 shadow-[0_40px_80px_-30px_rgba(14,34,51,0.45)]">
-        <div className="rounded-[36px] bg-[#F4F7F9] p-4 pb-2 overflow-hidden">
+      {/* Phone shell — iPhone-ish aspect ratio 9:19.5 */}
+      <div className="relative rounded-[44px] bg-[#0E2233] p-2 shadow-[0_40px_80px_-30px_rgba(14,34,51,0.45)] aspect-[9/19.5]">
+        <div className="absolute inset-2 rounded-[36px] bg-[#F4F7F9] overflow-hidden flex flex-col">
           {/* status bar */}
-          <div className="flex items-center justify-between text-[10px] font-bold text-ink/70 mb-3">
+          <div className="flex items-center justify-between text-[10px] font-bold text-ink/70 px-5 pt-3">
             <span>9:41</span>
-            <div className="h-5 w-16 rounded-full bg-ink" />
+            <div className="h-6 w-20 rounded-full bg-ink" />
             <span dir="ltr">●●● ●</span>
           </div>
           {/* greeting */}
-          <div className="text-end mb-3">
+          <div className="text-end px-5 mt-4">
             <p className="text-[10px] text-black/40">سيارتك في حالة ممتازة</p>
-            <p className="text-base font-extrabold text-ink">مرحباً يوسف</p>
+            <p className="text-lg font-extrabold text-ink">مرحباً يوسف</p>
           </div>
           {/* dark vehicle card */}
-          <div className="rounded-2xl bg-ink text-white p-3 mb-2">
+          <div className="rounded-2xl bg-ink text-white p-3.5 mx-4 mt-3">
             <div className="flex items-start justify-between">
-              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">
-                OK ●
-              </span>
+              <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">OK ●</span>
               <div className="text-end">
                 <p className="text-[9px] text-white/50">تويوتا كامري</p>
                 <p className="text-xs font-bold">2022</p>
               </div>
             </div>
-            <div className="mt-2 text-end">
+            <div className="mt-3 text-end">
               <p className="text-[9px] text-white/50">العداد الحالي</p>
               <p dir="ltr" className="text-2xl font-extrabold tabular text-end mt-0.5">
-                212,450
-                <span className="ms-1 text-[9px] text-white/60">كم</span>
+                212,450<span className="ms-1 text-[9px] text-white/60">كم</span>
               </p>
             </div>
             <svg viewBox="0 0 200 30" className="mt-1 w-full">
@@ -361,7 +358,7 @@ function HeroPhoneMockup() {
             </svg>
           </div>
           {/* orange cta */}
-          <div className="rounded-2xl bg-brand text-white p-3 mb-2 flex items-center gap-2">
+          <div className="rounded-2xl bg-brand text-white p-3 mx-4 mt-2 flex items-center gap-2">
             <ArrowLeft className="w-3 h-3" />
             <div className="flex-1 text-end">
               <p className="text-[9px] font-bold text-white/85">الصيانة القادمة</p>
@@ -372,46 +369,60 @@ function HeroPhoneMockup() {
             </div>
           </div>
           {/* stats */}
-          <div className="grid grid-cols-2 gap-2 mb-2">
+          <div className="grid grid-cols-2 gap-2 mx-4 mt-2">
             <div className="rounded-2xl bg-white p-2.5 text-end">
               <p className="text-[8px] font-bold text-black/40">متوسط الوقود</p>
               <p dir="ltr" className="mt-1 text-base font-extrabold tabular text-end">
-                8.2
-                <span className="ms-1 text-[8px] text-black/40">لتر/100كم</span>
+                8.2<span className="ms-1 text-[8px] text-black/40">لتر/100كم</span>
               </p>
             </div>
             <div className="rounded-2xl bg-white p-2.5 text-end">
               <p className="text-[8px] font-bold text-black/40">آخر تعبئة</p>
               <p className="mt-1 text-base font-extrabold tabular">
-                52
-                <span className="ms-1 text-[8px] text-black/40">ريال</span>
+                52<span className="ms-1 text-[8px] text-black/40">ريال</span>
               </p>
               <p className="text-[8px] text-black/40 mt-0.5">قبل 4 أيام</p>
             </div>
           </div>
-          {/* activity */}
-          <div className="rounded-2xl bg-white p-2.5 flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
-              <Fuel className="w-3.5 h-3.5" />
+          {/* activities */}
+          <div className="mx-4 mt-2 space-y-1.5">
+            <div className="rounded-2xl bg-white p-2.5 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-brand/15 text-brand flex items-center justify-center shrink-0">
+                <Fuel className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0 text-end">
+                <p className="text-[10px] font-bold text-ink truncate">تعبئة وقود</p>
+                <p className="text-[8px] text-black/40 truncate">محطة أرامكو · الرياض</p>
+              </div>
+              <div className="shrink-0 text-end">
+                <p className="text-[10px] font-bold">52<span className="ms-0.5 text-[8px] text-black/40">ريال</span></p>
+                <p dir="ltr" className="text-[8px] text-black/40 text-end">212,398 كم</p>
+              </div>
             </div>
-            <div className="flex-1 min-w-0 text-end">
-              <p className="text-[10px] font-bold text-ink truncate">تعبئة وقود</p>
-              <p className="text-[8px] text-black/40 truncate">محطة أرامكو · الرياض</p>
-            </div>
-            <div className="shrink-0 text-end">
-              <p className="text-[10px] font-bold">52<span className="ms-0.5 text-[8px] text-black/40">ريال</span></p>
-              <p dir="ltr" className="text-[8px] text-black/40 text-end">212,398 كم</p>
+            <div className="rounded-2xl bg-white p-2.5 flex items-center gap-2">
+              <div className="w-7 h-7 rounded-lg bg-success/15 text-success flex items-center justify-center shrink-0">
+                <CheckCircle2 className="w-3.5 h-3.5" />
+              </div>
+              <div className="flex-1 min-w-0 text-end">
+                <p className="text-[10px] font-bold text-ink truncate">فحص دوري</p>
+                <p className="text-[8px] text-black/40 truncate">22 أبر · العداد 208,500 كم</p>
+              </div>
+              <div className="shrink-0 text-end">
+                <p className="text-[10px] font-bold">50<span className="ms-0.5 text-[8px] text-black/40">ريال</span></p>
+              </div>
             </div>
           </div>
+          {/* spacer pushes nav to the bottom */}
+          <div className="flex-1" />
           {/* bottom nav */}
-          <div className="mt-3 -mx-2 px-4 py-2 flex items-center justify-around text-ink/40">
-            <HomeIcon className="w-4 h-4 text-brand" />
-            <Car className="w-4 h-4" />
-            <div className="-mt-4 w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center shadow-md">
-              <Camera className="w-4 h-4" />
+          <div className="px-5 pb-4 pt-2 flex items-center justify-around text-ink/40">
+            <HomeIcon className="w-5 h-5 text-brand" />
+            <Car className="w-5 h-5" />
+            <div className="-mt-5 w-11 h-11 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_8px_18px_rgba(242,107,31,0.38)]">
+              <Camera className="w-5 h-5" />
             </div>
-            <BarChart2 className="w-4 h-4" />
-            <UserIcon className="w-4 h-4" />
+            <BarChart2 className="w-5 h-5" />
+            <UserIcon className="w-5 h-5" />
           </div>
         </div>
       </div>
@@ -599,25 +610,27 @@ function FeaturesSection() {
   );
 }
 
-function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capture' | 'vehicles' }) {
+function StepPhone({ kind }: { kind: 'welcome' | 'capture' | 'vehicles' }) {
+  const isDark = kind === 'capture';
   return (
     <div className="relative w-[220px] sm:w-[240px] mx-auto">
-      <div className="rounded-[36px] bg-[#0E2233] p-2 shadow-[0_24px_60px_-24px_rgba(14,34,51,0.45)]">
-        <div className={`rounded-[28px] p-3 overflow-hidden ${kind === 'capture' ? 'bg-[#0E2233]' : 'bg-[#F4F7F9]'}`}>
+      {/* Phone shell with iPhone aspect ratio */}
+      <div className="relative rounded-[36px] bg-[#0E2233] p-2 shadow-[0_24px_60px_-24px_rgba(14,34,51,0.45)] aspect-[9/19.5]">
+        <div className={`absolute inset-2 rounded-[28px] overflow-hidden flex flex-col ${isDark ? 'bg-[#0E2233]' : 'bg-[#F4F7F9]'}`}>
           {/* status bar */}
-          <div className={`flex items-center justify-between text-[9px] font-bold mb-3 ${kind === 'capture' ? 'text-white/60' : 'text-ink/70'}`}>
+          <div className={`flex items-center justify-between text-[9px] font-bold px-4 pt-3 ${isDark ? 'text-white/60' : 'text-ink/70'}`}>
             <span>9:41</span>
-            <div className={`h-4 w-12 rounded-full ${kind === 'capture' ? 'bg-white/10' : 'bg-ink'}`} />
+            <div className={`h-5 w-16 rounded-full ${isDark ? 'bg-white/10' : 'bg-ink'}`} />
             <span dir="ltr">●● ●</span>
           </div>
 
           {kind === 'welcome' && (
             <>
-              <div className="text-end mb-2">
+              <div className="text-end px-4 mt-3">
                 <p className="text-[9px] text-black/40">سيارتك في حالة ممتازة</p>
                 <p className="text-base font-extrabold text-ink">مرحباً يوسف</p>
               </div>
-              <div className="rounded-2xl bg-ink text-white p-3 mb-2">
+              <div className="rounded-2xl bg-ink text-white p-3 mx-3 mt-3">
                 <div className="flex items-start justify-between">
                   <span className="rounded-full bg-white/15 px-2 py-0.5 text-[9px] font-bold">OK ●</span>
                   <div className="text-end">
@@ -631,8 +644,11 @@ function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capt
                     212,450<span className="ms-1 text-[8px] text-white/60">كم</span>
                   </p>
                 </div>
+                <svg viewBox="0 0 200 30" className="mt-1 w-full">
+                  <path d="M0 22 Q40 4 100 16 T200 8" stroke="#F26B1F" strokeWidth="1.5" fill="none" />
+                </svg>
               </div>
-              <div className="rounded-2xl bg-brand text-white p-2.5 mb-2 flex items-center gap-2">
+              <div className="rounded-2xl bg-brand text-white p-2.5 mx-3 mt-2 flex items-center gap-2">
                 <ArrowLeft className="w-3 h-3" />
                 <div className="flex-1 text-end">
                   <p className="text-[8px] text-white/85 font-bold">الصيانة القادمة</p>
@@ -642,7 +658,7 @@ function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capt
                   <Droplets className="w-3 h-3" />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-1.5">
+              <div className="grid grid-cols-2 gap-1.5 mx-3 mt-2">
                 <div className="rounded-xl bg-white p-2 text-end">
                   <p className="text-[8px] font-bold text-black/40">متوسط الوقود</p>
                   <p dir="ltr" className="mt-0.5 text-sm font-extrabold tabular text-end">
@@ -657,26 +673,36 @@ function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capt
                   <p className="text-[7px] text-black/40">قبل 4 أيام</p>
                 </div>
               </div>
+              <div className="flex-1" />
+              <div className="px-4 pb-3 pt-2 flex items-center justify-around text-ink/40">
+                <HomeIcon className="w-4 h-4 text-brand" />
+                <Car className="w-4 h-4" />
+                <div className="-mt-4 w-9 h-9 rounded-full bg-brand text-white flex items-center justify-center shadow-[0_6px_14px_rgba(242,107,31,0.38)]">
+                  <Camera className="w-4 h-4" />
+                </div>
+                <BarChart2 className="w-4 h-4" />
+                <UserIcon className="w-4 h-4" />
+              </div>
             </>
           )}
 
           {kind === 'capture' && (
             <>
-              <div className="flex items-center justify-between mb-4 text-white">
-                <button className="w-5 h-5 rounded-full bg-white/10 flex items-center justify-center">
+              <div className="flex items-center justify-between mt-3 px-4 text-white">
+                <button className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center">
                   <Plus className="w-3 h-3 rotate-45" />
                 </button>
                 <p className="text-xs font-bold">صوّر العداد</p>
-                <span className="w-5" />
+                <span className="w-6" />
               </div>
-              <div className="relative h-44 rounded-xl border-2 border-dashed border-brand/60 bg-black/40 flex items-center justify-center">
+              <div className="flex-1 mx-3 mt-4 relative rounded-xl border-2 border-dashed border-brand/60 bg-black/30 flex items-center justify-center">
                 <div className="absolute inset-3 border-2 border-brand rounded-md" />
                 <p dir="ltr" className="text-2xl font-extrabold text-brand tabular tracking-tight">
                   212,450
                 </p>
               </div>
               <p className="mt-3 text-center text-[9px] text-white/50">ضع العداد داخل الإطار</p>
-              <div className="mt-4 rounded-xl bg-white p-2 text-end">
+              <div className="rounded-xl bg-white p-2 text-end mx-3 mt-3 mb-3">
                 <p className="text-[9px] text-black/40">تم التعرّف على</p>
                 <p className="text-base font-extrabold tabular">
                   212,450
@@ -688,36 +714,41 @@ function StepPhone({ n, kind }: { n: '01' | '02' | '03'; kind: 'welcome' | 'capt
 
           {kind === 'vehicles' && (
             <>
-              <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center justify-between mt-3 px-4">
                 <span className="rounded-full bg-success/15 text-success px-2 py-0.5 text-[9px] font-bold">
                   + إضافة سيارة
                 </span>
                 <p className="text-base font-extrabold text-ink">سياراتي</p>
               </div>
-              {[
-                { name: 'كامري 2022', km: '212,450', sub: 'الخدمة بعد 1,200 كم', tag: 'سياراتي', tone: 'brand' as const },
-                { name: 'هايلكس 2019', km: '156,820', sub: 'الخدمة بعد 4,500 كم', tag: 'العمل', tone: 'success' as const },
-              ].map((v) => (
-                <div key={v.name} className={`rounded-2xl p-3 mb-2 ${v.tone === 'brand' ? 'bg-[#FFE8D6]' : 'bg-[#DBEFD9]'}`}>
-                  <div className="flex items-start justify-between">
-                    <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${v.tone === 'brand' ? 'bg-brand text-white' : 'bg-success text-white'}`}>
-                      {v.tag}
-                    </span>
-                    <div className="text-end">
-                      <svg viewBox="0 0 60 24" className="w-12">
-                        <path d="M4 18 Q10 8 22 8 L42 8 Q54 8 56 18 Z" fill={v.tone === 'brand' ? '#F26B1F' : '#3F7A40'} />
-                        <circle cx="16" cy="20" r="3" fill="#0E2233" />
-                        <circle cx="46" cy="20" r="3" fill="#0E2233" />
-                      </svg>
+              <div className="mx-3 mt-3 space-y-2">
+                {[
+                  { name: 'كامري 2022', km: '212,450', sub: 'الخدمة بعد 1,200 كم', tag: 'سياراتي', tone: 'brand' as const },
+                  { name: 'هايلكس 2019', km: '156,820', sub: 'الخدمة بعد 4,500 كم', tag: 'العمل', tone: 'success' as const },
+                  { name: 'يارس 2018', km: '88,400', sub: 'الفحص بعد 22 يوم', tag: 'الأبناء', tone: 'ink' as const },
+                ].map((v) => {
+                  const bg = v.tone === 'brand' ? 'bg-[#FFE8D6]' : v.tone === 'success' ? 'bg-[#DBEFD9]' : 'bg-[#DCEAF3]';
+                  const chip = v.tone === 'brand' ? 'bg-brand text-white' : v.tone === 'success' ? 'bg-success text-white' : 'bg-ink text-white';
+                  const fill = v.tone === 'brand' ? '#F26B1F' : v.tone === 'success' ? '#3F7A40' : '#1F3A52';
+                  return (
+                    <div key={v.name} className={`rounded-2xl p-3 ${bg}`}>
+                      <div className="flex items-start justify-between">
+                        <span className={`rounded-full px-2 py-0.5 text-[9px] font-bold ${chip}`}>{v.tag}</span>
+                        <svg viewBox="0 0 60 24" className="w-12">
+                          <path d="M4 18 Q10 8 22 8 L42 8 Q54 8 56 18 Z" fill={fill} />
+                          <circle cx="16" cy="20" r="3" fill="#0E2233" />
+                          <circle cx="46" cy="20" r="3" fill="#0E2233" />
+                        </svg>
+                      </div>
+                      <div className="mt-2 text-end">
+                        <p className="text-[11px] font-extrabold">{v.name}</p>
+                        <p dir="ltr" className="text-[9px] text-ink/50 text-end">{v.km} كم</p>
+                        <p className="text-[9px] text-ink/50">{v.sub}</p>
+                      </div>
                     </div>
-                  </div>
-                  <div className="mt-2 text-end">
-                    <p className="text-[11px] font-extrabold">{v.name}</p>
-                    <p dir="ltr" className="text-[9px] text-ink/50 text-end">{v.km} كم</p>
-                    <p className="text-[9px] text-ink/50">{v.sub}</p>
-                  </div>
-                </div>
-              ))}
+                  );
+                })}
+              </div>
+              <div className="flex-1" />
             </>
           )}
         </div>
@@ -745,7 +776,7 @@ function HowItWorksSection() {
             return (
               <div key={s.n} className="text-end space-y-5">
                 <div className="rounded-[28px] bg-white p-6 shadow-[0_8px_24px_rgba(14,34,51,0.06)]">
-                  <StepPhone n={s.n as '01' | '02' | '03'} kind={kind} />
+                  <StepPhone kind={kind} />
                 </div>
                 <div>
                   <p className="text-[11px] font-bold text-ink/40 tracking-wider">{s.n}</p>
