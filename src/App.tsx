@@ -23,7 +23,9 @@ import {
   ChevronLeft,
   Share2,
   Settings as SettingsIcon,
-  Trash2
+  Trash2,
+  TrendingUp,
+  TrendingDown
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
@@ -778,6 +780,73 @@ function getMaintenanceStatuses(vehicle: Vehicle): MaintenanceStatus[] {
   return out;
 }
 
+type NextCta =
+  | { source: 'oil'; state: StatusState; value: number; key: string }
+  | { source: 'status'; state: StatusState; value: number; status: MaintenanceStatus; key: string };
+
+function getNextCta(vehicle: Vehicle): NextCta | null {
+  const candidates: NextCta[] = [];
+  const oilLeft =
+    (vehicle.lastOilChangeMileage ?? vehicle.currentMileage) +
+    vehicle.oilIntervalKm -
+    vehicle.currentMileage;
+  const oilState: StatusState = oilLeft < 0 ? 'overdue' : oilLeft <= 2000 ? 'soon' : 'ok';
+  if (oilState !== 'ok') {
+    candidates.push({
+      source: 'oil',
+      state: oilState,
+      value: Math.abs(oilLeft),
+      key: `${vehicle.id}:oil`,
+    });
+  }
+  getMaintenanceStatuses(vehicle)
+    .filter((s) => s.state !== 'ok')
+    .forEach((s) =>
+      candidates.push({
+        source: 'status',
+        state: s.state,
+        value: s.value,
+        status: s,
+        key: `${vehicle.id}:${s.kind}`,
+      }),
+    );
+  if (candidates.length === 0) return null;
+  const rank: Record<StatusState, number> = { overdue: 0, soon: 1, ok: 2 };
+  candidates.sort((a, b) => {
+    if (rank[a.state] !== rank[b.state]) return rank[a.state] - rank[b.state];
+    return a.value - b.value;
+  });
+  return candidates[0];
+}
+
+function computeFuelAverage(events: TimelineEvent[]): { avg: number | null; trend: number | null } {
+  const fuels = events
+    .filter(
+      (e) =>
+        e.type === ServiceType.FUEL &&
+        typeof e.liters === 'number' &&
+        e.liters > 0 &&
+        Number.isFinite(e.mileage),
+    )
+    .sort((a, b) => a.mileage - b.mileage);
+  const compute = (arr: TimelineEvent[]): number | null => {
+    if (arr.length < 2) return null;
+    const km = arr[arr.length - 1].mileage - arr[0].mileage;
+    if (km <= 0) return null;
+    const L = arr.slice(1).reduce((acc, e) => acc + (e.liters ?? 0), 0);
+    if (L <= 0) return null;
+    return (L / km) * 100;
+  };
+  const avg = compute(fuels);
+  if (avg == null) return { avg: null, trend: null };
+  if (fuels.length < 4) return { avg, trend: null };
+  const mid = Math.floor(fuels.length / 2);
+  const earlier = compute(fuels.slice(0, mid + 1));
+  const later = compute(fuels.slice(mid));
+  if (earlier == null || later == null || earlier === 0) return { avg, trend: null };
+  return { avg, trend: ((earlier - later) / earlier) * 100 };
+}
+
 function CarPlate({ letters = 'أ ب ج', numbers = '1234', size = 'md' }: { letters?: string; numbers?: string; size?: 'sm' | 'md' | 'lg' }) {
   const scale = size === 'lg' ? 'scale-110' : size === 'sm' ? 'scale-90' : '';
   return (
@@ -1147,6 +1216,7 @@ export default function App() {
 
   const [snoozedAlerts, setSnoozedAlerts] = useState<Set<string>>(new Set());
   const snoozeKey = (vehicleId: string, kind: StatusKind) => `${vehicleId}:${kind}`;
+  const [dismissedCtaKeys, setDismissedCtaKeys] = useState<Set<string>>(new Set());
 
   const timelineData = useMemo(() => {
     const empty = {
@@ -1527,43 +1597,43 @@ export default function App() {
           )}
 
           {activePage === 'dashboard' && (
-            <motion.div 
+            <motion.div
               key="dashboard"
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               exit={{ opacity: 0, x: 20 }}
-              className="space-y-6"
+              className="space-y-5"
             >
-              <div className="flex justify-between items-center mb-2">
-                <div>
-                  <p className="text-xs font-semibold text-[#4A6378]">
-                    {new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
-                  </p>
-                  <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">
-                    {user?.displayName ? `${lang === 'ar' ? 'مرحباً، ' : 'Hi, '}${user.displayName.split(' ')[0]}` : t('profile.welcome')}
-                  </h1>
-                </div>
-                <div className="flex items-center gap-2">
-                  {vehicles.length > 1 && (
-                    <select
-                      value={selectedVehicle?.id}
-                      onChange={(e) => setSelectedVehicle(vehicles.find(v => v.id === e.target.value) || null)}
-                      className="bg-black/5 border border-black/10 rounded-full px-3 py-2 text-[10px] font-bold uppercase tracking-wider outline-none max-w-[120px]"
+              {(() => {
+                const firstName = user?.displayName?.trim().split(/\s+/)[0] ?? t('dashboard.guest_name');
+                const todayLabel = new Date().toLocaleDateString(dateLocale, {
+                  weekday: 'long',
+                  day: 'numeric',
+                  month: 'long',
+                });
+                return (
+                  <div className="flex items-start justify-between gap-3">
+                    <button
+                      onClick={() => setActivePage('alerts')}
+                      aria-label={t('nav.alerts')}
+                      className="relative w-10 h-10 rounded-full bg-white border border-[#E1EAF1] shadow-[0_2px_8px_rgba(14,34,51,0.04)] flex items-center justify-center"
                     >
-                      {vehicles.map(v => <option key={v.id} value={v.id} className="bg-bg-dark">{v.name}</option>)}
-                    </select>
-                  )}
-                  <LanguageToggle />
-                  <button
-                    onClick={() => fileInputRef.current?.click()}
-                    className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center hover:brightness-95 transition-colors shadow-lg shadow-brand/20"
-                    aria-label={t('dashboard.update_odometer')}
-                  >
-                    <Plus className="w-5 h-5" />
-                  </button>
-                  {user?.photoURL && <img src={user.photoURL} className="w-8 h-8 rounded-full border border-black/10" />}
-                </div>
-              </div>
+                      <Bell className="w-4 h-4 text-ink" />
+                      {alertCount > 0 && (
+                        <span className="absolute -top-1 -end-1 min-w-[16px] h-[16px] px-1 rounded-full bg-danger text-white text-[9px] font-bold flex items-center justify-center tabular leading-none">
+                          {alertCount > 9 ? '9+' : alertCount}
+                        </span>
+                      )}
+                    </button>
+                    <div className="text-end min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-[#4A6378] truncate">{todayLabel}</p>
+                      <h1 className="mt-0.5 text-2xl font-extrabold tracking-tight text-ink truncate">
+                        {t('dashboard.greeting', { name: firstName })} <span aria-hidden="true">👋</span>
+                      </h1>
+                    </div>
+                  </div>
+                );
+              })()}
 
               {vehicles.length === 0 ? (
                 <div className="glass-dark p-8 rounded-[32px] text-center space-y-4">
@@ -1578,230 +1648,266 @@ export default function App() {
                     {t('dashboard.first_scan')}
                   </button>
                 </div>
-              ) : (
-                <div className="space-y-4">
-                  {selectedVehicle && (
-                    <div className="space-y-3">
-                      {/* 1. Identity card */}
-                      <div className="relative overflow-hidden rounded-[28px] bg-ink p-5 text-white shadow-[0_18px_38px_rgba(14,34,51,0.18)]">
-                        <div className="absolute inset-x-0 top-[58%] h-6 bg-brand" />
-                        <div className="relative flex justify-between items-start gap-3 mb-2">
-                          <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-normal text-white/50">{lang === 'ar' ? 'السيارة الحالية' : 'Current car'}</p>
-                            <h3 className="mt-1 text-xl font-bold tracking-tight leading-[1.1] break-words">
-                              {selectedVehicle.name}
-                            </h3>
-                            {selectedVehicle.model && (
-                              <p className="text-sm font-semibold text-white/50 mt-1">
-                                {selectedVehicle.model}
-                              </p>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 shrink-0">
-                            <button
-                              onClick={() => setShowSettings(true)}
-                              className="bg-white/15 p-2.5 rounded-full hover:bg-white/25 transition-colors"
-                              aria-label={t('common.settings')}
-                            >
-                              <SettingsIcon className="w-5 h-5 text-white" />
-                            </button>
-                            <button
-                              onClick={() => runReport(selectedVehicle)}
-                              disabled={reportBusy}
-                              className="bg-white/15 p-2.5 rounded-full hover:bg-white/25 transition-colors disabled:opacity-50"
-                              aria-label={t('reports.title')}
-                            >
-                              <Share2 className="w-5 h-5 text-white" />
-                            </button>
-                          </div>
-                        </div>
-
-                        {(selectedVehicle.year || selectedVehicle.make || selectedVehicle.color) && (
-                          <div className="relative flex flex-wrap gap-x-4 gap-y-2 mt-5 pt-4 border-t border-white/10">
-                            {selectedVehicle.year && (
-                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
-                                <Calendar className="w-4 h-4" />
-                                {selectedVehicle.year}
-                              </span>
-                            )}
-                            {selectedVehicle.make && (
-                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
-                                <Car className="w-4 h-4" />
-                                {selectedVehicle.make}
-                              </span>
-                            )}
-                            {selectedVehicle.color && (
-                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
-                                <Palette className="w-4 h-4" />
-                                {selectedVehicle.color}
-                              </span>
-                            )}
-                          </div>
+              ) : selectedVehicle ? (
+                <>
+                  {/* Hero card */}
+                  <div className="relative overflow-hidden rounded-[28px] bg-ink text-white shadow-[0_18px_38px_rgba(14,34,51,0.18)]">
+                    <div className="px-5 pt-5 pb-7">
+                      <div className="flex items-start justify-between gap-3">
+                        {vehicles.length > 1 ? (
+                          <button
+                            onClick={() => {
+                              const idx = vehicles.findIndex((v) => v.id === selectedVehicle.id);
+                              setSelectedVehicle(vehicles[(idx + 1) % vehicles.length]);
+                            }}
+                            className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 transition rounded-full px-3 py-1.5 text-xs font-bold"
+                          >
+                            <ChevronRight className="w-3 h-3" />
+                            <span>{t('dashboard.switch')}</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => setShowSettings(true)}
+                            className="bg-white/10 hover:bg-white/15 transition rounded-full p-2"
+                            aria-label={t('common.settings')}
+                          >
+                            <SettingsIcon className="w-4 h-4" />
+                          </button>
                         )}
-                      </div>
-
-                      {/* 2. Health hero card */}
-                      <div className="relative bg-white/85 backdrop-blur rounded-[32px] p-7 border border-black/5 shadow-sm overflow-hidden">
-                        <div className="absolute -top-16 -end-16 w-48 h-48 bg-brand/15 blur-[80px] pointer-events-none" />
-
-                        <div className="relative flex flex-col items-center">
-                          <HealthIndicator
-                            score={calculateOilLife(
-                              selectedVehicle.currentMileage,
-                              selectedVehicle.lastOilChangeMileage || 0,
-                              selectedVehicle.oilIntervalKm
-                            )}
-                          />
-                        </div>
-
-                        <div className="relative mt-4 space-y-2">
-                          <div className="flex justify-between items-center text-xs uppercase tracking-widest">
-                            <span className="text-black/40 font-bold">{t('common.oil_life')}</span>
-                          </div>
-                          <div className="h-1.5 w-full bg-black/5 rounded-full overflow-hidden">
-                            <motion.div
-                              initial={{ width: 0 }}
-                              animate={{
-                                width: `${calculateOilLife(selectedVehicle.currentMileage, selectedVehicle.lastOilChangeMileage || 0, selectedVehicle.oilIntervalKm)}%`,
-                              }}
-                              className="h-full bg-brand"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="absolute bottom-4 end-4 bg-ink text-white px-3.5 py-2 rounded-full text-xs font-bold flex items-center gap-2 shadow-md">
-                          <span className="text-white/60 uppercase tracking-wider text-[9px]">
-                            {t('common.km_left')}
-                          </span>
-                          <span className="font-bold">
-                            {Math.max(
-                              0,
-                              (selectedVehicle.lastOilChangeMileage || 0) +
-                                selectedVehicle.oilIntervalKm -
-                                selectedVehicle.currentMileage
-                            )}
-                          </span>
-                        </div>
-                        <div className="relative mt-8">
-                          <p className="text-[10px] font-bold uppercase tracking-normal text-white/50">{t('common.mileage')}</p>
-                          <div className="mt-2 flex items-end justify-between gap-3">
-                            <BigNum value={formatMileage(selectedVehicle.currentMileage).replace(' KM', '')} unit={t('common.km_unit')} size="text-4xl" color="text-white" />
-                            <CarPlate size="sm" />
+                        <div className="text-end min-w-0">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                            {t('dashboard.current_car')}
+                          </p>
+                          <h3 className="mt-1 text-2xl font-extrabold tracking-tight truncate">
+                            {selectedVehicle.name}
+                            {selectedVehicle.year ? ` ${selectedVehicle.year}` : ''}
+                          </h3>
+                          <div className="mt-2 flex items-center justify-end gap-2">
+                            <button
+                              onClick={() => setActivePage('profile')}
+                              className="bg-white/10 hover:bg-white/15 transition rounded-full px-3 py-1 text-[10px] font-bold"
+                            >
+                              {t('dashboard.my_cars')}
+                            </button>
+                            <span className="bg-white/10 rounded-full px-3 py-1 text-[10px] font-bold tabular">
+                              {calculateOilLife(
+                                selectedVehicle.currentMileage,
+                                selectedVehicle.lastOilChangeMileage || 0,
+                                selectedVehicle.oilIntervalKm,
+                              )}
+                            </span>
                           </div>
                         </div>
                       </div>
-
-                      {/* 3. Stats row */}
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white/85 backdrop-blur rounded-2xl p-5 border border-black/5 shadow-sm">
-                          <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">
-                            {t('common.mileage')}
-                          </p>
-                          <p className="text-lg sm:text-xl font-bold">
-                            <CountUp value={selectedVehicle.currentMileage} />
-                          </p>
-                        </div>
-                        <div className="bg-white/85 backdrop-blur rounded-2xl p-5 border border-black/5 shadow-sm">
-                          <p className="text-[10px] uppercase tracking-widest text-black/40 mb-2">
-                            {t('common.last_update')}
-                          </p>
-                          <p className="text-sm sm:text-base font-bold">
+                    </div>
+                    <div className="h-6 bg-brand" />
+                    <div className="px-5 pt-4 pb-5">
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center gap-2 text-[11px] text-white/60 mt-1.5">
+                          <Camera className="w-3.5 h-3.5" />
+                          <span>
                             {(() => {
                               const d =
                                 timestampToDate(selectedVehicle.updatedAt) ||
                                 timestampToDate(selectedVehicle.createdAt);
-                              if (!d) return t('common.never');
-                              return formatDistanceToNow(d, {
-                                addSuffix: true,
-                                locale: lang === 'ar' ? arLocale : enLocale,
+                              if (!d) return t('dashboard.never_updated');
+                              return t('dashboard.updated_ago', {
+                                time: formatDistanceToNow(d, {
+                                  addSuffix: true,
+                                  locale: lang === 'ar' ? arLocale : enLocale,
+                                }),
                               });
                             })()}
+                          </span>
+                        </div>
+                        <div className="text-end">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                            {t('dashboard.current_odometer')}
+                          </p>
+                          <p className="mt-1 text-4xl font-extrabold tabular tracking-tight leading-none">
+                            <CountUp value={selectedVehicle.currentMileage} />
+                            <span className="ms-2 text-xs font-bold text-white/60">{t('common.km_unit')}</span>
                           </p>
                         </div>
                       </div>
-
-                      {/* Smart Insights */}
-                      {events.filter(e => e.vehicleId === selectedVehicle.id).length >= 5 && (selectedVehicle.name.includes('مركبتي الجديدة') || selectedVehicle.name.toLowerCase().includes('my new vehicle')) && (
-                        <div className="glass-dark p-6 rounded-[32px] border-l-4 border-l-brand">
-                          <div className="flex gap-4">
-                            <Car className="w-6 h-6 text-brand shrink-0" />
-                            <div className="flex-1">
-                              <p className="text-sm font-bold">{t('dashboard.name_your_car')}</p>
-                              <p className="text-xs text-black/40 mb-3">{t('dashboard.name_hint', { count: events.length })}</p>
-                              <div className="flex gap-2">
-                                <input
-                                  id="vehicle-name-input"
-                                  className="bg-black/5 border border-black/10 rounded-xl px-3 py-2 text-xs flex-1 outline-none focus:border-brand"
-                                  placeholder={t('dashboard.name_placeholder')}
-                                />
-                                <button
-                                  onClick={async () => {
-                                    const input = document.getElementById('vehicle-name-input') as HTMLInputElement;
-                                    if (input.value) {
-                                      await updateDoc(doc(db, 'vehicles', selectedVehicle.id), { name: input.value });
-                                      toast.success(t('dashboard.name_updated'));
-                                    }
-                                  }}
-                                  className="bg-brand px-4 py-2 rounded-xl text-xs font-bold text-white"
-                                >
-                                  {t('common.save')}
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      <MaintenanceStatusCard vehicle={selectedVehicle} onMarkDone={handleMarkReminderDone} />
-
-                      {/* Recent Activity */}
-                      <div className="space-y-4">
-                        <div className="flex justify-between items-center">
-                          <h4 className="text-xl font-bold">{t('dashboard.recent_activity')}</h4>
-                          <button onClick={() => setActivePage('timeline')} className="text-brand text-sm font-medium">{t('common.show_all')}</button>
-                        </div>
-                        <div className="space-y-3">
-                          {events.filter(e => e.vehicleId === selectedVehicle.id).slice(0, 3).map((event) => (
-                            <div key={event.id} className="glass-dark p-4 rounded-2xl flex justify-between items-center">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 bg-black/5 rounded-xl flex items-center justify-center">
-                                  {event.type === ServiceType.FUEL ? <Fuel className="w-5 h-5 text-brand" /> : <Droplets className="w-5 h-5 text-success" />}
-                                </div>
-                                <div>
-                                  <p className="font-bold text-sm">{serviceLabel(event.type)}</p>
-                                  <p className="text-[10px] text-black/40">{new Date(event.date).toLocaleDateString(dateLocale)}</p>
-                                </div>
-                              </div>
-                              <p className="font-bold text-xs">{formatMileage(event.mileage)}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
                     </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <button 
-                      onClick={() => fileInputRef.current?.click()}
-                      className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-transform active:scale-95"
-                    >
-                      <div className="w-12 h-12 bg-brand/10 rounded-2xl flex items-center justify-center">
-                        <Camera className="w-6 h-6 text-brand" />
-                      </div>
-                      <span className="text-sm font-medium">{t('dashboard.update_odometer')}</span>
-                    </button>
-                    <button
-                      onClick={() => setActivePage('timeline')}
-                      className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-transform active:scale-95"
-                    >
-                      <div className="w-12 h-12 bg-success/10 rounded-2xl flex items-center justify-center">
-                        <History className="w-6 h-6 text-success" />
-                      </div>
-                      <span className="text-sm font-medium">{t('dashboard.activity_log')}</span>
-                    </button>
                   </div>
-                </div>
-              )}
+
+                  {/* Next maintenance CTA */}
+                  {(() => {
+                    const cta = getNextCta(selectedVehicle);
+                    if (!cta) return null;
+                    if (dismissedCtaKeys.has(cta.key)) return null;
+                    const isOverdue = cta.state === 'overdue';
+                    const label =
+                      cta.source === 'oil'
+                        ? isOverdue
+                          ? t('dashboard.next_oil_overdue', { value: cta.value.toLocaleString() })
+                          : t('dashboard.next_oil_in', { value: cta.value.toLocaleString() })
+                        : (() => {
+                            const lbl = t(`status.${cta.status.kind}`);
+                            const tplKey =
+                              cta.status.unit === 'km'
+                                ? isOverdue
+                                  ? 'dashboard.next_status_overdue_km'
+                                  : 'dashboard.next_status_in_km'
+                                : isOverdue
+                                  ? 'dashboard.next_status_overdue_months'
+                                  : 'dashboard.next_status_in_months';
+                            return t(tplKey, { label: lbl, value: cta.value.toLocaleString() });
+                          })();
+                    const Icon = cta.source === 'oil' ? Droplets : STATUS_ICONS[cta.status.kind];
+                    return (
+                      <button
+                        onClick={() => setActivePage('alerts')}
+                        className="w-full bg-brand text-white rounded-[24px] p-4 flex items-center gap-3 text-start shadow-[0_12px_28px_rgba(242,107,31,0.25)] hover:brightness-95 transition"
+                      >
+                        <span
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDismissedCtaKeys((prev) => {
+                              const next = new Set(prev);
+                              next.add(cta.key);
+                              return next;
+                            });
+                            toast.success(t('dashboard.snoozed_cta'));
+                          }}
+                          role="button"
+                          tabIndex={0}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.stopPropagation();
+                              setDismissedCtaKeys((prev) => {
+                                const next = new Set(prev);
+                                next.add(cta.key);
+                                return next;
+                              });
+                              toast.success(t('dashboard.snoozed_cta'));
+                            }
+                          }}
+                          className="shrink-0 bg-white text-brand px-3.5 py-2 rounded-full text-xs font-bold cursor-pointer hover:bg-white/90 transition"
+                        >
+                          {t('alerts.snooze')}
+                        </span>
+                        <div className="flex-1 min-w-0 text-end">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-white/80">
+                            {t('dashboard.next_maintenance')}
+                          </p>
+                          <p className="mt-0.5 text-sm font-extrabold truncate">{label}</p>
+                        </div>
+                        <div className="w-10 h-10 rounded-xl bg-white/15 flex items-center justify-center shrink-0">
+                          <Icon className="w-5 h-5" />
+                        </div>
+                      </button>
+                    );
+                  })()}
+
+                  {/* Stats: this month + fuel avg */}
+                  {(() => {
+                    const { avg, trend } = computeFuelAverage(
+                      events.filter((e) => e.vehicleId === selectedVehicle.id),
+                    );
+                    const fuelCount = timelineData.counts.fuel;
+                    const serviceCount = timelineData.counts.service + timelineData.counts.inspection;
+                    return (
+                      <div className="grid grid-cols-2 gap-3">
+                        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+                            {t('dashboard.month_spend')}
+                          </p>
+                          <p className="mt-2 text-2xl font-extrabold tabular leading-none">
+                            {timelineData.monthSpend.toFixed(0)}
+                            <span className="ms-1 text-[10px] font-bold text-black/40">{t('timeline.unit_riyal')}</span>
+                          </p>
+                          <p className="mt-2 text-[11px] text-black/40">
+                            {t('dashboard.month_breakdown_fuels', { count: fuelCount })} · {t('dashboard.month_breakdown_services', { count: serviceCount })}
+                          </p>
+                        </div>
+                        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+                            {t('dashboard.fuel_avg')}
+                          </p>
+                          {avg != null ? (
+                            <>
+                              <p className="mt-2 text-2xl font-extrabold tabular leading-none">
+                                {avg.toFixed(1)}
+                                <span className="ms-1 text-[10px] font-bold text-black/40">{t('dashboard.fuel_avg_unit')}</span>
+                              </p>
+                              {trend != null && Math.abs(trend) >= 1 ? (
+                                <p className={cn('mt-2 flex items-center gap-1 text-[11px] font-bold',
+                                  trend > 0 ? 'text-success' : 'text-danger')}>
+                                  {trend > 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                                  {trend > 0
+                                    ? t('dashboard.improvement', { value: trend.toFixed(1) })
+                                    : t('dashboard.regression', { value: Math.abs(trend).toFixed(1) })}
+                                </p>
+                              ) : (
+                                <p className="mt-2 text-[11px] text-black/40">&nbsp;</p>
+                              )}
+                            </>
+                          ) : (
+                            <p className="mt-2 text-xs text-black/40 leading-snug">{t('dashboard.fuel_avg_unavailable')}</p>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })()}
+
+                  {/* Latest activities */}
+                  {(() => {
+                    const recent = events
+                      .filter((e) => e.vehicleId === selectedVehicle.id)
+                      .slice(0, 3);
+                    if (recent.length === 0) return null;
+                    return (
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <button
+                            onClick={() => setActivePage('timeline')}
+                            className="text-brand text-xs font-bold"
+                          >
+                            {t('common.show_all')}
+                          </button>
+                          <h4 className="text-lg font-extrabold">{t('dashboard.recent_activity')}</h4>
+                        </div>
+                        <div className="space-y-2">
+                          {recent.map((event) => {
+                            const tone = EVENT_TONE[event.type] ?? EVENT_TONE[ServiceType.OTHER];
+                            const Icon = eventIcon(event.type);
+                            const subtitle =
+                              event.station || event.serviceCenter || event.location?.address ||
+                              new Date(event.date).toLocaleDateString(dateLocale, { day: 'numeric', month: 'short' });
+                            const ago = formatDistanceToNow(new Date(event.date), {
+                              addSuffix: true,
+                              locale: lang === 'ar' ? arLocale : enLocale,
+                            });
+                            return (
+                              <div key={event.id} className="bg-white rounded-2xl p-4 flex items-center gap-3 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
+                                <div className="shrink-0 text-end">
+                                  {event.amount != null && (
+                                    <p className="text-sm font-extrabold tabular whitespace-nowrap">
+                                      {event.amount}
+                                      <span className="ms-1 text-[10px] text-black/40">{t('timeline.unit_riyal')}</span>
+                                    </p>
+                                  )}
+                                  <p className="text-[10px] text-black/40 whitespace-nowrap mt-0.5">{ago}</p>
+                                </div>
+                                <div className="flex-1 min-w-0 text-end">
+                                  <p className="text-sm font-bold truncate">{serviceLabel(event.type)}</p>
+                                  <p className="text-xs text-black/40 truncate mt-0.5">{subtitle}</p>
+                                </div>
+                                <div className={cn('w-11 h-11 rounded-xl flex items-center justify-center shrink-0', tone.bg, tone.fg)}>
+                                  <Icon className="w-5 h-5" />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
+              ) : null}
             </motion.div>
           )}
 
