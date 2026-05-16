@@ -978,7 +978,7 @@ const Navbar = ({ activePage, setActivePage, alertCount = 0 }: any) => {
     { id: 'dashboard', icon: HomeIcon, label: t('nav.home'), badge: alertCount },
     { id: 'cars', icon: Car, label: t('nav.cars') },
     { id: 'camera', icon: Camera, label: t('nav.camera'), primary: true },
-    { id: 'timeline', icon: BarChart3, label: t('nav.stats') },
+    { id: 'timeline', icon: History, label: t('nav.timeline') },
     { id: 'profile', icon: UserIcon, label: t('nav.profile') },
   ];
 
