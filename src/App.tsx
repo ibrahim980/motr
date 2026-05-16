@@ -1045,7 +1045,6 @@ export default function App() {
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'fuel' | 'service' | 'inspection'>('all');
   const [carDetailsTab, setCarDetailsTab] = useState<'details' | 'stats' | 'history'>('stats');
-  const [carsSort, setCarsSort] = useState<'urgency' | 'name' | 'mileage'>('urgency');
 
   const serviceIcon = (type: ServiceType) => {
     switch (type) {
@@ -2139,23 +2138,13 @@ export default function App() {
                   return cta.state === 'overdue' ? 'brand' : 'warn';
                 };
                 const urgencyRank: Record<'brand' | 'warn' | 'ok', number> = { brand: 0, warn: 1, ok: 2 };
-                const sortedVehicles = [...vehicles].sort((a, b) => {
-                  if (carsSort === 'name') return (a.name || '').localeCompare(b.name || '', 'ar');
-                  if (carsSort === 'mileage') return (b.currentMileage || 0) - (a.currentMileage || 0);
-                  return urgencyRank[toneFor(a)] - urgencyRank[toneFor(b)];
-                });
+                const sortedVehicles = [...vehicles].sort(
+                  (a, b) => urgencyRank[toneFor(a)] - urgencyRank[toneFor(b)],
+                );
                 const toneColor = (k: 'brand' | 'ok' | 'warn') =>
                   k === 'brand' ? '#F26B1F' : k === 'ok' ? '#3F7A40' : '#B96A1E';
                 const toneBg = (k: 'brand' | 'ok' | 'warn') =>
                   k === 'brand' ? 'bg-[#FFE6D5]' : k === 'ok' ? 'bg-[#E2EFE3]' : 'bg-[#FBEFE0]';
-                const sortLabel = {
-                  urgency: t('cars.sort_urgency'),
-                  name: t('cars.sort_name'),
-                  mileage: t('cars.sort_mileage'),
-                }[carsSort];
-                const cycleSort = () => {
-                  setCarsSort((s) => (s === 'urgency' ? 'name' : s === 'name' ? 'mileage' : 'urgency'));
-                };
 
                 return (
                   <>
@@ -2171,14 +2160,7 @@ export default function App() {
                     </div>
 
                     {vehicles.length > 0 && (
-                      <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center justify-between">
-                        <button
-                          onClick={cycleSort}
-                          className="text-xs font-semibold text-brand inline-flex items-center gap-1"
-                        >
-                          <span>{t('cars.sort')}</span>
-                          <span className="text-[#4A6378] font-medium">· {sortLabel}</span>
-                        </button>
+                      <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5">
                         <p className="text-xs text-[#4A6378] text-end">
                           {vehicles.length === 1
                             ? t('cars.counter_one', { total: totalKm.toLocaleString() })
