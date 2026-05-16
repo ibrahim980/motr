@@ -1149,6 +1149,7 @@ export default function App() {
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const newVehicleIdRef = useRef<string | null>(null);
+  const mileageSyncedRef = useRef<Set<string>>(new Set());
 
   const handleAddVehicle = () => {
     setActivePage('add-car');
@@ -1361,6 +1362,30 @@ export default function App() {
       unsubE();
     };
   }, [user]);
+
+  useEffect(() => {
+    if (!user || vehicles.length === 0 || events.length === 0) return;
+    vehicles.forEach((v) => {
+      if (mileageSyncedRef.current.has(v.id)) return;
+      const vEvents = events.filter((e) => e.vehicleId === v.id);
+      if (vEvents.length === 0) return;
+      const maxEventMileage = Math.max(
+        ...vEvents.map((e) => (Number.isFinite(e.mileage) ? e.mileage : 0)),
+      );
+      if (maxEventMileage > (v.currentMileage ?? 0)) {
+        mileageSyncedRef.current.add(v.id);
+        updateDoc(doc(db, 'vehicles', v.id), {
+          currentMileage: maxEventMileage,
+          updatedAt: serverTimestamp(),
+        }).catch((err) => {
+          mileageSyncedRef.current.delete(v.id);
+          console.error('mileage backfill failed', err);
+        });
+      } else {
+        mileageSyncedRef.current.add(v.id);
+      }
+    });
+  }, [user, vehicles, events]);
 
   const handleSignIn = async () => {
     try {
