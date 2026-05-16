@@ -71,6 +71,10 @@ const ar: Dict = {
   // timeline
   'timeline.title': 'سجل المركبة',
   'timeline.empty': 'لا يوجد سجلات حتى الآن',
+  'timeline.delete': 'حذف',
+  'timeline.delete_confirm': 'حذف هذا السجل نهائياً؟',
+  'timeline.deleted': 'تم حذف السجل',
+  'timeline.delete_failed': 'فشل حذف السجل',
 
   // profile
   'profile.guest': 'ضيف',
@@ -288,6 +292,10 @@ const en: Dict = {
   // timeline
   'timeline.title': 'Vehicle history',
   'timeline.empty': 'No entries yet',
+  'timeline.delete': 'Delete',
+  'timeline.delete_confirm': 'Delete this entry permanently?',
+  'timeline.deleted': 'Entry deleted',
+  'timeline.delete_failed': 'Failed to delete entry',
 
   // profile
   'profile.guest': 'Guest',

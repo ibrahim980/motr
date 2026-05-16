@@ -252,6 +252,93 @@ function AlertItemRow({ status }: { status: MaintenanceStatus }) {
   );
 }
 
+function TimelineEventRow({
+  event,
+  isLast,
+  serviceLabel,
+  dateLocale,
+  onDelete,
+}: {
+  event: TimelineEvent;
+  isLast: boolean;
+  serviceLabel: (type: ServiceType) => string;
+  dateLocale: string;
+  onDelete: (eventId: string) => Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [confirming, setConfirming] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  return (
+    <div className="relative ps-8 pb-8 last:pb-0">
+      {!isLast && <div className="absolute start-4 top-8 bottom-0 w-[1px] bg-black/10" />}
+      <div
+        className={cn(
+          'absolute start-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark',
+          event.type === ServiceType.FUEL ? 'bg-brand' : 'bg-success',
+        )}
+      />
+      <div className="glass-dark p-6 rounded-[28px] space-y-3 group">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            {event.type === ServiceType.FUEL ? (
+              <Fuel className="w-4 h-4 text-brand" />
+            ) : (
+              <Droplets className="w-4 h-4 text-success" />
+            )}
+            <span className="font-bold">{serviceLabel(event.type)}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-black/40">
+              {new Date(event.date).toLocaleDateString(dateLocale)}
+            </span>
+            <button
+              onClick={() => setConfirming(true)}
+              className="w-7 h-7 rounded-full bg-danger/10 text-danger flex items-center justify-center hover:bg-danger/20 transition opacity-0 group-hover:opacity-100 sm:opacity-100 shrink-0"
+              aria-label={t('timeline.delete')}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+        <div className="flex justify-between">
+          <p className="text-lg font-bold">{formatMileage(event.mileage)}</p>
+          <p className="text-black/40 text-sm">{event.notes || ''}</p>
+        </div>
+
+        {confirming && (
+          <div className="bg-danger/5 border border-danger/20 rounded-2xl p-3 space-y-2 mt-2">
+            <p className="text-xs font-bold text-danger">{t('timeline.delete_confirm')}</p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirming(false)}
+                disabled={busy}
+                className="flex-1 bg-black/5 border border-black/10 py-2 rounded-xl text-xs font-bold hover:bg-black/10 transition"
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={async () => {
+                  setBusy(true);
+                  try {
+                    await onDelete(event.id);
+                  } finally {
+                    setBusy(false);
+                  }
+                }}
+                disabled={busy}
+                className="flex-1 bg-danger text-white py-2 rounded-xl text-xs font-bold hover:brightness-95 transition disabled:opacity-60"
+              >
+                {t('settings.delete_confirm_button')}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function VehicleManageRow({
   vehicle,
   onDelete,
@@ -350,6 +437,78 @@ function getMaintenanceStatuses(vehicle: Vehicle): MaintenanceStatus[] {
   return out;
 }
 
+function CarPlate({ letters = 'أ ب ج', numbers = '1234', size = 'md' }: { letters?: string; numbers?: string; size?: 'sm' | 'md' | 'lg' }) {
+  const scale = size === 'lg' ? 'scale-110' : size === 'sm' ? 'scale-90' : '';
+  return (
+    <div dir="ltr" className={cn('inline-flex overflow-hidden rounded-md border-2 border-ink bg-white font-mono font-bold text-ink', scale)}>
+      <div className="border-e-2 border-ink px-2 py-0.5 text-sm tabular">{numbers}</div>
+      <div className="px-2 py-0.5 text-xs">{letters}</div>
+    </div>
+  );
+}
+
+function VehicleArt({ tone = 'brand' }: { tone?: 'brand' | 'ok' | 'warn' }) {
+  const fill = tone === 'ok' ? '#3F7A40' : tone === 'warn' ? '#B96A1E' : '#F26B1F';
+  return (
+    <svg width="160" height="80" viewBox="0 0 160 80" className="relative z-[1]">
+      <path d="M14 56 Q24 36 56 32 L104 32 Q130 32 142 48 L146 56 Z" fill={fill} />
+      <path d="M60 32 L70 18 L96 18 L104 32 Z" fill={fill} opacity="0.7" />
+      <circle cx="40" cy="58" r="10" fill="#0E2233" />
+      <circle cx="40" cy="58" r="4" fill="white" />
+      <circle cx="118" cy="58" r="10" fill="#0E2233" />
+      <circle cx="118" cy="58" r="4" fill="white" />
+    </svg>
+  );
+}
+
+function BigNum({ value, unit, size = 'text-4xl', color = 'text-ink' }: { value: string | number; unit?: string; size?: string; color?: string }) {
+  return (
+    <div className="flex items-baseline gap-1.5">
+      <span className={cn('tabular font-mono font-bold leading-none tracking-tight', size, color)}>{value}</span>
+      {unit && <span className="text-xs font-semibold text-[#4A6378]">{unit}</span>}
+    </div>
+  );
+}
+
+function AppTop({ title, sub, trailing }: { title: string; sub?: string; trailing?: React.ReactNode }) {
+  return (
+    <div className="flex items-start justify-between gap-3 px-1 pb-4">
+      <div className="min-w-0">
+        {sub && <p className="text-[11px] font-bold uppercase tracking-normal text-[#4A6378]">{sub}</p>}
+        <h1 className="mt-0.5 truncate text-2xl font-extrabold tracking-tight text-ink">{title}</h1>
+      </div>
+      {trailing}
+    </div>
+  );
+}
+
+function DesignField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  type = 'text',
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  type?: string;
+}) {
+  return (
+    <label className="block rounded-2xl border border-[#E1EAF1] bg-white px-4 py-3">
+      <span className="block text-[10px] font-bold uppercase tracking-normal text-[#4A6378]">{label}</span>
+      <input
+        type={type}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="mt-1 w-full bg-transparent text-base font-semibold text-ink outline-none placeholder:text-[#7B92A6]"
+      />
+    </label>
+  );
+}
+
 import { generateVehicleReport } from './lib/reports';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 
@@ -358,7 +517,7 @@ const HealthIndicator = ({ score }: { score: number }) => {
     { value: score },
     { value: 100 - score }
   ];
-  const COLORS = ['#3B82F6', 'rgba(0,0,0,0.05)'];
+  const COLORS = ['#F26B1F', '#E1EAF1'];
 
   return (
     <div className="relative w-32 h-32 mx-auto">
@@ -403,28 +562,40 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
   const tabs = [
     { id: 'dashboard', icon: Car, label: t('nav.vehicles') },
     { id: 'alerts', icon: Bell, label: t('nav.alerts') },
-    { id: 'camera', icon: Camera, label: t('nav.camera') },
+    { id: 'camera', icon: Camera, label: t('nav.camera'), primary: true },
     { id: 'timeline', icon: History, label: t('nav.timeline') },
     { id: 'profile', icon: UserIcon, label: t('nav.profile') },
   ];
 
   return (
-    <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-40 max-w-[95vw] w-full px-4 sm:max-w-fit">
-      <nav className="pill-nav flex items-center justify-around sm:justify-start gap-1 py-1.5 px-2">
+    <div className="fixed bottom-5 left-1/2 z-40 w-full max-w-[430px] -translate-x-1/2 px-3">
+      <nav className="pill-nav flex items-center justify-around px-3 py-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = activePage === tab.id;
+          if (tab.primary) {
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActivePage(tab.id)}
+                aria-label={tab.label}
+                className="relative -mt-8 grid h-[54px] w-[54px] shrink-0 place-items-center rounded-full bg-brand text-white shadow-[0_8px_18px_rgba(242,107,31,0.38)] transition active:scale-95"
+              >
+                <Icon className="h-6 w-6" strokeWidth={2.2} />
+              </button>
+            );
+          }
           return (
             <button
               key={tab.id}
               onClick={() => setActivePage(tab.id)}
               className={cn(
-                "px-3 sm:px-6 py-3 rounded-full text-[11px] font-bold tracking-wider uppercase transition-all duration-300 flex items-center gap-2",
-                isActive ? "bg-brand text-white shadow-[0_0_20px_rgba(242,100,48,0.5)]" : "text-black/40 hover:text-ink"
+                "min-w-0 flex-1 rounded-2xl px-1 py-2 text-[9px] font-bold transition-all duration-300 flex flex-col items-center gap-1",
+                isActive ? "text-brand" : "text-[#7B92A6] hover:text-ink"
               )}
             >
-              <Icon className="w-4 h-4 shrink-0" />
-              {isActive && <motion.span initial={{ opacity: 0, width: 0 }} animate={{ opacity: 1, width: 'auto' }} className="font-arabic">{tab.label}</motion.span>}
+              <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+              <span className="max-w-full truncate">{tab.label}</span>
             </button>
           );
         })}
@@ -439,7 +610,9 @@ export default function App() {
   const { t, lang } = useI18n();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activePage, setActivePage] = useState('camera');
+  const [hasSeenOnboarding, setHasSeenOnboarding] = useState(() => localStorage.getItem('motr-onboarding-done') === '1');
+  const [showSplash, setShowSplash] = useState(() => localStorage.getItem('motr-splash-seen') !== '1');
+  const [activePage, setActivePage] = useState(() => (localStorage.getItem('motr-onboarding-done') === '1' ? 'dashboard' : 'onboarding'));
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [events, setEvents] = useState<TimelineEvent[]>([]);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
@@ -448,6 +621,36 @@ export default function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [eventNotes, setEventNotes] = useState('');
   const [reportBusy, setReportBusy] = useState(false);
+  const [addCarForm, setAddCarForm] = useState({ name: '', make: '', model: '', year: '', color: '', mileage: '' });
+  const [fuelForm, setFuelForm] = useState({ amount: '', liters: '', station: '' });
+  const [serviceForm, setServiceForm] = useState({ center: '' });
+
+  useEffect(() => {
+    if (!showSplash) return;
+    const id = window.setTimeout(() => {
+      localStorage.setItem('motr-splash-seen', '1');
+      setShowSplash(false);
+    }, 1100);
+    return () => window.clearTimeout(id);
+  }, [showSplash]);
+
+  const finishOnboarding = () => {
+    localStorage.setItem('motr-onboarding-done', '1');
+    setHasSeenOnboarding(true);
+    setActivePage('dashboard');
+  };
+
+  const updateAddCarForm = (key: keyof typeof addCarForm, value: string) => {
+    setAddCarForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateFuelForm = (key: keyof typeof fuelForm, value: string) => {
+    setFuelForm((current) => ({ ...current, [key]: value }));
+  };
+
+  const updateServiceForm = (key: keyof typeof serviceForm, value: string) => {
+    setServiceForm((current) => ({ ...current, [key]: value }));
+  };
 
   const runReport = async (vehicle: Vehicle | null) => {
     if (!vehicle) {
@@ -493,7 +696,46 @@ export default function App() {
 
   const handleAddVehicle = () => {
     setSelectedVehicle(null);
-    fileInputRef.current?.click();
+    setActivePage('add-car');
+  };
+
+  const createVehicleFromForm = async () => {
+    if (!user) {
+      toast.error(t('profile.sign_in_first'));
+      setActivePage('profile');
+      return;
+    }
+    const mileage = Number(addCarForm.mileage) || 0;
+    const name =
+      addCarForm.name.trim() ||
+      [addCarForm.make.trim(), addCarForm.model.trim(), addCarForm.year.trim()].filter(Boolean).join(' ') ||
+      (lang === 'ar' ? 'مركبتي الجديدة' : 'My new vehicle');
+    try {
+      const vehiclePayload: Record<string, unknown> = {
+        userId: user.uid,
+        name,
+        make: addCarForm.make.trim(),
+        model: addCarForm.model.trim(),
+        color: addCarForm.color.trim(),
+        currentMileage: mileage,
+        healthScore: 100,
+        oilIntervalKm: 10000,
+        lastOilChangeMileage: mileage,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      };
+      if (addCarForm.year) vehiclePayload.year = Number(addCarForm.year);
+      const newV = await addDoc(collection(db, 'vehicles'), vehiclePayload);
+      newVehicleIdRef.current = newV.id;
+      setAddCarForm({ name: '', make: '', model: '', year: '', color: '', mileage: '' });
+      localStorage.setItem('motr-onboarding-done', '1');
+      setHasSeenOnboarding(true);
+      setActivePage('dashboard');
+      toast.success(t('service.saved'));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('service.save_failed'));
+    }
   };
 
   const handleDeleteVehicle = async (vehicle: Vehicle) => {
@@ -516,6 +758,16 @@ export default function App() {
     } catch (err) {
       console.error(err);
       toast.error(t('settings.delete_failed'));
+    }
+  };
+
+  const handleDeleteEvent = async (eventId: string) => {
+    try {
+      await deleteDoc(doc(db, 'events', eventId));
+      toast.success(t('timeline.deleted'));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('timeline.delete_failed'));
     }
   };
 
@@ -623,8 +875,8 @@ export default function App() {
           });
         }
         
-        // Auto show service selection
-        setActivePage('service-select');
+        // Show detected reading for confirmation before logging a service.
+        setActivePage('ocr-result');
         setTempEventData({ mileage: result.mileage, vehicleId: vehicleId as string });
         
       } catch (err) {
@@ -648,7 +900,10 @@ export default function App() {
 
   const [tempEventData, setTempEventData] = useState<{ mileage: number, vehicleId: string } | null>(null);
 
-  const saveEvent = async (type: ServiceType) => {
+  const saveEvent = async (
+    type: ServiceType,
+    extra: Partial<Pick<TimelineEvent, 'amount' | 'liters' | 'station' | 'serviceCenter'>> = {}
+  ) => {
     if (!tempEventData || !user) return;
     
     let location = null;
@@ -676,6 +931,10 @@ export default function App() {
         createdAt: serverTimestamp(),
       };
       if (trimmedNotes) payload.notes = trimmedNotes.slice(0, 1000);
+      if (typeof extra.amount === 'number' && Number.isFinite(extra.amount)) payload.amount = extra.amount;
+      if (typeof extra.liters === 'number' && Number.isFinite(extra.liters)) payload.liters = extra.liters;
+      if (extra.station) payload.station = extra.station;
+      if (extra.serviceCenter) payload.serviceCenter = extra.serviceCenter;
       await addDoc(collection(db, 'events'), payload);
       
       const vehiclePatch: Record<string, unknown> = { updatedAt: serverTimestamp() };
@@ -693,6 +952,8 @@ export default function App() {
       setActivePage('dashboard');
       setTempEventData(null);
       setEventNotes('');
+      setFuelForm({ amount: '', liters: '', station: '' });
+      setServiceForm({ center: '' });
     } catch (err) {
       console.error(err);
       toast.error(t('service.save_failed'));
@@ -701,14 +962,112 @@ export default function App() {
 
   if (loading) return null;
 
+  if (showSplash) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-ink text-white">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.92 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <img src="/logo.svg" alt="MOTR" className="mx-auto h-20 w-auto" />
+          <p className="mt-4 text-sm font-semibold text-white/60">
+            {lang === 'ar' ? 'صيانة سيارتك، ببساطة.' : 'Car maintenance, simplified.'}
+          </p>
+        </motion.div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-bg-dark text-ink selection:bg-brand/30 overflow-x-hidden pb-32">
+    <div className="min-h-screen bg-bg-dark text-ink selection:bg-brand/30 overflow-x-hidden pb-28">
       <Toaster position="top-center" />
       <InstallPrompt />
 
       {/* Pages */}
-      <main className="max-w-md mx-auto px-6 pt-12">
+      <main className="mx-auto min-h-screen w-full max-w-[430px] px-4 pt-12">
         <AnimatePresence mode="wait">
+          {activePage === 'onboarding' && (
+            <motion.div
+              key="onboarding"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="flex min-h-[calc(100vh-8rem)] flex-col justify-between"
+            >
+              <div className="pt-8">
+                <div className="relative mx-auto mb-10 h-72 w-full overflow-hidden rounded-[32px] bg-[#DCEAF3]">
+                  <div className="absolute inset-x-0 top-[56%] h-7 bg-brand" />
+                  <div className="absolute inset-0 flex items-end justify-center pb-8">
+                    <VehicleArt />
+                  </div>
+                </div>
+                <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
+                  {lang === 'ar' ? 'كل شيء يخص سيارتك في مكان واحد.' : 'Everything your car needs. One app.'}
+                </h1>
+                <p className="mt-4 text-base font-medium leading-8 text-[#4A6378]">
+                  {lang === 'ar'
+                    ? 'صوّر العداد، سجّل الوقود والصيانة، واحصل على تنبيهات قبل الموعد.'
+                    : 'Snap the odometer, log fuel and services, and get reminders before they are due.'}
+                </p>
+              </div>
+              <div className="space-y-3 pb-4">
+                <button
+                  onClick={finishOnboarding}
+                  className="w-full rounded-2xl bg-brand px-5 py-4 text-base font-bold text-white shadow-lg shadow-brand/20"
+                >
+                  {lang === 'ar' ? 'ابدأ الآن' : 'Get started'}
+                </button>
+                <button
+                  onClick={() => setActivePage('add-car')}
+                  className="w-full rounded-2xl border border-[#E1EAF1] bg-white px-5 py-4 text-base font-bold text-ink"
+                >
+                  {lang === 'ar' ? 'أضف سيارة مباشرة' : 'Add a car first'}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {activePage === 'add-car' && (
+            <motion.div
+              key="add-car"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="space-y-5"
+            >
+              <AppTop
+                title={lang === 'ar' ? 'إضافة سيارة' : 'Add car'}
+                sub={lang === 'ar' ? 'بيانات السيارة' : 'Car details'}
+                trailing={
+                  <button onClick={() => setActivePage(hasSeenOnboarding ? 'dashboard' : 'onboarding')} className="rounded-full bg-white p-3 text-[#4A6378]">
+                    <ChevronLeft className="h-5 w-5" />
+                  </button>
+                }
+              />
+              <div className="rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
+                <div className="mb-5 flex h-36 items-end justify-center overflow-hidden rounded-2xl bg-[#DCEAF3]">
+                  <VehicleArt />
+                </div>
+                <div className="space-y-3">
+                  <DesignField label={lang === 'ar' ? 'اسم السيارة' : 'Car name'} value={addCarForm.name} onChange={(v) => updateAddCarForm('name', v)} placeholder="Toyota Camry" />
+                  <div className="grid grid-cols-2 gap-3">
+                    <DesignField label={t('reports.make')} value={addCarForm.make} onChange={(v) => updateAddCarForm('make', v)} />
+                    <DesignField label={t('reports.model')} value={addCarForm.model} onChange={(v) => updateAddCarForm('model', v)} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <DesignField label={t('reports.year')} value={addCarForm.year} onChange={(v) => updateAddCarForm('year', v)} type="number" />
+                    <DesignField label={t('reports.color')} value={addCarForm.color} onChange={(v) => updateAddCarForm('color', v)} />
+                  </div>
+                  <DesignField label={t('common.mileage')} value={addCarForm.mileage} onChange={(v) => updateAddCarForm('mileage', v)} type="number" placeholder="212450" />
+                </div>
+              </div>
+              <button onClick={createVehicleFromForm} className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20">
+                {t('common.save')}
+              </button>
+            </motion.div>
+          )}
+
           {activePage === 'dashboard' && (
             <motion.div 
               key="dashboard"
@@ -717,13 +1076,14 @@ export default function App() {
               exit={{ opacity: 0, x: 20 }}
               className="space-y-6"
             >
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-3">
-                  <img
-                    src="/motr2.svg"
-                    alt="MOTR"
-                    className="h-12 w-auto drop-shadow-md"
-                  />
+              <div className="flex justify-between items-center mb-2">
+                <div>
+                  <p className="text-xs font-semibold text-[#4A6378]">
+                    {new Date().toLocaleDateString(dateLocale, { weekday: 'long', day: 'numeric', month: 'long' })}
+                  </p>
+                  <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink">
+                    {user?.displayName ? `${lang === 'ar' ? 'مرحباً، ' : 'Hi, '}${user.displayName.split(' ')[0]}` : t('profile.welcome')}
+                  </h1>
                 </div>
                 <div className="flex items-center gap-2">
                   {vehicles.length > 1 && (
@@ -738,10 +1098,10 @@ export default function App() {
                   <LanguageToggle />
                   <button
                     onClick={() => fileInputRef.current?.click()}
-                    className="w-10 h-10 glass-dark rounded-full flex items-center justify-center hover:bg-black/10 transition-colors shadow-lg"
+                    className="w-10 h-10 rounded-full bg-brand text-white flex items-center justify-center hover:brightness-95 transition-colors shadow-lg shadow-brand/20"
                     aria-label={t('dashboard.update_odometer')}
                   >
-                    <Plus className="w-5 h-5 text-brand" />
+                    <Plus className="w-5 h-5" />
                   </button>
                   {user?.photoURL && <img src={user.photoURL} className="w-8 h-8 rounded-full border border-black/10" />}
                 </div>
@@ -765,14 +1125,16 @@ export default function App() {
                   {selectedVehicle && (
                     <div className="space-y-3">
                       {/* 1. Identity card */}
-                      <div className="bg-white/85 backdrop-blur rounded-[32px] p-7 border border-black/5 shadow-sm">
-                        <div className="flex justify-between items-start gap-3 mb-2">
+                      <div className="relative overflow-hidden rounded-[28px] bg-ink p-5 text-white shadow-[0_18px_38px_rgba(14,34,51,0.18)]">
+                        <div className="absolute inset-x-0 top-[58%] h-6 bg-brand" />
+                        <div className="relative flex justify-between items-start gap-3 mb-2">
                           <div className="min-w-0">
-                            <h3 className="text-3xl sm:text-4xl font-bold tracking-tight leading-[1.1] break-words">
+                            <p className="text-[10px] font-bold uppercase tracking-normal text-white/50">{lang === 'ar' ? 'السيارة الحالية' : 'Current car'}</p>
+                            <h3 className="mt-1 text-xl font-bold tracking-tight leading-[1.1] break-words">
                               {selectedVehicle.name}
                             </h3>
                             {selectedVehicle.model && (
-                              <p className="text-lg font-semibold text-black/40 mt-1">
+                              <p className="text-sm font-semibold text-white/50 mt-1">
                                 {selectedVehicle.model}
                               </p>
                             )}
@@ -780,38 +1142,38 @@ export default function App() {
                           <div className="flex items-center gap-2 shrink-0">
                             <button
                               onClick={() => setShowSettings(true)}
-                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors"
+                              className="bg-white/15 p-2.5 rounded-full hover:bg-white/25 transition-colors"
                               aria-label={t('common.settings')}
                             >
-                              <SettingsIcon className="w-5 h-5 text-ink" />
+                              <SettingsIcon className="w-5 h-5 text-white" />
                             </button>
                             <button
                               onClick={() => runReport(selectedVehicle)}
                               disabled={reportBusy}
-                              className="bg-black/5 border border-black/10 p-2.5 rounded-full hover:bg-black/10 transition-colors disabled:opacity-50"
+                              className="bg-white/15 p-2.5 rounded-full hover:bg-white/25 transition-colors disabled:opacity-50"
                               aria-label={t('reports.title')}
                             >
-                              <Share2 className="w-5 h-5 text-brand" />
+                              <Share2 className="w-5 h-5 text-white" />
                             </button>
                           </div>
                         </div>
 
                         {(selectedVehicle.year || selectedVehicle.make || selectedVehicle.color) && (
-                          <div className="flex flex-wrap gap-x-5 gap-y-2 mt-6 pt-5 border-t border-black/5">
+                          <div className="relative flex flex-wrap gap-x-4 gap-y-2 mt-5 pt-4 border-t border-white/10">
                             {selectedVehicle.year && (
-                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
                                 <Calendar className="w-4 h-4" />
                                 {selectedVehicle.year}
                               </span>
                             )}
                             {selectedVehicle.make && (
-                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
                                 <Car className="w-4 h-4" />
                                 {selectedVehicle.make}
                               </span>
                             )}
                             {selectedVehicle.color && (
-                              <span className="flex items-center gap-1.5 text-sm font-semibold text-black/70">
+                              <span className="flex items-center gap-1.5 text-xs font-semibold text-white/75">
                                 <Palette className="w-4 h-4" />
                                 {selectedVehicle.color}
                               </span>
@@ -861,6 +1223,13 @@ export default function App() {
                                 selectedVehicle.currentMileage
                             )}
                           </span>
+                        </div>
+                        <div className="relative mt-8">
+                          <p className="text-[10px] font-bold uppercase tracking-normal text-white/50">{t('common.mileage')}</p>
+                          <div className="mt-2 flex items-end justify-between gap-3">
+                            <BigNum value={formatMileage(selectedVehicle.currentMileage).replace(' KM', '')} unit={t('common.km_unit')} size="text-4xl" color="text-white" />
+                            <CarPlate size="sm" />
+                          </div>
                         </div>
                       </div>
 
@@ -1092,26 +1461,14 @@ export default function App() {
                   <div className="py-20 text-center text-black/20">{t('timeline.empty')}</div>
                 ) : (
                   events.map((event, i) => (
-                    <div key={event.id} className="relative ps-8 pb-8 last:pb-0">
-                      {i !== events.length - 1 && <div className="absolute start-4 top-8 bottom-0 w-[1px] bg-black/10" />}
-                      <div className={cn(
-                        "absolute start-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark",
-                        event.type === ServiceType.FUEL ? "bg-brand" : "bg-success"
-                      )} />
-                      <div className="glass-dark p-6 rounded-[28px] space-y-3">
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                             {event.type === ServiceType.FUEL ? <Fuel className="w-4 h-4 text-brand" /> : <Droplets className="w-4 h-4 text-success" />}
-                             <span className="font-bold">{serviceLabel(event.type)}</span>
-                          </div>
-                          <span className="text-xs text-black/40">{new Date(event.date).toLocaleDateString(dateLocale)}</span>
-                        </div>
-                        <div className="flex justify-between">
-                          <p className="text-lg font-bold">{formatMileage(event.mileage)}</p>
-                          <p className="text-black/40 text-sm">{event.notes || ''}</p>
-                        </div>
-                      </div>
-                    </div>
+                    <TimelineEventRow
+                      key={event.id}
+                      event={event}
+                      isLast={i === events.length - 1}
+                      serviceLabel={serviceLabel}
+                      dateLocale={dateLocale}
+                      onDelete={handleDeleteEvent}
+                    />
                   ))
                 )}
               </div>
@@ -1203,6 +1560,103 @@ export default function App() {
             </motion.div>
           )}
 
+          {activePage === 'ocr-result' && (
+            <motion.div
+              key="ocr-result"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="space-y-6 pt-8"
+            >
+              <AppTop title={lang === 'ar' ? 'تمت قراءة العداد' : 'Odometer scanned'} sub={t('camera.detected', { value: '' }).trim()} />
+              <div className="rounded-[32px] border border-[#E1EAF1] bg-white p-7 text-center shadow-sm">
+                <div className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
+                  <CheckCircle2 className="h-10 w-10" />
+                </div>
+                <BigNum value={formatMileage(tempEventData?.mileage || 0).replace(' KM', '')} unit={t('common.km_unit')} size="text-5xl" />
+                <p className="mt-4 text-sm font-medium leading-7 text-[#4A6378]">
+                  {lang === 'ar' ? 'راجع الرقم ثم اختر العملية التي تريد تسجيلها.' : 'Review the number, then choose what you want to log.'}
+                </p>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <button onClick={() => fileInputRef.current?.click()} className="rounded-2xl border border-[#E1EAF1] bg-white px-4 py-4 font-bold text-ink">
+                  {lang === 'ar' ? 'إعادة التصوير' : 'Retake'}
+                </button>
+                <button onClick={() => setActivePage('service-select')} className="rounded-2xl bg-brand px-4 py-4 font-bold text-white shadow-lg shadow-brand/20">
+                  {lang === 'ar' ? 'تأكيد' : 'Confirm'}
+                </button>
+              </div>
+            </motion.div>
+          )}
+
+          {activePage === 'log-fuel' && (
+            <motion.div
+              key="log-fuel"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="space-y-5"
+            >
+              <AppTop title={t('service.fuel')} sub={t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })} />
+              <div className="space-y-3 rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
+                <DesignField label={lang === 'ar' ? 'المبلغ' : 'Amount'} value={fuelForm.amount} onChange={(v) => updateFuelForm('amount', v)} type="number" placeholder="52" />
+                <DesignField label={lang === 'ar' ? 'اللترات' : 'Liters'} value={fuelForm.liters} onChange={(v) => updateFuelForm('liters', v)} type="number" placeholder="40" />
+                <DesignField label={lang === 'ar' ? 'المحطة' : 'Station'} value={fuelForm.station} onChange={(v) => updateFuelForm('station', v)} placeholder={lang === 'ar' ? 'محطة أرامكو' : 'Aramco station'} />
+                <label className="block rounded-2xl border border-[#E1EAF1] bg-white px-4 py-3">
+                  <span className="block text-[10px] font-bold uppercase tracking-normal text-[#4A6378]">{t('service.notes')}</span>
+                  <textarea
+                    value={eventNotes}
+                    onChange={(e) => setEventNotes(e.target.value)}
+                    rows={3}
+                    className="mt-2 w-full resize-none bg-transparent text-sm font-medium outline-none placeholder:text-[#7B92A6]"
+                    placeholder={t('service.notes_placeholder')}
+                  />
+                </label>
+              </div>
+              <button
+                onClick={() => saveEvent(ServiceType.FUEL, {
+                  amount: Number(fuelForm.amount),
+                  liters: Number(fuelForm.liters),
+                  station: fuelForm.station.trim(),
+                })}
+                className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20"
+              >
+                {t('common.save')}
+              </button>
+            </motion.div>
+          )}
+
+          {activePage === 'log-service' && (
+            <motion.div
+              key="log-service"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="space-y-5"
+            >
+              <AppTop title={t('service.maintenance')} sub={t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })} />
+              <div className="space-y-3 rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
+                <DesignField label={lang === 'ar' ? 'مركز الخدمة' : 'Service center'} value={serviceForm.center} onChange={(v) => updateServiceForm('center', v)} />
+                <label className="block rounded-2xl border border-[#E1EAF1] bg-white px-4 py-3">
+                  <span className="block text-[10px] font-bold uppercase tracking-normal text-[#4A6378]">{t('service.notes')}</span>
+                  <textarea
+                    value={eventNotes}
+                    onChange={(e) => setEventNotes(e.target.value)}
+                    rows={4}
+                    className="mt-2 w-full resize-none bg-transparent text-sm font-medium outline-none placeholder:text-[#7B92A6]"
+                    placeholder={t('service.notes_placeholder')}
+                  />
+                </label>
+              </div>
+              <button
+                onClick={() => saveEvent(ServiceType.MAINTENANCE, { serviceCenter: serviceForm.center.trim() })}
+                className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20"
+              >
+                {t('common.save')}
+              </button>
+            </motion.div>
+          )}
+
           {activePage === 'service-select' && (
             <motion.div 
               key="service-select"
@@ -1227,7 +1681,11 @@ export default function App() {
                 ].map((s) => (
                   <button
                     key={s.type}
-                    onClick={() => saveEvent(s.type)}
+                    onClick={() => {
+                      if (s.type === ServiceType.FUEL) setActivePage('log-fuel');
+                      else if (s.type === ServiceType.MAINTENANCE) setActivePage('log-service');
+                      else saveEvent(s.type);
+                    }}
                     className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-all active:scale-95 group hover:border-brand/40"
                   >
                     <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", s.bg)}>
@@ -1271,7 +1729,9 @@ export default function App() {
         onChange={handleCapture}
       />
 
-      <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />
+      {!['onboarding', 'add-car', 'ocr-result', 'log-fuel', 'log-service', 'service-select'].includes(activePage) && (
+        <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />
+      )}
 
       <AnimatePresence>
         {showSettings && selectedVehicle && (
