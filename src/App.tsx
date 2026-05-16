@@ -1322,6 +1322,24 @@ export default function App() {
     const unsub = onAuthStateChanged(auth, (u) => {
       setUser(u);
       setLoading(false);
+      if (u) {
+        (async () => {
+          try {
+            const userRef = doc(db, 'users', u.uid);
+            const snap = await getDoc(userRef);
+            if (!snap.exists()) {
+              await setDoc(userRef, {
+                email: u.email ?? '',
+                displayName: u.displayName ?? '',
+                createdAt: serverTimestamp(),
+              });
+              await setDoc(doc(db, 'stats', 'public'), { userCount: increment(1) }, { merge: true });
+            }
+          } catch (err) {
+            console.warn('user count backfill failed', err);
+          }
+        })();
+      }
     });
     return unsub;
   }, []);
@@ -1390,22 +1408,8 @@ export default function App() {
   const handleSignIn = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      const result = await signInWithPopup(auth, provider);
-      const u = result.user;
-      try {
-        const userRef = doc(db, 'users', u.uid);
-        const snap = await getDoc(userRef);
-        if (!snap.exists()) {
-          await setDoc(userRef, {
-            email: u.email ?? '',
-            displayName: u.displayName ?? '',
-            createdAt: serverTimestamp(),
-          });
-          await setDoc(doc(db, 'stats', 'public'), { userCount: increment(1) }, { merge: true });
-        }
-      } catch (statsErr) {
-        console.warn('user count tracking failed', statsErr);
-      }
+      await signInWithPopup(auth, provider);
+      // user-doc + counter increment are handled inside onAuthStateChanged
       toast.success(t('profile.welcome'));
     } catch (err) {
       console.error(err);
