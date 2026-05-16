@@ -34,7 +34,7 @@ import {
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
 import { onAuthStateChanged, signInWithPopup, GoogleAuthProvider, signOut, User } from 'firebase/auth';
-import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDocs, deleteDoc, writeBatch } from 'firebase/firestore';
+import { collection, query, where, onSnapshot, addDoc, serverTimestamp, updateDoc, doc, getDoc, setDoc, getDocs, deleteDoc, writeBatch, increment } from 'firebase/firestore';
 import { formatDistanceToNow } from 'date-fns';
 import { ar as arLocale, enUS as enLocale } from 'date-fns/locale';
 import { cn, formatMileage, calculateOilLife } from './lib/utils';
@@ -1390,7 +1390,22 @@ export default function App() {
   const handleSignIn = async () => {
     try {
       const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
+      const result = await signInWithPopup(auth, provider);
+      const u = result.user;
+      try {
+        const userRef = doc(db, 'users', u.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          await setDoc(userRef, {
+            email: u.email ?? '',
+            displayName: u.displayName ?? '',
+            createdAt: serverTimestamp(),
+          });
+          await setDoc(doc(db, 'stats', 'public'), { userCount: increment(1) }, { merge: true });
+        }
+      } catch (statsErr) {
+        console.warn('user count tracking failed', statsErr);
+      }
       toast.success(t('profile.welcome'));
     } catch (err) {
       console.error(err);

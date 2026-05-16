@@ -60,11 +60,24 @@ service cloud.firestore {
     // Collections
     match /users/{userId} {
       allow get: if isOwner(userId);
-      allow create: if isOwner(userId) 
+      allow create: if isOwner(userId)
         && incoming().keys().hasAll(['email', 'displayName', 'createdAt'])
         && incoming().email is string && incoming().email.size() <= 255;
       allow update: if isOwner(userId)
         && incoming().diff(existing()).affectedKeys().hasOnly(['displayName']);
+    }
+
+    // Public stats (e.g., site-wide user count). Anyone can read; only
+    // signed-in users can create or increment userCount by exactly 1.
+    match /stats/public {
+      allow read: if true;
+      allow create: if isSignedIn()
+        && incoming().keys().hasOnly(['userCount'])
+        && incoming().userCount is number && incoming().userCount == 1;
+      allow update: if isSignedIn()
+        && incoming().diff(existing()).affectedKeys().hasOnly(['userCount'])
+        && incoming().userCount is number
+        && incoming().userCount == existing().userCount + 1;
     }
 
     match /vehicles/{vehicleId} {

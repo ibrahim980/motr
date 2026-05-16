@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -197,6 +197,40 @@ function useLP() {
   return { lang: lang as Lang, setLang, c };
 }
 
+function formatUserCount(n: number, lang: Lang): string {
+  if (n < 1) return lang === 'ar' ? 'كن الأول' : 'Be first';
+  if (n < 100) return n.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US');
+  if (n < 1000) return `${Math.floor(n / 10) * 10}+`;
+  const k = n / 1000;
+  return `${k.toFixed(k < 10 ? 1 : 0)}K+`;
+}
+
+function useUserCount(): number | null {
+  const [count, setCount] = useState<number | null>(null);
+  useEffect(() => {
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
+    if (!projectId) return;
+    const databaseId = (import.meta.env.VITE_FIREBASE_DATABASE_ID as string | undefined) || '(default)';
+    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/stats/public`;
+    let cancelled = false;
+    fetch(url)
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return;
+        const value = data?.fields?.userCount?.integerValue ?? data?.fields?.userCount?.stringValue ?? '0';
+        const parsed = parseInt(value, 10);
+        setCount(Number.isFinite(parsed) ? parsed : 0);
+      })
+      .catch(() => {
+        if (!cancelled) setCount(0);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  return count;
+}
+
 function Pill({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
     <span
@@ -254,7 +288,7 @@ function Header() {
     <header className="sticky top-0 z-30 w-full bg-[#B6CDDB]/80 backdrop-blur-md">
       <div className="mx-auto flex h-16 max-w-[1280px] items-center justify-between gap-4 px-6">
         <a href="/" className="flex items-center gap-2 shrink-0">
-          <img src="/logo.svg" alt="MOTR" className="h-7 w-auto" />
+          <img src="/logo.svg" alt="MOTR" className="h-[2.1rem] w-auto" />
         </a>
         <nav className="hidden md:flex items-center gap-6 text-sm font-bold text-ink/80">
           <a href="#features" className="hover:text-ink transition">
@@ -440,7 +474,7 @@ function HeroSection() {
           <HeroPhoneMockup />
         </div>
         {/* Text */}
-        <div className="order-2 md:order-1 text-center md:text-end">
+        <div className="order-2 md:order-1 text-center md:text-start">
           <Pill>
             <Sparkles className="w-3 h-3 text-brand" />
             <span>{c.hero.pill}</span>
@@ -452,16 +486,16 @@ function HeroSection() {
               <span className="text-brand">.</span>
             </span>
           </h1>
-          <p className="mt-5 text-base md:text-lg leading-relaxed text-ink/75 max-w-xl md:ms-auto">
+          <p className="mt-5 text-base md:text-lg leading-relaxed text-ink/75 max-w-xl md:me-auto">
             {c.hero.sub}
           </p>
-          <div className="mt-7 flex flex-wrap items-center gap-3 md:justify-end justify-center">
+          <div className="mt-7 flex flex-wrap items-center gap-3 md:justify-start justify-center">
             <ChevronCta href="/app" primary>
               {c.hero.ctaOpen}
             </ChevronCta>
             <AddDesktopCta>{c.hero.ctaAdd}</AddDesktopCta>
           </div>
-          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 md:justify-end justify-center text-sm text-ink/70 font-medium">
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 md:justify-start justify-center text-sm text-ink/70 font-medium">
             {c.hero.bullets.map((b) => (
               <span key={b} className="inline-flex items-center gap-1.5">
                 <CheckCircle2 className="w-4 h-4 text-success" />
@@ -476,11 +510,21 @@ function HeroSection() {
 }
 
 function StatsStrip() {
-  const { c } = useLP();
+  const { c, lang } = useLP();
+  const userCount = useUserCount();
+  const items = c.stats.map((s, i) => {
+    if (i === 2) {
+      return {
+        ...s,
+        value: userCount == null ? '—' : formatUserCount(userCount, lang),
+      };
+    }
+    return s;
+  });
   return (
     <section className="bg-white">
       <div className="mx-auto max-w-[1280px] px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-        {c.stats.map((s) => (
+        {items.map((s) => (
           <div key={s.label} className="space-y-1">
             <p className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink tabular">
               {s.value}
@@ -578,7 +622,7 @@ function FeaturesSection() {
   const f = c.features.cards;
   return (
     <section id="features" className="mx-auto max-w-[1280px] px-6 py-20">
-      <div className="text-end max-w-2xl ms-auto">
+      <div className="text-start max-w-2xl me-auto">
         <p className="text-sm font-bold text-brand">{c.features.eyebrow}</p>
         <h2 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-ink leading-tight">
           <span className="block">{c.features.h1Pre}</span>
@@ -762,7 +806,7 @@ function HowItWorksSection() {
   return (
     <section id="how" className="bg-[#B6CDDB]">
       <div className="mx-auto max-w-[1280px] px-6 py-20">
-        <div className="text-end max-w-2xl ms-auto">
+        <div className="text-start max-w-2xl me-auto">
           <p className="text-sm font-bold text-brand">{c.how.eyebrow}</p>
           <h2 className="mt-3 text-4xl md:text-5xl font-extrabold tracking-tight text-ink leading-tight">
             {c.how.h1}
@@ -774,7 +818,7 @@ function HowItWorksSection() {
           {c.how.steps.map((s, i) => {
             const kind = (['vehicles', 'capture', 'welcome'] as const)[i];
             return (
-              <div key={s.n} className="text-end space-y-5">
+              <div key={s.n} className="text-start space-y-5">
                 <div className="rounded-[28px] bg-white p-6 shadow-[0_8px_24px_rgba(14,34,51,0.06)]">
                   <StepPhone kind={kind} />
                 </div>
@@ -821,7 +865,11 @@ function Footer() {
   return (
     <footer className="bg-[#B6CDDB]">
       <div className="mx-auto max-w-[1280px] px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
-        <div className="flex md:items-center gap-6">
+        <div className="text-start">
+          <img src="/logo.svg" alt="MOTR" className="h-[2.1rem] w-auto" />
+          <p className="mt-3 text-sm text-ink/65 max-w-md">{c.footer.tag}</p>
+        </div>
+        <div className="flex md:items-center md:justify-end gap-6">
           <a href="#" className="text-sm font-bold text-ink/70 hover:text-ink transition">
             {c.footer.links.contact}
           </a>
@@ -832,12 +880,8 @@ function Footer() {
             {c.footer.links.privacy}
           </a>
         </div>
-        <div className="text-end">
-          <img src="/logo.svg" alt="MOTR" className="h-7 w-auto md:ms-auto" />
-          <p className="mt-3 text-sm text-ink/65 max-w-md md:ms-auto">{c.footer.tag}</p>
-        </div>
       </div>
-      <div className="mx-auto max-w-[1280px] px-6 pb-8 text-end text-xs text-ink/50">
+      <div className="mx-auto max-w-[1280px] px-6 pb-8 text-start text-xs text-ink/50">
         {c.footer.copy}
       </div>
     </footer>
