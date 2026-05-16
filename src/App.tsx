@@ -2748,22 +2748,10 @@ export default function App() {
                 <span className="w-9" />
               </div>
 
-              <div className="relative mt-8 flex justify-center gap-2">
-                {[
-                  { k: 'odometer', label: t('capture.mode_odometer'), active: true },
-                  { k: 'receipt', label: t('capture.mode_receipt') },
-                  { k: 'tire', label: t('capture.mode_tire') },
-                ].map((m) => (
-                  <span
-                    key={m.k}
-                    className={cn(
-                      'px-3 py-1.5 rounded-full text-xs font-semibold',
-                      m.active ? 'bg-white text-ink' : 'bg-white/15 text-white',
-                    )}
-                  >
-                    {m.label}
-                  </span>
-                ))}
+              <div className="relative mt-8 flex justify-center">
+                <span className="px-3 py-1.5 rounded-full text-xs font-semibold bg-white text-ink">
+                  {t('capture.mode_odometer')}
+                </span>
               </div>
 
               <div className="relative mt-14 mx-10 h-32 rounded-2xl">
