@@ -25,7 +25,9 @@ import {
   Settings as SettingsIcon,
   Trash2,
   TrendingUp,
-  TrendingDown
+  TrendingDown,
+  X,
+  ArrowLeft
 } from 'lucide-react';
 import { Toaster, toast } from 'react-hot-toast';
 import { auth, db } from './lib/firebase';
@@ -1074,14 +1076,21 @@ export default function App() {
     const id = window.setTimeout(() => {
       localStorage.setItem('motr-splash-seen', '1');
       setShowSplash(false);
-    }, 1100);
+      if (!user) {
+        setActivePage('signin');
+      } else if (!hasSeenOnboarding) {
+        setActivePage('onboarding');
+      } else {
+        setActivePage('dashboard');
+      }
+    }, 1600);
     return () => window.clearTimeout(id);
-  }, [showSplash]);
+  }, [showSplash, user, hasSeenOnboarding]);
 
   const finishOnboarding = () => {
     localStorage.setItem('motr-onboarding-done', '1');
     setHasSeenOnboarding(true);
-    setActivePage('dashboard');
+    setActivePage('add-car');
   };
 
   const updateAddCarForm = (key: keyof typeof addCarForm, value: string) => {
@@ -1493,17 +1502,25 @@ export default function App() {
 
   if (showSplash) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-ink text-white">
+      <div className="relative flex min-h-screen items-center justify-center bg-brand text-white overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="absolute inset-x-0 top-1/2 -translate-y-1/2 h-20 bg-ink/10 pointer-events-none"
+        />
         <motion.div
           initial={{ opacity: 0, scale: 0.92 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="text-center"
+          className="relative text-center px-10"
         >
-          <img src="/logo.svg" alt="MOTR" className="mx-auto h-20 w-auto" />
-          <p className="mt-4 text-sm font-semibold text-white/60">
-            {lang === 'ar' ? 'صيانة سيارتك، ببساطة.' : 'Car maintenance, simplified.'}
+          <img src="/logo.svg" alt="MOTR" className="mx-auto h-24 w-auto" />
+          <p className="mt-7 text-base font-medium tracking-wide text-white/90">
+            {t('splash.tagline')}
           </p>
         </motion.div>
+        <p className="absolute bottom-16 inset-x-0 text-center text-[11px] font-semibold tracking-[0.15em] text-white/55">
+          {t('splash.version')}
+        </p>
+        <div className="absolute inset-x-0 bottom-0 h-1.5 bg-ink" />
       </div>
     );
   }
@@ -1516,42 +1533,120 @@ export default function App() {
       {/* Pages */}
       <main className="mx-auto min-h-screen w-full max-w-[430px] px-4 pt-12">
         <AnimatePresence mode="wait">
+          {activePage === 'signin' && (
+            <motion.div
+              key="signin"
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -24 }}
+              className="relative -mx-4 -mt-12 min-h-screen bg-white"
+            >
+              <div className="absolute inset-x-0 top-[38%] h-24 bg-brand/95 pointer-events-none" />
+
+              <div className="relative flex flex-col items-center pt-14">
+                <img src="/logo.svg" alt="MOTR" className="h-10 w-auto" />
+              </div>
+
+              <div className="relative px-8 pt-9 text-center">
+                <h1 className="text-2xl font-extrabold tracking-tight text-ink leading-tight">
+                  {t('signin.title')}
+                </h1>
+                <p className="mt-3 text-sm leading-relaxed text-[#4A6378] max-w-[280px] mx-auto">
+                  {t('signin.subtitle')}
+                </p>
+              </div>
+
+              <div className="absolute inset-x-5 bottom-9 rounded-3xl bg-white border border-[#E1EAF1] p-4 shadow-[0_12px_30px_rgba(14,34,51,0.08)] space-y-3">
+                <button
+                  onClick={handleSignIn}
+                  dir="ltr"
+                  className="w-full flex items-center justify-center gap-3 rounded-2xl bg-white border border-[#E1EAF1] px-5 py-3.5 text-sm font-semibold text-ink hover:bg-[#F4F7F9] transition"
+                >
+                  <svg width="20" height="20" viewBox="0 0 48 48">
+                    <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+                    <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+                    <path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+                    <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+                  </svg>
+                  <span>{t('signin.with_google')}</span>
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  dir="ltr"
+                  className="w-full flex items-center justify-center gap-3 rounded-2xl bg-ink border-0 px-5 py-3.5 text-sm font-semibold text-white opacity-90 cursor-not-allowed"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="white">
+                    <path d="M17.05 12.04c.02-2.3 1.88-3.4 1.96-3.45-1.07-1.56-2.73-1.78-3.32-1.8-1.41-.14-2.76.83-3.48.83-.72 0-1.83-.81-3.01-.79-1.55.02-2.98.9-3.78 2.29-1.61 2.8-.41 6.93 1.16 9.2.77 1.11 1.69 2.36 2.9 2.31 1.16-.05 1.6-.75 3.01-.75 1.4 0 1.8.75 3.03.73 1.25-.02 2.04-1.13 2.81-2.24.88-1.29 1.25-2.54 1.27-2.6-.03-.01-2.43-.93-2.45-3.7Z M14.5 5.32c.64-.78 1.07-1.86.95-2.94-.92.04-2.04.61-2.7 1.38-.59.68-1.11 1.78-.97 2.83 1.03.08 2.08-.52 2.72-1.27Z"/>
+                  </svg>
+                  <span>{t('signin.with_apple')}</span>
+                </button>
+                <p className="text-[11px] leading-relaxed text-[#7B92A6] text-center px-2">
+                  {t('signin.terms_pre')}{' '}
+                  <span className="text-ink font-semibold">{t('signin.terms')}</span>
+                  {' '}{t('signin.terms_mid')}{' '}
+                  <span className="text-ink font-semibold">{t('signin.privacy')}</span>.
+                </p>
+              </div>
+            </motion.div>
+          )}
+
           {activePage === 'onboarding' && (
             <motion.div
               key="onboarding"
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
-              className="flex min-h-[calc(100vh-8rem)] flex-col justify-between"
+              className="relative -mx-4 -mt-12 min-h-screen bg-white pt-14 pb-32 overflow-hidden"
             >
-              <div className="pt-8">
-                <div className="relative mx-auto mb-10 h-72 w-full overflow-hidden rounded-[32px] bg-[#DCEAF3]">
-                  <div className="absolute inset-x-0 top-[56%] h-7 bg-brand" />
-                  <div className="absolute inset-0 flex items-end justify-center pb-8">
-                    <VehicleArt />
+              <button
+                onClick={finishOnboarding}
+                className="absolute top-14 start-5 z-10 text-sm font-semibold text-[#4A6378]"
+              >
+                {t('onboarding.skip')}
+              </button>
+
+              <div className="mx-5 mt-3 h-72 rounded-[32px] bg-[#DCEAF3] relative overflow-hidden">
+                <div className="absolute inset-x-[-20px] top-[52%] h-16 bg-brand -rotate-3" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="relative w-44 h-60 bg-white rounded-3xl border border-[#E1EAF1] shadow-[0_20px_40px_rgba(14,34,51,0.2)] -rotate-3 flex flex-col items-center justify-center">
+                    <div className="font-mono text-[32px] font-extrabold text-brand tracking-wider">212,450</div>
+                    <div className="mt-1.5 text-[11px] text-[#4A6378]">OCR · 2.1s</div>
+                    {[
+                      'top-3.5 start-3.5 border-t-2 border-s-2 rounded-tl-lg',
+                      'top-3.5 end-3.5 border-t-2 border-e-2 rounded-tr-lg',
+                      'bottom-3.5 start-3.5 border-b-2 border-s-2 rounded-bl-lg',
+                      'bottom-3.5 end-3.5 border-b-2 border-e-2 rounded-br-lg',
+                    ].map((cls, i) => (
+                      <div key={i} className={cn('absolute w-3.5 h-3.5 border-brand', cls)} />
+                    ))}
                   </div>
                 </div>
-                <h1 className="text-4xl font-extrabold leading-tight tracking-tight">
-                  {lang === 'ar' ? 'كل شيء يخص سيارتك في مكان واحد.' : 'Everything your car needs. One app.'}
+                <span className="absolute top-5 end-5 bg-ink text-white px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider">
+                  {t('onboarding.feature_label')}
+                </span>
+              </div>
+
+              <div className="px-7 mt-8">
+                <h1 className="text-3xl font-extrabold tracking-tight leading-snug text-balance">
+                  {t('onboarding.h1')}
                 </h1>
-                <p className="mt-4 text-base font-medium leading-8 text-[#4A6378]">
-                  {lang === 'ar'
-                    ? 'صوّر العداد، سجّل الوقود والصيانة، واحصل على تنبيهات قبل الموعد.'
-                    : 'Snap the odometer, log fuel and services, and get reminders before they are due.'}
+                <p className="mt-3 text-[15px] leading-relaxed text-[#4A6378] text-pretty">
+                  {t('onboarding.desc')}
                 </p>
               </div>
-              <div className="space-y-3 pb-4">
+
+              <div className="absolute inset-x-6 bottom-8 space-y-3.5">
+                <div className="flex gap-1.5 justify-center">
+                  <span className="w-6 h-1.5 rounded-full bg-brand" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E1EAF1]" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#E1EAF1]" />
+                </div>
                 <button
                   onClick={finishOnboarding}
-                  className="w-full rounded-2xl bg-brand px-5 py-4 text-base font-bold text-white shadow-lg shadow-brand/20"
+                  className="w-full rounded-2xl bg-brand text-white px-5 py-4 text-[15px] font-bold tracking-tight shadow-[0_12px_28px_rgba(242,107,31,0.35)]"
                 >
-                  {lang === 'ar' ? 'ابدأ الآن' : 'Get started'}
-                </button>
-                <button
-                  onClick={() => setActivePage('add-car')}
-                  className="w-full rounded-2xl border border-[#E1EAF1] bg-white px-5 py-4 text-base font-bold text-ink"
-                >
-                  {lang === 'ar' ? 'أضف سيارة مباشرة' : 'Add a car first'}
+                  {t('onboarding.next')}
                 </button>
               </div>
             </motion.div>
@@ -1563,37 +1658,97 @@ export default function App() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
-              className="space-y-5"
+              className="-mx-4 -mt-12 min-h-screen bg-bg-dark pt-14 pb-28"
             >
-              <AppTop
-                title={lang === 'ar' ? 'إضافة سيارة' : 'Add car'}
-                sub={lang === 'ar' ? 'بيانات السيارة' : 'Car details'}
-                trailing={
-                  <button onClick={() => setActivePage(hasSeenOnboarding ? 'dashboard' : 'onboarding')} className="rounded-full bg-white p-3 text-[#4A6378]">
-                    <ChevronLeft className="h-5 w-5" />
-                  </button>
-                }
-              />
-              <div className="rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
-                <div className="mb-5 flex h-36 items-end justify-center overflow-hidden rounded-2xl bg-[#DCEAF3]">
-                  <VehicleArt />
+              <div className="px-5 pb-3 flex items-start justify-between gap-3">
+                <button
+                  onClick={() => setActivePage(hasSeenOnboarding ? 'dashboard' : 'onboarding')}
+                  className="w-9 h-9 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                  aria-label="close"
+                >
+                  <X className="w-4 h-4 text-ink" />
+                </button>
+                <div className="flex-1 text-end min-w-0">
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4A6378]">{t('addcar.sub')}</p>
+                  <h1 className="mt-0.5 text-lg font-extrabold tracking-tight text-ink truncate">{t('addcar.title')}</h1>
                 </div>
-                <div className="space-y-3">
-                  <DesignField label={lang === 'ar' ? 'اسم السيارة' : 'Car name'} value={addCarForm.name} onChange={(v) => updateAddCarForm('name', v)} placeholder="Toyota Camry" />
-                  <div className="grid grid-cols-2 gap-3">
-                    <DesignField label={t('reports.make')} value={addCarForm.make} onChange={(v) => updateAddCarForm('make', v)} />
-                    <DesignField label={t('reports.model')} value={addCarForm.model} onChange={(v) => updateAddCarForm('model', v)} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <DesignField label={t('reports.year')} value={addCarForm.year} onChange={(v) => updateAddCarForm('year', v)} type="number" />
-                    <DesignField label={t('reports.color')} value={addCarForm.color} onChange={(v) => updateAddCarForm('color', v)} />
-                  </div>
-                  <DesignField label={t('common.mileage')} value={addCarForm.mileage} onChange={(v) => updateAddCarForm('mileage', v)} type="number" placeholder="212450" />
-                </div>
+                <button
+                  onClick={createVehicleFromForm}
+                  className="text-sm font-bold text-brand"
+                >
+                  {t('common.save')}
+                </button>
               </div>
-              <button onClick={createVehicleFromForm} className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20">
-                {t('common.save')}
-              </button>
+
+              <div className="px-5">
+                <div className="rounded-3xl bg-white border border-[#E1EAF1] p-4">
+                  <div className="relative h-32 rounded-2xl overflow-hidden flex items-end justify-center pb-1.5" style={{ background: 'linear-gradient(135deg, #DCEAF3, #FFE6D5)' }}>
+                    <svg width="170" height="80" viewBox="0 0 170 80">
+                      <path d="M14 56 Q24 36 56 32 L114 32 Q140 32 152 48 L156 56 Z" fill="#F26B1F"/>
+                      <path d="M60 32 L72 18 L100 18 L114 32 Z" fill="#F26B1F" opacity="0.7"/>
+                      <circle cx="44" cy="58" r="10" fill="#0E2233"/>
+                      <circle cx="44" cy="58" r="4" fill="white"/>
+                      <circle cx="128" cy="58" r="10" fill="#0E2233"/>
+                      <circle cx="128" cy="58" r="4" fill="white"/>
+                    </svg>
+                    <button className="absolute top-2.5 start-2.5 bg-white/85 backdrop-blur px-2.5 py-1.5 rounded-full text-[11px] font-semibold text-ink flex items-center gap-1.5">
+                      <Plus className="w-3 h-3" />
+                      <span>{t('addcar.change_color')}</span>
+                    </button>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('addcar.section_info')}</p>
+                  <div className="space-y-2">
+                    <DesignField label={t('reports.make')} value={addCarForm.make} onChange={(v) => updateAddCarForm('make', v)} placeholder="Toyota" />
+                    <DesignField label={t('reports.model')} value={addCarForm.model} onChange={(v) => updateAddCarForm('model', v)} placeholder="Camry" />
+                    <div className="grid grid-cols-2 gap-2">
+                      <DesignField label={t('reports.year')} value={addCarForm.year} onChange={(v) => updateAddCarForm('year', v)} type="number" placeholder="2022" />
+                      <DesignField label={t('common.mileage')} value={addCarForm.mileage} onChange={(v) => updateAddCarForm('mileage', v)} type="number" placeholder="212450" />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-5">
+                  <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('addcar.section_nickname')}</p>
+                  <DesignField label={t('reports.color')} value={addCarForm.name} onChange={(v) => updateAddCarForm('name', v)} placeholder={t('addcar.nickname_hint')} />
+                </div>
+
+                <div className="mt-5">
+                  <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('addcar.section_fuel')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {[
+                      { key: '95', label: t('addcar.fuel_95'), active: true },
+                      { key: '91', label: t('addcar.fuel_91') },
+                      { key: 'diesel', label: t('addcar.fuel_diesel') },
+                      { key: 'ev', label: t('addcar.fuel_ev') },
+                    ].map((c) => (
+                      <span
+                        key={c.key}
+                        className={cn(
+                          'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold',
+                          c.active ? 'bg-brand text-white' : 'bg-[#FFE6D5] text-brand',
+                        )}
+                      >
+                        {c.label}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="h-24" />
+              </div>
+
+              <div className="fixed bottom-6 inset-x-4 max-w-[430px] mx-auto px-1">
+                <button
+                  onClick={createVehicleFromForm}
+                  className="w-full rounded-2xl bg-brand text-white px-5 py-4 text-[15px] font-bold tracking-tight shadow-[0_12px_28px_rgba(242,107,31,0.35)] flex items-center justify-center gap-2"
+                >
+                  <span>{t('addcar.continue')}</span>
+                  <ArrowLeft className="w-4 h-4 -scale-x-100" />
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -2442,7 +2597,7 @@ export default function App() {
         onChange={handleCapture}
       />
 
-      {!['onboarding', 'add-car', 'ocr-result', 'log-fuel', 'log-service', 'service-select'].includes(activePage) && (
+      {!['signin', 'onboarding', 'add-car', 'ocr-result', 'log-fuel', 'log-service', 'service-select'].includes(activePage) && (
         <Navbar activePage={activePage} setActivePage={setActivePage} alertCount={alertCount} />
       )}
 
