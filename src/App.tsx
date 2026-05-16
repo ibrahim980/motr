@@ -1485,6 +1485,10 @@ export default function App() {
       
       const vehiclePatch: Record<string, unknown> = { updatedAt: serverTimestamp() };
       const nowIso = new Date().toISOString();
+      const vehicleNow = vehicles.find((v) => v.id === tempEventData.vehicleId);
+      if (Number.isFinite(tempEventData.mileage) && tempEventData.mileage > (vehicleNow?.currentMileage ?? 0)) {
+        vehiclePatch.currentMileage = tempEventData.mileage;
+      }
       if (type === ServiceType.OIL_CHANGE) vehiclePatch.lastOilChangeMileage = tempEventData.mileage;
       if (type === ServiceType.TIRES) vehiclePatch.lastTireChangeMileage = tempEventData.mileage;
       if (type === ServiceType.BATTERY) vehiclePatch.lastBatteryChangeDate = nowIso;
@@ -3253,7 +3257,33 @@ export default function App() {
                           { key: 'fuel', icon: Fuel, title: t('capture.act_fuel_title'), sub: t('capture.act_fuel_sub'), bg: 'bg-[#FFE6D5]', fg: 'text-brand', active: true, onClick: () => setActivePage('log-fuel') },
                           { key: 'oil', icon: Droplets, title: t('capture.act_oil_title'), sub: t('capture.act_oil_sub'), bg: 'bg-[#DCEAF3]', fg: 'text-[#1F3A8A]', onClick: () => { setServiceForm((s) => ({ ...s, subtype: 'oil' })); setActivePage('log-service'); } },
                           { key: 'service', icon: CheckCircle2, title: t('capture.act_service_title'), sub: t('capture.act_service_sub'), bg: 'bg-[#E2EFE3]', fg: 'text-success', onClick: () => { setServiceForm((s) => ({ ...s, subtype: 'check' })); setActivePage('log-service'); } },
-                          { key: 'reading', icon: History, title: t('capture.act_reading_title'), sub: t('capture.act_reading_sub'), bg: 'bg-white', fg: 'text-ink', onClick: () => setActivePage('dashboard') },
+                          {
+                            key: 'reading',
+                            icon: History,
+                            title: t('capture.act_reading_title'),
+                            sub: t('capture.act_reading_sub'),
+                            bg: 'bg-white',
+                            fg: 'text-ink',
+                            onClick: async () => {
+                              if (tempEventData && Number.isFinite(tempEventData.mileage)) {
+                                const vehicleNow = vehicles.find((v) => v.id === tempEventData.vehicleId);
+                                if (!vehicleNow || tempEventData.mileage > (vehicleNow.currentMileage ?? 0)) {
+                                  try {
+                                    await updateDoc(doc(db, 'vehicles', tempEventData.vehicleId), {
+                                      currentMileage: tempEventData.mileage,
+                                      updatedAt: serverTimestamp(),
+                                    });
+                                    toast.success(t('service.saved'));
+                                  } catch (err) {
+                                    console.error(err);
+                                    toast.error(t('service.save_failed'));
+                                  }
+                                }
+                              }
+                              setTempEventData(null);
+                              setActivePage('dashboard');
+                            },
+                          },
                         ].map((o) => (
                           <button
                             key={o.key}
