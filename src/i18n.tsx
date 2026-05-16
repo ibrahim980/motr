@@ -37,10 +37,20 @@ const ar: Dict = {
   'nav.camera': 'تصوير',
   'nav.timeline': 'السجل',
   'nav.profile': 'حسابي',
-  'alerts.title': 'سجل التنبيهات',
+  'alerts.title': 'التذكيرات',
   'alerts.all_good_title': 'كل شيء على ما يرام',
   'alerts.all_good_desc': 'لا توجد تنبيهات حالية على مركباتك.',
   'alerts.open_vehicle': 'فتح',
+  'alerts.featured_label': 'الأكثر إلحاحاً',
+  'alerts.due_now': 'قريباً',
+  'alerts.due_soon': 'قادم',
+  'alerts.upcoming': 'لاحقاً',
+  'alerts.mark_done': 'تم',
+  'alerts.snooze': 'أجّل',
+  'alerts.done_toast': 'تم تحديث التذكير',
+  'alerts.snoozed_toast': 'أجّلنا التذكير شهراً',
+  'alerts.done_failed': 'فشل التحديث',
+  'alerts.count': '{count} تذكير نشط',
 
   // dashboard
   'dashboard.empty_hint': 'ابدأ بتصوير عدادك وسنتولى الباقي',
@@ -264,6 +274,10 @@ const en: Dict = {
   'alerts.all_good_title': 'All clear',
   'alerts.all_good_desc': 'No active alerts on your vehicles right now.',
   'alerts.open_vehicle': 'Open',
+  'alerts.mark_done': 'Done',
+  'alerts.done_toast': 'Reminder reset',
+  'alerts.done_failed': 'Could not update reminder',
+  'alerts.count': '{count} active',
 
   // dashboard
   'dashboard.empty_hint': 'Capture your odometer and we’ll handle the rest',

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { motion, AnimatePresence, animate } from 'motion/react';
 import { 
   Camera, 
@@ -233,21 +233,50 @@ function useFormatStatusValue() {
   };
 }
 
-function AlertItemRow({ status }: { status: MaintenanceStatus }) {
+function AlertItemRow({
+  status,
+  vehicle,
+  onMarkDone,
+}: {
+  status: MaintenanceStatus;
+  vehicle?: Vehicle;
+  onMarkDone?: (vehicle: Vehicle, kind: StatusKind) => Promise<void>;
+}) {
   const { t } = useI18n();
   const formatValue = useFormatStatusValue();
   const Icon = STATUS_ICONS[status.kind];
+  const [busy, setBusy] = useState(false);
+  const canMarkDone = vehicle && onMarkDone && status.state !== 'ok';
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex items-center gap-3">
-        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center', STATE_ICON_BG[status.state])}>
+    <div className="flex items-center justify-between gap-3">
+      <div className="flex items-center gap-3 min-w-0">
+        <div className={cn('w-10 h-10 rounded-xl flex items-center justify-center shrink-0', STATE_ICON_BG[status.state])}>
           <Icon className="w-5 h-5" />
         </div>
-        <span className="text-sm font-medium">{t(`status.${status.kind}`)}</span>
+        <div className="min-w-0">
+          <p className="text-sm font-medium truncate">{t(`status.${status.kind}`)}</p>
+          <p className={cn('text-xs font-bold whitespace-nowrap', STATE_COLOR[status.state])}>
+            {formatValue(status)}
+          </p>
+        </div>
       </div>
-      <span className={cn('text-sm font-bold whitespace-nowrap', STATE_COLOR[status.state])}>
-        {formatValue(status)}
-      </span>
+      {canMarkDone && (
+        <button
+          onClick={async () => {
+            if (busy) return;
+            setBusy(true);
+            try {
+              await onMarkDone!(vehicle!, status.kind);
+            } finally {
+              setBusy(false);
+            }
+          }}
+          disabled={busy}
+          className="shrink-0 bg-success/10 text-success px-3 py-1.5 rounded-full text-xs font-bold hover:bg-success/20 transition disabled:opacity-60"
+        >
+          {t('alerts.mark_done')}
+        </button>
+      )}
     </div>
   );
 }
@@ -493,7 +522,13 @@ function VehicleManageRow({
   );
 }
 
-function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
+function MaintenanceStatusCard({
+  vehicle,
+  onMarkDone,
+}: {
+  vehicle: Vehicle;
+  onMarkDone?: (vehicle: Vehicle, kind: StatusKind) => Promise<void>;
+}) {
   const { t } = useI18n();
   const items = getMaintenanceStatuses(vehicle);
 
@@ -505,7 +540,7 @@ function MaintenanceStatusCard({ vehicle }: { vehicle: Vehicle }) {
       ) : (
         <div className="space-y-3">
           {items.map((s) => (
-            <div key={s.kind}><AlertItemRow status={s} /></div>
+            <div key={s.kind}><AlertItemRow status={s} vehicle={vehicle} onMarkDone={onMarkDone} /></div>
           ))}
         </div>
       )}
@@ -646,11 +681,11 @@ const HealthLabel = () => {
   );
 };
 
-const Navbar = ({ activePage, setActivePage, user }: any) => {
+const Navbar = ({ activePage, setActivePage, alertCount = 0 }: any) => {
   const { t } = useI18n();
   const tabs = [
     { id: 'dashboard', icon: Car, label: t('nav.vehicles') },
-    { id: 'alerts', icon: Bell, label: t('nav.alerts') },
+    { id: 'alerts', icon: Bell, label: t('nav.alerts'), badge: alertCount },
     { id: 'camera', icon: Camera, label: t('nav.camera'), primary: true },
     { id: 'timeline', icon: History, label: t('nav.timeline') },
     { id: 'profile', icon: UserIcon, label: t('nav.profile') },
@@ -683,7 +718,14 @@ const Navbar = ({ activePage, setActivePage, user }: any) => {
                 isActive ? "text-brand" : "text-[#7B92A6] hover:text-ink"
               )}
             >
-              <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+              <span className="relative">
+                <Icon className="h-5 w-5 shrink-0" strokeWidth={isActive ? 2.2 : 1.8} />
+                {tab.badge > 0 && (
+                  <span className="absolute -top-1.5 -end-2 min-w-[16px] h-[16px] px-1 rounded-full bg-danger text-white text-[9px] font-bold flex items-center justify-center tabular leading-none">
+                    {tab.badge > 9 ? '9+' : tab.badge}
+                  </span>
+                )}
+              </span>
               <span className="max-w-full truncate">{tab.label}</span>
             </button>
           );
@@ -882,6 +924,31 @@ export default function App() {
     } catch (err) {
       console.error(err);
       toast.error(t('timeline.delete_failed'));
+    }
+  };
+
+  const alertCount = useMemo(
+    () =>
+      vehicles.reduce(
+        (acc, v) => acc + getMaintenanceStatuses(v).filter((s) => s.state !== 'ok').length,
+        0,
+      ),
+    [vehicles],
+  );
+
+  const handleMarkReminderDone = async (vehicle: Vehicle, kind: StatusKind) => {
+    try {
+      const nowIso = new Date().toISOString();
+      const patch: Record<string, unknown> = { updatedAt: serverTimestamp() };
+      if (kind === 'battery') patch.lastBatteryChangeDate = nowIso;
+      else if (kind === 'tires') patch.lastTireChangeMileage = vehicle.currentMileage;
+      else if (kind === 'maintenance') patch.lastMaintenanceDate = nowIso;
+      else if (kind === 'parts') patch.lastPartsDate = nowIso;
+      await updateDoc(doc(db, 'vehicles', vehicle.id), patch);
+      toast.success(t('alerts.done_toast'));
+    } catch (err) {
+      console.error(err);
+      toast.error(t('alerts.done_failed'));
     }
   };
 
@@ -1409,7 +1476,7 @@ export default function App() {
                         </div>
                       )}
 
-                      <MaintenanceStatusCard vehicle={selectedVehicle} />
+                      <MaintenanceStatusCard vehicle={selectedVehicle} onMarkDone={handleMarkReminderDone} />
 
                       {/* Recent Activity */}
                       <div className="space-y-4">
@@ -1470,57 +1537,71 @@ export default function App() {
               exit={{ opacity: 0, y: -20 }}
               className="space-y-6"
             >
-              <h2 className="text-3xl font-bold tracking-tight">{t('alerts.title')}</h2>
-
               {(() => {
+                const urgencyRank: Record<StatusState, number> = { overdue: 0, soon: 1, ok: 2 };
                 const groups = vehicles
                   .map((v) => ({
                     vehicle: v,
-                    items: getMaintenanceStatuses(v).filter((s) => s.state !== 'ok'),
+                    items: getMaintenanceStatuses(v)
+                      .filter((s) => s.state !== 'ok')
+                      .sort((a, b) => urgencyRank[a.state] - urgencyRank[b.state]),
                   }))
                   .filter((g) => g.items.length > 0);
 
-                if (groups.length === 0) {
-                  return (
-                    <div className="glass-dark p-12 rounded-[32px] text-center space-y-3">
-                      <CheckCircle2 className="w-14 h-14 text-success mx-auto" />
-                      <p className="text-lg font-bold">{t('alerts.all_good_title')}</p>
-                      <p className="text-sm text-black/40">{t('alerts.all_good_desc')}</p>
-                    </div>
-                  );
-                }
+                const totalCount = groups.reduce((acc, g) => acc + g.items.length, 0);
 
                 return (
-                  <div className="space-y-5">
-                    {groups.map(({ vehicle, items }) => (
-                      <div key={vehicle.id} className="glass-dark p-6 rounded-[32px] space-y-4">
-                        <div className="flex items-center justify-between">
-                          <div className="min-w-0">
-                            <h3 className="text-lg font-bold truncate">{vehicle.name}</h3>
-                            {(vehicle.make || vehicle.model) && (
-                              <p className="text-[10px] uppercase tracking-widest text-black/40">
-                                {vehicle.make} {vehicle.model}
-                              </p>
-                            )}
-                          </div>
-                          <button
-                            onClick={() => {
-                              setSelectedVehicle(vehicle);
-                              setActivePage('dashboard');
-                            }}
-                            className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full"
-                          >
-                            {t('alerts.open_vehicle')}
-                          </button>
-                        </div>
-                        <div className="space-y-2">
-                          {items.map((s) => (
-                            <div key={s.kind}><AlertItemRow status={s} /></div>
-                          ))}
-                        </div>
+                  <>
+                    <div className="flex items-baseline justify-between gap-3">
+                      <h2 className="text-3xl font-bold tracking-tight">{t('alerts.title')}</h2>
+                      {totalCount > 0 && (
+                        <span className="text-xs font-bold text-black/50 whitespace-nowrap">
+                          {t('alerts.count', { count: totalCount })}
+                        </span>
+                      )}
+                    </div>
+
+                    {groups.length === 0 ? (
+                      <div className="glass-dark p-12 rounded-[32px] text-center space-y-3">
+                        <CheckCircle2 className="w-14 h-14 text-success mx-auto" />
+                        <p className="text-lg font-bold">{t('alerts.all_good_title')}</p>
+                        <p className="text-sm text-black/40">{t('alerts.all_good_desc')}</p>
                       </div>
-                    ))}
-                  </div>
+                    ) : (
+                      <div className="space-y-5">
+                        {groups.map(({ vehicle, items }) => (
+                          <div key={vehicle.id} className="glass-dark p-6 rounded-[32px] space-y-4">
+                            <div className="flex items-center justify-between">
+                              <div className="min-w-0">
+                                <h3 className="text-lg font-bold truncate">{vehicle.name}</h3>
+                                {(vehicle.make || vehicle.model) && (
+                                  <p className="text-[10px] uppercase tracking-widest text-black/40">
+                                    {vehicle.make} {vehicle.model}
+                                  </p>
+                                )}
+                              </div>
+                              <button
+                                onClick={() => {
+                                  setSelectedVehicle(vehicle);
+                                  setActivePage('dashboard');
+                                }}
+                                className="text-xs font-bold text-brand bg-brand/10 px-3 py-1.5 rounded-full"
+                              >
+                                {t('alerts.open_vehicle')}
+                              </button>
+                            </div>
+                            <div className="space-y-3">
+                              {items.map((s) => (
+                                <div key={s.kind}>
+                                  <AlertItemRow status={s} vehicle={vehicle} onMarkDone={handleMarkReminderDone} />
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </>
                 );
               })()}
             </motion.div>
@@ -1870,7 +1951,7 @@ export default function App() {
       />
 
       {!['onboarding', 'add-car', 'ocr-result', 'log-fuel', 'log-service', 'service-select'].includes(activePage) && (
-        <Navbar activePage={activePage} setActivePage={setActivePage} user={user} />
+        <Navbar activePage={activePage} setActivePage={setActivePage} alertCount={alertCount} />
       )}
 
       <AnimatePresence>
