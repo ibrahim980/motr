@@ -41,7 +41,8 @@ import { InstallPrompt } from './InstallPrompt';
 import { useI18n, LanguageToggle } from './i18n';
 import { VehicleSettings } from './VehicleSettings';
 
-function CountUp({ value }: { value: number }) {
+function CountUp({ value, format }: { value: number; format?: (n: number) => string }) {
+  const fmt = format ?? formatMileage;
   const ref = useRef<HTMLSpanElement>(null);
   useEffect(() => {
     const node = ref.current;
@@ -51,12 +52,12 @@ function CountUp({ value }: { value: number }) {
       duration: 1.1,
       ease: [0.16, 1, 0.3, 1],
       onUpdate: (latest) => {
-        if (node) node.textContent = formatMileage(Math.round(latest));
+        if (node) node.textContent = fmt(Math.round(latest));
       },
     });
     return () => controls.stop();
-  }, [value]);
-  return <span ref={ref}>{formatMileage(value)}</span>;
+  }, [value, fmt]);
+  return <span ref={ref}>{fmt(value)}</span>;
 }
 
 function ScanViewport({
@@ -1724,8 +1725,14 @@ export default function App() {
                           <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
                             {t('dashboard.current_odometer')}
                           </p>
-                          <p className="mt-1 text-4xl font-extrabold tabular tracking-tight leading-none">
-                            <CountUp value={selectedVehicle.currentMileage} />
+                          <p
+                            dir="ltr"
+                            className="mt-1 text-4xl font-extrabold tabular tracking-tight leading-none text-end"
+                          >
+                            <CountUp
+                              value={selectedVehicle.currentMileage}
+                              format={(n) => new Intl.NumberFormat('en-US').format(n)}
+                            />
                             <span className="ms-2 text-xs font-bold text-white/60">{t('common.km_unit')}</span>
                           </p>
                         </div>
@@ -1802,53 +1809,35 @@ export default function App() {
                     );
                   })()}
 
-                  {/* Stats: this month + fuel avg */}
+                  {/* Stats: fuel avg only */}
                   {(() => {
                     const { avg, trend } = computeFuelAverage(
                       events.filter((e) => e.vehicleId === selectedVehicle.id),
                     );
-                    const fuelCount = timelineData.counts.fuel;
-                    const serviceCount = timelineData.counts.service + timelineData.counts.inspection;
                     return (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
-                            {t('dashboard.month_spend')}
-                          </p>
-                          <p className="mt-2 text-2xl font-extrabold tabular leading-none">
-                            {timelineData.monthSpend.toFixed(0)}
-                            <span className="ms-1 text-[10px] font-bold text-black/40">{t('timeline.unit_riyal')}</span>
-                          </p>
-                          <p className="mt-2 text-[11px] text-black/40">
-                            {t('dashboard.month_breakdown_fuels', { count: fuelCount })} · {t('dashboard.month_breakdown_services', { count: serviceCount })}
-                          </p>
-                        </div>
-                        <div className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(14,34,51,0.04)]">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
-                            {t('dashboard.fuel_avg')}
-                          </p>
-                          {avg != null ? (
-                            <>
-                              <p className="mt-2 text-2xl font-extrabold tabular leading-none">
-                                {avg.toFixed(1)}
-                                <span className="ms-1 text-[10px] font-bold text-black/40">{t('dashboard.fuel_avg_unit')}</span>
+                      <div className="bg-white rounded-2xl p-4 shadow-[0_2px_8px_rgba(14,34,51,0.04)] text-end">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-black/40">
+                          {t('dashboard.fuel_avg')}
+                        </p>
+                        {avg != null ? (
+                          <>
+                            <p dir="ltr" className="mt-2 text-2xl font-extrabold tabular leading-none text-end">
+                              {avg.toFixed(1)}
+                              <span className="ms-1 text-[10px] font-bold text-black/40">{t('dashboard.fuel_avg_unit')}</span>
+                            </p>
+                            {trend != null && Math.abs(trend) >= 1 && (
+                              <p className={cn('mt-2 inline-flex items-center gap-1 text-[11px] font-bold',
+                                trend > 0 ? 'text-success' : 'text-danger')}>
+                                {trend > 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
+                                {trend > 0
+                                  ? t('dashboard.improvement', { value: trend.toFixed(1) })
+                                  : t('dashboard.regression', { value: Math.abs(trend).toFixed(1) })}
                               </p>
-                              {trend != null && Math.abs(trend) >= 1 ? (
-                                <p className={cn('mt-2 flex items-center gap-1 text-[11px] font-bold',
-                                  trend > 0 ? 'text-success' : 'text-danger')}>
-                                  {trend > 0 ? <TrendingDown className="w-3 h-3" /> : <TrendingUp className="w-3 h-3" />}
-                                  {trend > 0
-                                    ? t('dashboard.improvement', { value: trend.toFixed(1) })
-                                    : t('dashboard.regression', { value: Math.abs(trend).toFixed(1) })}
-                                </p>
-                              ) : (
-                                <p className="mt-2 text-[11px] text-black/40">&nbsp;</p>
-                              )}
-                            </>
-                          ) : (
-                            <p className="mt-2 text-xs text-black/40 leading-snug">{t('dashboard.fuel_avg_unavailable')}</p>
-                          )}
-                        </div>
+                            )}
+                          </>
+                        ) : (
+                          <p className="mt-2 text-xs text-black/40 leading-snug">{t('dashboard.fuel_avg_unavailable')}</p>
+                        )}
                       </div>
                     );
                   })()}
