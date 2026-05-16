@@ -1,4 +1,4 @@
-import { useEffect, useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import {
   ArrowLeft,
   ArrowRight,
@@ -35,7 +35,6 @@ const COPY = {
     stats: [
       { value: '3s', label: 'لقراءة العداد بالكاميرا' },
       { value: '0 ريال', label: 'لا اشتراك، أبداً' },
-      { value: '+12k', label: 'سائق يعتمد على MOTR' },
     ],
     features: {
       eyebrow: 'المميزات',
@@ -119,7 +118,6 @@ const COPY = {
     stats: [
       { value: '3s', label: 'to scan the odometer' },
       { value: '$0', label: 'no subscription, ever' },
-      { value: '12k+', label: 'drivers trust MOTR' },
     ],
     features: {
       eyebrow: 'Features',
@@ -197,55 +195,6 @@ function useLP() {
   return { lang: lang as Lang, setLang, c };
 }
 
-function formatUserCount(n: number, lang: Lang): string {
-  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
-  if (n < 1000) return `+${n.toLocaleString(locale)}`;
-  const k = n / 1000;
-  return `+${k.toFixed(k < 10 ? 1 : 0)}K`;
-}
-
-function useUserCount(): number | null {
-  const [count, setCount] = useState<number | null>(null);
-  useEffect(() => {
-    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-    if (!projectId) {
-      console.warn('[user-count] missing VITE_FIREBASE_PROJECT_ID');
-      return;
-    }
-    const databaseId = (import.meta.env.VITE_FIREBASE_DATABASE_ID as string | undefined) || '(default)';
-    const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/stats/public`;
-    let cancelled = false;
-    fetch(url)
-      .then(async (res) => {
-        const body = await res.text();
-        if (!res.ok) {
-          console.warn('[user-count] HTTP', res.status, body);
-          return null;
-        }
-        try {
-          return JSON.parse(body);
-        } catch (e) {
-          console.warn('[user-count] parse error', e);
-          return null;
-        }
-      })
-      .then((data) => {
-        if (cancelled) return;
-        const raw = data?.fields?.userCount;
-        const value = raw?.integerValue ?? raw?.stringValue ?? raw?.doubleValue ?? '0';
-        const parsed = parseInt(String(value), 10);
-        setCount(Number.isFinite(parsed) ? parsed : 0);
-      })
-      .catch((err) => {
-        console.warn('[user-count] fetch failed', err);
-        if (!cancelled) setCount(0);
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-  return count;
-}
 
 function Pill({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
@@ -502,21 +451,11 @@ function HeroSection() {
 }
 
 function StatsStrip() {
-  const { c, lang } = useLP();
-  const userCount = useUserCount();
-  const items = c.stats.map((s, i) => {
-    if (i === 2) {
-      return {
-        ...s,
-        value: userCount == null ? '—' : formatUserCount(userCount, lang),
-      };
-    }
-    return s;
-  });
+  const { c } = useLP();
   return (
     <section className="bg-white">
-      <div className="mx-auto max-w-[1280px] px-6 py-8 grid grid-cols-1 sm:grid-cols-3 gap-6 text-center">
-        {items.map((s) => (
+      <div className="mx-auto max-w-[1280px] px-6 py-8 grid grid-cols-1 sm:grid-cols-2 gap-6 text-center">
+        {c.stats.map((s) => (
           <div key={s.label} className="space-y-1">
             <p className="text-4xl md:text-5xl font-extrabold tracking-tight text-ink tabular">
               {s.value}
