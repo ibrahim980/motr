@@ -2728,23 +2728,67 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="space-y-2.5">
-                    {timelineData.filtered.length === 0 ? (
-                      <div className="py-20 text-center text-sm text-black/30">
-                        {timelineData.counts.all === 0 ? t('timeline.empty') : t('timeline.empty_filter')}
-                      </div>
-                    ) : (
-                      timelineData.filtered.map((event) => (
-                        <EventCardV2
-                          key={event.id}
-                          event={event}
-                          serviceLabel={serviceLabel}
-                          dateLocale={dateLocale}
-                          onDelete={handleDeleteEvent}
-                        />
-                      ))
-                    )}
-                  </div>
+                  {timelineData.filtered.length === 0 ? (
+                    <div className="py-20 text-center text-sm text-black/30">
+                      {timelineData.counts.all === 0 ? t('timeline.empty') : t('timeline.empty_filter')}
+                    </div>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute top-5 bottom-5 end-4 w-[2px] bg-[#EEF3F7]" />
+                      <ul className="space-y-3">
+                        {timelineData.filtered.map((event) => {
+                          const tone = EVENT_TONE[event.type] ?? EVENT_TONE[ServiceType.OTHER];
+                          const Icon = eventIcon(event.type);
+                          const dateStr = new Date(event.date).toLocaleDateString(dateLocale, {
+                            day: 'numeric',
+                            month: 'short',
+                          });
+                          const isFuel = event.type === ServiceType.FUEL;
+                          const title = isFuel && event.liters
+                            ? `${serviceLabel(event.type)} · ${event.liters} ${t('timeline.unit_liters')}`
+                            : serviceLabel(event.type);
+                          return (
+                            <li key={event.id} className="relative flex items-start gap-3">
+                              <div
+                                className={cn(
+                                  'relative z-[1] w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border-[3px] border-bg-dark',
+                                  tone.bg,
+                                  tone.fg,
+                                )}
+                              >
+                                <Icon className="w-4 h-4" />
+                              </div>
+                              <div className="flex-1 min-w-0 bg-white rounded-2xl border border-[#E1EAF1] p-3.5">
+                                <div className="flex items-start justify-between gap-2">
+                                  <div className="min-w-0 text-end flex-1">
+                                    <p className="text-sm font-bold truncate">{title}</p>
+                                    <p className="tabular text-[11px] text-[#4A6378] mt-0.5">
+                                      {dateStr} · {t('timeline.odometer_label')} {event.mileage.toLocaleString()} {t('timeline.unit_km')}
+                                    </p>
+                                  </div>
+                                  {event.amount != null && (
+                                    <p className="whitespace-nowrap text-end shrink-0">
+                                      <span className="text-sm font-extrabold tabular">{event.amount}</span>
+                                      <span className="ms-1 text-[10px] text-[#4A6378] font-bold">
+                                        {t('timeline.unit_riyal')}
+                                      </span>
+                                    </p>
+                                  )}
+                                </div>
+                                <button
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  className="mt-2 text-[10px] font-semibold text-[#B23E3E] opacity-50 hover:opacity-100 transition"
+                                  aria-label={t('timeline.delete')}
+                                >
+                                  {t('timeline.delete')}
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
                 </>
               )}
             </motion.div>
