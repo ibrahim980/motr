@@ -40,7 +40,7 @@ const COPY = {
       eyebrow: 'المميزات',
       h1Pre: 'كل ما تحتاجه لسيارتك.',
       h1Post: 'في تطبيق واحد.',
-      sub: 'صُمّم MOTR للسائق الذي ينسى — أي شخص منا.',
+      sub: 'صُمّم {logo} للسائق الذي ينسى — أي شخص منا.',
       cards: {
         camera: {
           title: 'صوّر العداد بكاميرتك',
@@ -80,7 +80,7 @@ const COPY = {
         {
           n: '01',
           title: 'افتح التطبيق وسجّل دخول',
-          desc: 'افتح motrs.uk من متصفح جوالك، أو أضِفه لسطح المكتب. سجّل دخول بحساب Google خلال ثوانٍ.',
+          desc: 'افتح {logo} من متصفح جوالك، أو أضِفه لسطح المكتب. سجّل دخول بحساب Google خلال ثوانٍ.',
         },
         {
           n: '02',
@@ -99,9 +99,9 @@ const COPY = {
       sub: 'افتح التطبيق الآن من المتصفح — تسجيل دخول بـ Google خلال ثوانٍ.',
     },
     footer: {
-      tag: 'صنعنا MOTR لأننا، مثلك تماماً، ننسى تغيير الزيت.',
+      tag: 'صنعنا {logo} لأننا، مثلك تماماً، ننسى تغيير الزيت.',
       links: { privacy: 'الخصوصية', terms: 'الشروط', contact: 'اتصل بنا' },
-      copy: '© MOTR 2026. جميع الحقوق محفوظة.',
+      copy: '© {logo} 2026. جميع الحقوق محفوظة.',
     },
   },
   en: {
@@ -123,7 +123,7 @@ const COPY = {
       eyebrow: 'Features',
       h1Pre: 'Everything your car needs.',
       h1Post: 'In one app.',
-      sub: 'MOTR was built for the driver who forgets — that’s all of us.',
+      sub: '{logo} was built for the driver who forgets — that’s all of us.',
       cards: {
         camera: {
           title: 'Scan with your camera',
@@ -163,7 +163,7 @@ const COPY = {
         {
           n: '01',
           title: 'Open the app and sign in',
-          desc: 'Open motrs.uk in your mobile browser, or add it to your home screen. Sign in with Google in seconds.',
+          desc: 'Open {logo} in your mobile browser, or add it to your home screen. Sign in with Google in seconds.',
         },
         {
           n: '02',
@@ -182,9 +182,9 @@ const COPY = {
       sub: 'Open the app right now from your browser — Google sign-in in seconds.',
     },
     footer: {
-      tag: 'We built MOTR because we, just like you, forget to change the oil.',
+      tag: 'We built {logo} because we, just like you, forget to change the oil.',
       links: { privacy: 'Privacy', terms: 'Terms', contact: 'Contact' },
-      copy: '© MOTR 2026. All rights reserved.',
+      copy: '© {logo} 2026. All rights reserved.',
     },
   },
 } as const;
@@ -195,6 +195,26 @@ function useLP() {
   return { lang: lang as Lang, setLang, c };
 }
 
+function WithLogo({ text }: { text: string }) {
+  const parts = text.split('{logo}');
+  return (
+    <>
+      {parts.map((part, i) => (
+        <span key={i}>
+          {part}
+          {i < parts.length - 1 && (
+            <img
+              src="/motr2.svg"
+              alt="MOTR"
+              className="inline-block w-auto align-[-0.2em] mx-0.5"
+              style={{ height: '1em' }}
+            />
+          )}
+        </span>
+      ))}
+    </>
+  );
+}
 
 function Pill({ children, className = '' }: { children: ReactNode; className?: string }) {
   return (
@@ -567,7 +587,7 @@ function FeaturesSection() {
           <span className="block">{c.features.h1Pre}</span>
           <span className="block">{c.features.h1Post}</span>
         </h2>
-        <p className="mt-4 text-base text-ink/70 leading-relaxed">{c.features.sub}</p>
+        <p className="mt-4 text-base text-ink/70 leading-relaxed"><WithLogo text={c.features.sub} /></p>
       </div>
 
       <div className="mt-12 grid grid-cols-1 md:grid-cols-2 gap-5">
@@ -764,7 +784,7 @@ function HowItWorksSection() {
                 <div>
                   <p className="text-[11px] font-bold text-ink/40 tracking-wider">{s.n}</p>
                   <h3 className="mt-1 text-xl font-extrabold tracking-tight">{s.title}</h3>
-                  <p className="mt-2 text-sm text-ink/65 leading-relaxed">{s.desc}</p>
+                  <p className="mt-2 text-sm text-ink/65 leading-relaxed"><WithLogo text={s.desc} /></p>
                 </div>
               </div>
             );
@@ -805,7 +825,7 @@ function Footer() {
       <div className="mx-auto max-w-[1280px] px-6 py-10 grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="text-start">
           <img src="/logo.svg" alt="MOTR" className="h-[2.1rem] w-auto" />
-          <p className="mt-3 text-sm text-ink/65 max-w-md">{c.footer.tag}</p>
+          <p className="mt-3 text-sm text-ink/65 max-w-md"><WithLogo text={c.footer.tag} /></p>
         </div>
         <div className="flex md:items-center md:justify-end gap-6">
           <a href="#" className="text-sm font-bold text-ink/70 hover:text-ink transition">
@@ -820,7 +840,7 @@ function Footer() {
         </div>
       </div>
       <div className="mx-auto max-w-[1280px] px-6 pb-8 text-start text-xs text-ink/50">
-        {c.footer.copy}
+        <WithLogo text={c.footer.copy} />
       </div>
     </footer>
   );
