@@ -1044,6 +1044,7 @@ export default function App() {
   const [eventNotes, setEventNotes] = useState('');
   const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
   const [timelineFilter, setTimelineFilter] = useState<'all' | 'fuel' | 'service' | 'inspection'>('all');
+  const [carDetailsTab, setCarDetailsTab] = useState<'details' | 'stats' | 'history'>('stats');
 
   const serviceIcon = (type: ServiceType) => {
     switch (type) {
@@ -2323,127 +2324,279 @@ export default function App() {
                     </div>
 
                     <div className="bg-white rounded-2xl border border-[#E1EAF1] p-1 flex gap-1.5">
-                      {[t('cardetails.tab_details'), t('cardetails.tab_stats'), t('cardetails.tab_history')].map((label, i) => (
-                        <button
-                          key={i}
-                          onClick={() => {
-                            if (i === 2) {
-                              setActivePage('timeline');
-                            }
-                          }}
-                          className={cn(
-                            'flex-1 py-2 rounded-xl text-xs font-semibold transition',
-                            i === 1 ? 'bg-ink text-white' : 'text-[#4A6378] hover:text-ink',
-                          )}
-                        >
-                          {label}
-                        </button>
-                      ))}
+                      {(['details', 'stats', 'history'] as const).map((key, i) => {
+                        const label = [t('cardetails.tab_details'), t('cardetails.tab_stats'), t('cardetails.tab_history')][i];
+                        const active = carDetailsTab === key;
+                        return (
+                          <button
+                            key={key}
+                            onClick={() => setCarDetailsTab(key)}
+                            className={cn(
+                              'flex-1 py-2 rounded-xl text-xs font-semibold transition',
+                              active ? 'bg-ink text-white' : 'text-[#4A6378] hover:text-ink',
+                            )}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
                     </div>
 
-                    <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <span className="bg-[#E2EFE3] text-success px-2.5 py-1 rounded-full text-[11px] font-bold tabular">
-                          ▼ 6%
-                        </span>
-                        <div className="text-end">
-                          <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
-                            {t('cardetails.consumption_6m')}
+                    {carDetailsTab === 'details' && (
+                      <>
+                        <div>
+                          <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">
+                            {t('cardetails.info_title')}
                           </p>
-                          {avg != null ? (
-                            <p dir="ltr" className="mt-1 text-end">
-                              <span className="text-4xl font-extrabold tabular tracking-tight">{avg.toFixed(1)}</span>
-                              <span className="ms-1 text-xs font-bold text-[#4A6378]">{t('dashboard.fuel_avg_unit')}</span>
-                            </p>
-                          ) : (
-                            <p className="mt-1 text-xs text-[#4A6378]">{t('dashboard.fuel_avg_unavailable')}</p>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className="mt-5 flex items-end justify-between gap-1.5 h-24">
-                        {monthBuckets.map((b, i) => {
-                          const value = monthAvgs[i];
-                          const h = value != null ? (value / maxFuel) * 70 + 14 : 14;
-                          const isLast = i === monthBuckets.length - 1 && value != null;
-                          return (
-                            <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
-                              <div className="w-full relative" style={{ height: h }}>
-                                {isLast && (
-                                  <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-brand tabular">
-                                    {value!.toFixed(1)}
-                                  </span>
-                                )}
-                                <div
-                                  className={cn('absolute inset-0 rounded-md', isLast ? 'bg-brand' : value != null ? 'bg-[#DCEAF3]' : 'bg-[#EEF3F7]')}
-                                />
-                              </div>
-                              <span className="text-[10px] font-semibold text-[#7B92A6]">{b.label}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2.5">
-                      <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
-                          {t('cardetails.distance_label')}
-                        </p>
-                        <p dir="ltr" className="mt-1 text-end">
-                          <span className="text-xl font-extrabold tabular">{distanceThisYear.toLocaleString()}</span>
-                          <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('common.km_unit')}</span>
-                        </p>
-                        <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.distance_sub')}</p>
-                      </div>
-                      <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
-                        <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
-                          {t('cardetails.spend_label')}
-                        </p>
-                        <p className="mt-1 text-end">
-                          <span className="text-xl font-extrabold tabular">{totalSpend.toLocaleString()}</span>
-                          <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('timeline.unit_riyal')}</span>
-                        </p>
-                        <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.spend_sub')}</p>
-                      </div>
-                    </div>
-
-                    <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-4">
-                      <h3 className="text-sm font-bold text-end mb-3">{t('cardetails.breakdown_title')}</h3>
-                      {catTotal > 0 ? (
-                        <>
-                          <div dir="ltr" className="flex h-3.5 rounded-full overflow-hidden mb-3">
-                            <div style={{ width: `${pct(catSums.fuel)}%`, background: '#F26B1F' }} />
-                            <div style={{ width: `${pct(catSums.service)}%`, background: '#1F3A8A' }} />
-                            <div style={{ width: `${pct(catSums.tires)}%`, background: '#3F7A40' }} />
-                            <div style={{ width: `${pct(catSums.other)}%`, background: '#4A6378' }} />
-                          </div>
-                          <div className="space-y-2">
+                          <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
                             {[
-                              { c: '#F26B1F', n: t('cardetails.cat_fuel'), v: catSums.fuel, p: pct(catSums.fuel) },
-                              { c: '#1F3A8A', n: t('cardetails.cat_service'), v: catSums.service, p: pct(catSums.service) },
-                              { c: '#3F7A40', n: t('cardetails.cat_tires'), v: catSums.tires, p: pct(catSums.tires) },
-                              { c: '#4A6378', n: t('cardetails.cat_other'), v: catSums.other, p: pct(catSums.other) },
-                            ].map((r) => (
-                              <div key={r.n} className="flex items-center justify-between">
-                                <div className="flex items-center gap-2 font-mono">
-                                  <span className="tabular text-[11px] text-[#7B92A6]">{r.p}%</span>
-                                  <span className="tabular text-sm font-bold">
-                                    {r.v.toLocaleString()} {t('timeline.unit_riyal')}
-                                  </span>
+                              { label: t('cardetails.info_make'), value: v.make || '—' },
+                              { label: t('cardetails.info_model'), value: v.model || '—' },
+                              { label: t('cardetails.info_year'), value: v.year ? String(v.year) : '—', mono: true },
+                              { label: t('cardetails.info_color'), value: v.color || '—' },
+                              {
+                                label: t('cardetails.info_odometer'),
+                                value: `${(v.currentMileage || 0).toLocaleString()} ${t('common.km_unit')}`,
+                                mono: true,
+                              },
+                            ].map((row) => (
+                              <div key={row.label} className="px-4 py-3 flex items-center justify-between gap-3">
+                                <p className={cn('text-sm font-semibold text-ink truncate', row.mono && 'tabular')}>
+                                  {row.value}
+                                </p>
+                                <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{row.label}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="px-1 pb-2 flex items-center justify-between">
+                            <button
+                              onClick={() => setShowSettings(true)}
+                              className="text-[11px] font-bold text-brand"
+                            >
+                              {t('cardetails.edit_intervals')}
+                            </button>
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">
+                              {t('cardetails.intervals_title')}
+                            </p>
+                          </div>
+                          <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
+                            {[
+                              { icon: Droplets, label: t('cardetails.interval_oil'), value: v.oilIntervalKm ? `${v.oilIntervalKm.toLocaleString()} ${t('common.km_unit')}` : t('cardetails.interval_unset'), bg: 'bg-[#FFE6D5]', fg: 'text-brand' },
+                              { icon: Battery, label: t('cardetails.interval_battery'), value: v.batteryIntervalMonths ? t('cardetails.interval_months', { n: v.batteryIntervalMonths }) : t('cardetails.interval_unset'), bg: 'bg-[#F5E3E3]', fg: 'text-danger' },
+                              { icon: Disc, label: t('cardetails.interval_tires'), value: v.tireIntervalKm ? `${v.tireIntervalKm.toLocaleString()} ${t('common.km_unit')}` : t('cardetails.interval_unset'), bg: 'bg-[#FBEFE0]', fg: 'text-warning' },
+                              { icon: Wrench, label: t('cardetails.interval_maintenance'), value: v.maintenanceIntervalMonths ? t('cardetails.interval_months', { n: v.maintenanceIntervalMonths }) : t('cardetails.interval_unset'), bg: 'bg-[#DCEAF3]', fg: 'text-[#1F3A8A]' },
+                            ].map((row) => (
+                              <div key={row.label} className="px-4 py-3 flex items-center gap-3">
+                                <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center shrink-0', row.bg, row.fg)}>
+                                  <row.icon className="w-4 h-4" />
                                 </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm font-semibold">{r.n}</span>
-                                  <span className="w-2 h-2 rounded-full" style={{ background: r.c }} />
+                                <div className="flex-1 text-end min-w-0">
+                                  <p className="text-sm font-semibold">{row.label}</p>
+                                  <p className="tabular text-xs text-[#4A6378] mt-0.5">{row.value}</p>
                                 </div>
                               </div>
                             ))}
                           </div>
-                        </>
-                      ) : (
-                        <p className="text-xs text-[#7B92A6] text-end">{t('cardetails.no_data')}</p>
-                      )}
-                    </div>
+                        </div>
+
+                        <div>
+                          <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#B23E3E] text-end">
+                            {t('cardetails.danger_title')}
+                          </p>
+                          <button
+                            onClick={() => {
+                              handleDeleteVehicle(v);
+                              setActivePage('cars');
+                            }}
+                            className="w-full bg-white border border-[#F5E3E3] text-danger rounded-2xl px-4 py-3 text-sm font-bold inline-flex items-center justify-center gap-2"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            {t('cardetails.delete_vehicle')}
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {carDetailsTab === 'stats' && (
+                      <>
+                        <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-5">
+                          <div className="flex items-start justify-between gap-3">
+                            <span className="bg-[#E2EFE3] text-success px-2.5 py-1 rounded-full text-[11px] font-bold tabular">
+                              ▼ 6%
+                            </span>
+                            <div className="text-end">
+                              <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                                {t('cardetails.consumption_6m')}
+                              </p>
+                              {avg != null ? (
+                                <p dir="ltr" className="mt-1 text-end">
+                                  <span className="text-4xl font-extrabold tabular tracking-tight">{avg.toFixed(1)}</span>
+                                  <span className="ms-1 text-xs font-bold text-[#4A6378]">{t('dashboard.fuel_avg_unit')}</span>
+                                </p>
+                              ) : (
+                                <p className="mt-1 text-xs text-[#4A6378]">{t('dashboard.fuel_avg_unavailable')}</p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="mt-5 flex items-end justify-between gap-1.5 h-24">
+                            {monthBuckets.map((b, i) => {
+                              const value = monthAvgs[i];
+                              const h = value != null ? (value / maxFuel) * 70 + 14 : 14;
+                              const isLast = i === monthBuckets.length - 1 && value != null;
+                              return (
+                                <div key={i} className="flex-1 flex flex-col items-center gap-1.5">
+                                  <div className="w-full relative" style={{ height: h }}>
+                                    {isLast && (
+                                      <span className="absolute -top-5 left-1/2 -translate-x-1/2 text-[10px] font-bold text-brand tabular">
+                                        {value!.toFixed(1)}
+                                      </span>
+                                    )}
+                                    <div
+                                      className={cn('absolute inset-0 rounded-md', isLast ? 'bg-brand' : value != null ? 'bg-[#DCEAF3]' : 'bg-[#EEF3F7]')}
+                                    />
+                                  </div>
+                                  <span className="text-[10px] font-semibold text-[#7B92A6]">{b.label}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2.5">
+                          <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                              {t('cardetails.distance_label')}
+                            </p>
+                            <p dir="ltr" className="mt-1 text-end">
+                              <span className="text-xl font-extrabold tabular">{distanceThisYear.toLocaleString()}</span>
+                              <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('common.km_unit')}</span>
+                            </p>
+                            <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.distance_sub')}</p>
+                          </div>
+                          <div className="bg-white rounded-[18px] border border-[#E1EAF1] p-3.5 text-end">
+                            <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">
+                              {t('cardetails.spend_label')}
+                            </p>
+                            <p className="mt-1 text-end">
+                              <span className="text-xl font-extrabold tabular">{totalSpend.toLocaleString()}</span>
+                              <span className="ms-1 text-[10px] font-bold text-[#4A6378]">{t('timeline.unit_riyal')}</span>
+                            </p>
+                            <p className="text-[10px] text-[#7B92A6] mt-1">{t('cardetails.spend_sub')}</p>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-4">
+                          <h3 className="text-sm font-bold text-end mb-3">{t('cardetails.breakdown_title')}</h3>
+                          {catTotal > 0 ? (
+                            <>
+                              <div dir="ltr" className="flex h-3.5 rounded-full overflow-hidden mb-3">
+                                <div style={{ width: `${pct(catSums.fuel)}%`, background: '#F26B1F' }} />
+                                <div style={{ width: `${pct(catSums.service)}%`, background: '#1F3A8A' }} />
+                                <div style={{ width: `${pct(catSums.tires)}%`, background: '#3F7A40' }} />
+                                <div style={{ width: `${pct(catSums.other)}%`, background: '#4A6378' }} />
+                              </div>
+                              <div className="space-y-2">
+                                {[
+                                  { c: '#F26B1F', n: t('cardetails.cat_fuel'), v: catSums.fuel, p: pct(catSums.fuel) },
+                                  { c: '#1F3A8A', n: t('cardetails.cat_service'), v: catSums.service, p: pct(catSums.service) },
+                                  { c: '#3F7A40', n: t('cardetails.cat_tires'), v: catSums.tires, p: pct(catSums.tires) },
+                                  { c: '#4A6378', n: t('cardetails.cat_other'), v: catSums.other, p: pct(catSums.other) },
+                                ].map((r) => (
+                                  <div key={r.n} className="flex items-center justify-between">
+                                    <div className="flex items-center gap-2 font-mono">
+                                      <span className="tabular text-[11px] text-[#7B92A6]">{r.p}%</span>
+                                      <span className="tabular text-sm font-bold">
+                                        {r.v.toLocaleString()} {t('timeline.unit_riyal')}
+                                      </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="text-sm font-semibold">{r.n}</span>
+                                      <span className="w-2 h-2 rounded-full" style={{ background: r.c }} />
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            </>
+                          ) : (
+                            <p className="text-xs text-[#7B92A6] text-end">{t('cardetails.no_data')}</p>
+                          )}
+                        </div>
+                      </>
+                    )}
+
+                    {carDetailsTab === 'history' && (
+                      <>
+                        {vEvents.length === 0 ? (
+                          <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-10 text-center text-sm text-[#7B92A6]">
+                            {t('cardetails.history_empty')}
+                          </div>
+                        ) : (
+                          <div className="relative">
+                            <div className="absolute top-5 bottom-5 end-4 w-[2px] bg-[#EEF3F7]" />
+                            <ul className="space-y-3">
+                              {[...vEvents]
+                                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                                .slice(0, 8)
+                                .map((event) => {
+                                  const tone = EVENT_TONE[event.type] ?? EVENT_TONE[ServiceType.OTHER];
+                                  const Icon = eventIcon(event.type);
+                                  const dateStr = new Date(event.date).toLocaleDateString(dateLocale, {
+                                    day: 'numeric',
+                                    month: 'short',
+                                  });
+                                  const isFuel = event.type === ServiceType.FUEL;
+                                  const title = isFuel && event.liters
+                                    ? `${serviceLabel(event.type)} · ${event.liters} ${t('timeline.unit_liters')}`
+                                    : serviceLabel(event.type);
+                                  return (
+                                    <li key={event.id} className="relative flex items-start gap-3">
+                                      <div
+                                        className={cn(
+                                          'relative z-[1] w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border-[3px] border-bg-dark',
+                                          tone.bg,
+                                          tone.fg,
+                                        )}
+                                      >
+                                        <Icon className="w-4 h-4" />
+                                      </div>
+                                      <div className="flex-1 min-w-0 bg-white rounded-2xl border border-[#E1EAF1] p-3.5">
+                                        <div className="flex items-start justify-between gap-2">
+                                          <div className="min-w-0 text-end flex-1">
+                                            <p className="text-sm font-bold truncate">{title}</p>
+                                            <p className="tabular text-[11px] text-[#4A6378] mt-0.5">
+                                              {dateStr} · {t('timeline.odometer_label')} {event.mileage.toLocaleString()} {t('timeline.unit_km')}
+                                            </p>
+                                          </div>
+                                          {event.amount != null && (
+                                            <p className="whitespace-nowrap text-end shrink-0">
+                                              <span className="text-sm font-extrabold tabular">{event.amount}</span>
+                                              <span className="ms-1 text-[10px] text-[#4A6378] font-bold">
+                                                {t('timeline.unit_riyal')}
+                                              </span>
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </li>
+                                  );
+                                })}
+                            </ul>
+                          </div>
+                        )}
+                        {vEvents.length > 0 && (
+                          <button
+                            onClick={() => setActivePage('timeline')}
+                            className="w-full text-brand text-sm font-bold py-2"
+                          >
+                            {t('cardetails.history_view_all')}
+                          </button>
+                        )}
+                      </>
+                    )}
                   </>
                 );
               })()}
