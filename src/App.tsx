@@ -252,6 +252,95 @@ function AlertItemRow({ status }: { status: MaintenanceStatus }) {
   );
 }
 
+function PreviewServiceCard({
+  type,
+  mileage,
+  dateLocale,
+  notes,
+  onNotesChange,
+  Icon,
+  iconColor,
+  label,
+  onCancel,
+  onAdd,
+}: {
+  type: ServiceType;
+  mileage: number;
+  dateLocale: string;
+  notes: string;
+  onNotesChange: (v: string) => void;
+  Icon: typeof Fuel;
+  iconColor: string;
+  label: string;
+  onCancel: () => void;
+  onAdd: () => void | Promise<void>;
+}) {
+  const { t } = useI18n();
+  const [busy, setBusy] = useState(false);
+  const today = new Date().toLocaleDateString(dateLocale);
+
+  return (
+    <div className="relative ps-8 pb-2">
+      <div
+        className={cn(
+          'absolute start-2 top-2 w-4 h-4 rounded-full border-2 border-bg-dark',
+          type === ServiceType.FUEL ? 'bg-brand' : 'bg-success',
+        )}
+      />
+      <div className="glass-dark p-6 rounded-[28px] space-y-3">
+        <div className="flex justify-between items-start">
+          <div className="flex items-center gap-2">
+            <Icon className={cn('w-4 h-4', iconColor)} />
+            <span className="font-bold">{label}</span>
+          </div>
+          <span className="text-xs text-black/40">{today}</span>
+        </div>
+        <div className="flex justify-between">
+          <p className="text-lg font-bold">{formatMileage(mileage)}</p>
+        </div>
+
+        <label className="block pt-1">
+          <span className="block text-xs font-bold text-black/60 mb-2">
+            {t('service.notes')}
+          </span>
+          <textarea
+            value={notes}
+            onChange={(e) => onNotesChange(e.target.value)}
+            placeholder={t('service.notes_placeholder')}
+            maxLength={1000}
+            rows={3}
+            className="w-full bg-white border border-black/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-brand resize-none"
+          />
+        </label>
+
+        <div className="flex gap-2 pt-1">
+          <button
+            onClick={onCancel}
+            disabled={busy}
+            className="flex-1 bg-black/5 border border-black/10 py-3 rounded-2xl text-sm font-bold hover:bg-black/10 transition"
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            onClick={async () => {
+              setBusy(true);
+              try {
+                await onAdd();
+              } finally {
+                setBusy(false);
+              }
+            }}
+            disabled={busy}
+            className="flex-1 bg-brand text-white py-3 rounded-2xl text-sm font-bold hover:brightness-95 transition disabled:opacity-60"
+          >
+            {t('service.add')}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function TimelineEventRow({
   event,
   isLast,
@@ -620,6 +709,31 @@ export default function App() {
   const [scanPreview, setScanPreview] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [eventNotes, setEventNotes] = useState('');
+  const [selectedServiceType, setSelectedServiceType] = useState<ServiceType | null>(null);
+
+  const serviceIcon = (type: ServiceType) => {
+    switch (type) {
+      case ServiceType.FUEL: return Fuel;
+      case ServiceType.OIL_CHANGE: return Droplets;
+      case ServiceType.MAINTENANCE: return Wrench;
+      case ServiceType.TIRES: return Disc;
+      case ServiceType.BATTERY: return Battery;
+      case ServiceType.PARTS: return Cog;
+      default: return Plus;
+    }
+  };
+
+  const serviceColor = (type: ServiceType): string => {
+    switch (type) {
+      case ServiceType.FUEL: return 'text-brand';
+      case ServiceType.OIL_CHANGE: return 'text-success';
+      case ServiceType.MAINTENANCE: return 'text-warning';
+      case ServiceType.TIRES: return 'text-purple-400';
+      case ServiceType.BATTERY: return 'text-danger';
+      case ServiceType.PARTS: return 'text-sky-500';
+      default: return 'text-black/60';
+    }
+  };
   const [reportBusy, setReportBusy] = useState(false);
   const [addCarForm, setAddCarForm] = useState({ name: '', make: '', model: '', year: '', color: '', mileage: '' });
   const [fuelForm, setFuelForm] = useState({ amount: '', liters: '', station: '' });
@@ -952,6 +1066,7 @@ export default function App() {
       setActivePage('dashboard');
       setTempEventData(null);
       setEventNotes('');
+      setSelectedServiceType(null);
       setFuelForm({ amount: '', liters: '', station: '' });
       setServiceForm({ center: '' });
     } catch (err) {
@@ -1658,7 +1773,7 @@ export default function App() {
           )}
 
           {activePage === 'service-select' && (
-            <motion.div 
+            <motion.div
               key="service-select"
               initial={{ opacity: 0, y: 100 }}
               animate={{ opacity: 1, y: 0 }}
@@ -1666,54 +1781,79 @@ export default function App() {
             >
               <div>
                 <h2 className="text-3xl font-bold mb-2">{t('service.title')}</h2>
-                <p className="text-black/40">{t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })}</p>
+                <p className="text-black/40">
+                  {selectedServiceType
+                    ? t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })
+                    : t('service.pick_type')}
+                </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  { type: ServiceType.FUEL, icon: Fuel, color: 'text-brand', bg: 'bg-brand/10' },
-                  { type: ServiceType.OIL_CHANGE, icon: Droplets, color: 'text-success', bg: 'bg-success/10' },
-                  { type: ServiceType.MAINTENANCE, icon: Wrench, color: 'text-warning', bg: 'bg-warning/10' },
-                  { type: ServiceType.TIRES, icon: Disc, color: 'text-purple-400', bg: 'bg-purple-400/10' },
-                  { type: ServiceType.BATTERY, icon: Battery, color: 'text-danger', bg: 'bg-danger/10' },
-                  { type: ServiceType.PARTS, icon: Cog, color: 'text-sky-500', bg: 'bg-sky-500/10' },
-                  { type: ServiceType.OTHER, icon: Plus, color: 'text-black/60', bg: 'bg-black/5' },
-                ].map((s) => (
+              {!selectedServiceType ? (
+                <>
+                  <div className="grid grid-cols-2 gap-4">
+                    {[
+                      { type: ServiceType.FUEL, bg: 'bg-brand/10' },
+                      { type: ServiceType.OIL_CHANGE, bg: 'bg-success/10' },
+                      { type: ServiceType.MAINTENANCE, bg: 'bg-warning/10' },
+                      { type: ServiceType.TIRES, bg: 'bg-purple-400/10' },
+                      { type: ServiceType.BATTERY, bg: 'bg-danger/10' },
+                      { type: ServiceType.PARTS, bg: 'bg-sky-500/10' },
+                      { type: ServiceType.OTHER, bg: 'bg-black/5' },
+                    ].map((s) => {
+                      const Icon = serviceIcon(s.type);
+                      const color = serviceColor(s.type);
+                      return (
+                        <button
+                          key={s.type}
+                          onClick={() => {
+                            if (s.type === ServiceType.FUEL) setActivePage('log-fuel');
+                            else if (s.type === ServiceType.MAINTENANCE) setActivePage('log-service');
+                            else setSelectedServiceType(s.type);
+                          }}
+                          className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-all active:scale-95 group hover:border-brand/40"
+                        >
+                          <div
+                            className={cn(
+                              'w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110',
+                              s.bg,
+                            )}
+                          >
+                            <Icon className={cn('w-7 h-7', color)} />
+                          </div>
+                          <span className="text-sm font-bold">{serviceLabel(s.type)}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
                   <button
-                    key={s.type}
                     onClick={() => {
-                      if (s.type === ServiceType.FUEL) setActivePage('log-fuel');
-                      else if (s.type === ServiceType.MAINTENANCE) setActivePage('log-service');
-                      else saveEvent(s.type);
+                      setEventNotes('');
+                      setSelectedServiceType(null);
+                      setActivePage('dashboard');
                     }}
-                    className="glass-dark p-6 rounded-[32px] flex flex-col items-center gap-3 transition-all active:scale-95 group hover:border-brand/40"
+                    className="w-full text-black/40 font-medium py-4"
                   >
-                    <div className={cn("w-14 h-14 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110", s.bg)}>
-                      <s.icon className={cn("w-7 h-7", s.color)} />
-                    </div>
-                    <span className="text-sm font-bold">{serviceLabel(s.type)}</span>
+                    {t('service.skip')}
                   </button>
-                ))}
-              </div>
-
-              <label className="block">
-                <span className="block text-xs font-bold text-black/60 mb-2">{t('service.notes')}</span>
-                <textarea
-                  value={eventNotes}
-                  onChange={(e) => setEventNotes(e.target.value)}
-                  placeholder={t('service.notes_placeholder')}
-                  maxLength={1000}
-                  rows={3}
-                  className="w-full bg-white border border-black/10 rounded-2xl px-4 py-3 text-sm outline-none focus:border-brand resize-none"
+                </>
+              ) : (
+                <PreviewServiceCard
+                  type={selectedServiceType}
+                  mileage={tempEventData?.mileage || 0}
+                  dateLocale={dateLocale}
+                  notes={eventNotes}
+                  onNotesChange={setEventNotes}
+                  Icon={serviceIcon(selectedServiceType)}
+                  iconColor={serviceColor(selectedServiceType)}
+                  label={serviceLabel(selectedServiceType)}
+                  onCancel={() => {
+                    setSelectedServiceType(null);
+                    setEventNotes('');
+                  }}
+                  onAdd={() => saveEvent(selectedServiceType)}
                 />
-              </label>
-
-              <button
-                onClick={() => { setEventNotes(''); setActivePage('dashboard'); }}
-                className="w-full text-black/40 font-medium py-4"
-              >
-                {t('service.skip')}
-              </button>
+              )}
             </motion.div>
           )}
         </AnimatePresence>

@@ -121,6 +121,8 @@ const ar: Dict = {
   'service.other': 'أخرى',
   'service.notes': 'ملاحظات (اختياري)',
   'service.notes_placeholder': 'أضف أي ملاحظة عن الصيانة...',
+  'service.add': 'إضافة العملية',
+  'service.pick_type': 'اختر نوع العملية',
 
   // settings (vehicle)
   'settings.title': 'إعدادات المركبة',
@@ -342,6 +344,8 @@ const en: Dict = {
   'service.other': 'Other',
   'service.notes': 'Notes (optional)',
   'service.notes_placeholder': 'Add any note about this service…',
+  'service.add': 'Add entry',
+  'service.pick_type': 'Pick the service type',
 
   // settings (vehicle)
   'settings.title': 'Vehicle settings',
