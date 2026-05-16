@@ -24,13 +24,13 @@ const COPY = {
   ar: {
     nav: { features: 'المميزات', how: 'كيف يعمل', open: 'افتح التطبيق' },
     hero: {
-      pill: 'تطبيق ويب · بدون تنزيل',
+      pill: 'تطبيق ويب · بدون تحميل',
       h1Pre: 'صيانة سيارتك،',
       h1Post: 'ببساطة.',
       sub: 'افتح التطبيق من المتصفح. صوّر العداد بكاميرتك، سجّل الوقود والزيت، واحصل على تنبيهات صيانة ذكية. تسجيل دخول بحساب Google.',
       ctaOpen: 'افتح التطبيق',
       ctaAdd: 'أضِف لسطح المكتب',
-      bullets: ['تسجيل دخول بـ Google', 'يعمل بدون تنزيل', 'بدون إعلانات'],
+      bullets: ['تسجيل دخول بـ Google', 'يعمل بدون تحميل', 'بدون إعلانات'],
     },
     stats: [
       { value: '3s', label: 'لقراءة العداد بالكاميرا' },
@@ -198,30 +198,46 @@ function useLP() {
 }
 
 function formatUserCount(n: number, lang: Lang): string {
-  if (n < 1) return lang === 'ar' ? 'كن الأول' : 'Be first';
-  if (n < 100) return n.toLocaleString(lang === 'ar' ? 'ar-EG' : 'en-US');
-  if (n < 1000) return `${Math.floor(n / 10) * 10}+`;
+  const locale = lang === 'ar' ? 'ar-EG' : 'en-US';
+  if (n < 1000) return `+${n.toLocaleString(locale)}`;
   const k = n / 1000;
-  return `${k.toFixed(k < 10 ? 1 : 0)}K+`;
+  return `+${k.toFixed(k < 10 ? 1 : 0)}K`;
 }
 
 function useUserCount(): number | null {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
     const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID as string | undefined;
-    if (!projectId) return;
+    if (!projectId) {
+      console.warn('[user-count] missing VITE_FIREBASE_PROJECT_ID');
+      return;
+    }
     const databaseId = (import.meta.env.VITE_FIREBASE_DATABASE_ID as string | undefined) || '(default)';
     const url = `https://firestore.googleapis.com/v1/projects/${projectId}/databases/${databaseId}/documents/stats/public`;
     let cancelled = false;
     fetch(url)
-      .then((res) => (res.ok ? res.json() : null))
+      .then(async (res) => {
+        const body = await res.text();
+        if (!res.ok) {
+          console.warn('[user-count] HTTP', res.status, body);
+          return null;
+        }
+        try {
+          return JSON.parse(body);
+        } catch (e) {
+          console.warn('[user-count] parse error', e);
+          return null;
+        }
+      })
       .then((data) => {
         if (cancelled) return;
-        const value = data?.fields?.userCount?.integerValue ?? data?.fields?.userCount?.stringValue ?? '0';
-        const parsed = parseInt(value, 10);
+        const raw = data?.fields?.userCount;
+        const value = raw?.integerValue ?? raw?.stringValue ?? raw?.doubleValue ?? '0';
+        const parsed = parseInt(String(value), 10);
         setCount(Number.isFinite(parsed) ? parsed : 0);
       })
-      .catch(() => {
+      .catch((err) => {
+        console.warn('[user-count] fetch failed', err);
         if (!cancelled) setCount(0);
       });
     return () => {
@@ -256,29 +272,6 @@ function ChevronCta({ children, href, primary = false }: { children: ReactNode; 
       <Arrow className="w-4 h-4" />
       <span>{children}</span>
     </a>
-  );
-}
-
-function AddDesktopCta({ children, primary = false }: { children: ReactNode; primary?: boolean }) {
-  return (
-    <button
-      type="button"
-      onClick={() => {
-        if (typeof window !== 'undefined') {
-          window.alert(
-            COPY.ar.hero.bullets[1] /* placeholder; install prompt handled in app */,
-          );
-        }
-      }}
-      className={
-        primary
-          ? 'inline-flex items-center gap-2 rounded-full bg-brand text-white px-6 py-3 text-sm font-bold shadow-[0_12px_28px_rgba(242,107,31,0.35)] hover:brightness-95 transition'
-          : 'inline-flex items-center gap-2 rounded-full bg-white text-ink border border-[#E1EAF1] px-6 py-3 text-sm font-bold hover:bg-white/90 transition'
-      }
-    >
-      <Plus className="w-4 h-4" />
-      <span>{children}</span>
-    </button>
   );
 }
 
@@ -493,7 +486,6 @@ function HeroSection() {
             <ChevronCta href="/app" primary>
               {c.hero.ctaOpen}
             </ChevronCta>
-            <AddDesktopCta>{c.hero.ctaAdd}</AddDesktopCta>
           </div>
           <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-2 md:justify-start justify-center text-sm text-ink/70 font-medium">
             {c.hero.bullets.map((b) => (
@@ -861,7 +853,6 @@ function BottomCta() {
           <ChevronCta href="/app" primary>
             {c.hero.ctaOpen}
           </ChevronCta>
-          <AddDesktopCta>{c.hero.ctaAdd}</AddDesktopCta>
         </div>
       </div>
     </section>
