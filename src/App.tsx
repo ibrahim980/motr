@@ -2751,87 +2751,208 @@ export default function App() {
           )}
 
           {activePage === 'profile' && (
-            <motion.div 
+            <motion.div
               key="profile"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="space-y-8"
+              className="space-y-4"
             >
-              <div className="text-center pt-10">
-                <div className="w-24 h-24 bg-black/5 rounded-full flex items-center justify-center mx-auto mb-4 border border-black/10">
-                  {user?.photoURL ? <img src={user.photoURL} className="rounded-full" /> : <UserIcon className="w-12 h-12 text-black/20" />}
-                </div>
-                <h2 className="text-2xl font-bold">{user?.displayName || t('profile.guest')}</h2>
-                <p className="text-black/40">{user?.email || t('profile.sign_in_hint')}</p>
+              <div className="pb-1">
+                <h1 className="text-3xl font-extrabold tracking-tight text-end">{t('settings.title')}</h1>
               </div>
 
-              <div className="flex justify-center">
-                <LanguageToggle />
-              </div>
-
-              <div className="space-y-4">
-                {!user ? (
+              {!user ? (
+                <div className="bg-white rounded-[28px] border border-[#E1EAF1] p-6 space-y-4 text-center">
+                  <p className="text-sm text-black/60">{t('profile.sign_in_hint')}</p>
                   <button
                     onClick={handleSignIn}
-                    className="w-full glass p-6 rounded-3xl flex items-center gap-4 hover:bg-black/10 transition-all font-bold text-lg"
+                    dir="ltr"
+                    className="w-full flex items-center justify-center gap-3 rounded-2xl bg-white border border-[#E1EAF1] px-5 py-3 text-sm font-semibold text-ink hover:bg-bg-dark transition"
                   >
-                    <div className="w-10 h-10 bg-brand rounded-full flex items-center justify-center">
-                      <Plus className="w-6 h-6 text-white" />
-                    </div>
-                    <span>{t('profile.sign_in_google')}</span>
+                    <svg width="20" height="20" viewBox="0 0 48 48">
+                      <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+                      <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+                      <path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+                      <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+                    </svg>
+                    <span>{t('signin.with_google')}</span>
                   </button>
-                ) : (
-                  <>
-                    <div className="space-y-3">
-                      <h3 className="text-lg font-bold">{t('profile.your_vehicles')}</h3>
+                </div>
+              ) : (
+                <>
+                  <div className="relative overflow-hidden bg-ink text-white rounded-[22px] p-4 flex items-center gap-3.5">
+                    <div className="absolute inset-x-0 top-[52%] h-3.5 bg-brand pointer-events-none" />
+                    <div className="relative shrink-0 w-14 h-14 rounded-full flex items-center justify-center font-extrabold text-2xl text-brand border-[3px] border-ink overflow-hidden" style={{ background: 'linear-gradient(135deg, #FFE6D5, #F8C9A8)' }}>
+                      {user.photoURL ? (
+                        <img src={user.photoURL} alt="avatar" className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{(user.displayName || user.email || '?').trim().charAt(0)}</span>
+                      )}
+                    </div>
+                    <div className="relative flex-1 min-w-0 text-end">
+                      <p className="text-base font-bold truncate">{user.displayName || t('profile.guest')}</p>
+                      <p dir="ltr" className="text-xs text-white/60 font-mono mt-0.5 truncate text-end">{user.email}</p>
+                      <span className="mt-1.5 inline-flex items-center gap-1.5 text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/15">
+                        <svg width="11" height="11" viewBox="0 0 48 48">
+                          <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+                          <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.31-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+                          <path fill="#FBBC05" d="M11.69 28.18c-.44-1.32-.69-2.73-.69-4.18s.25-2.86.69-4.18v-5.7H4.34C2.85 17.09 2 20.45 2 24c0 3.55.85 6.91 2.34 9.88l7.35-5.7z"/>
+                          <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.35 5.7c1.73-5.2 6.58-9.07 12.31-9.07z"/>
+                        </svg>
+                        <span>{t('settings.signed_in_with')}</span>
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">{t('settings.section_app')}</p>
+                    <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <button
+                          onClick={() => setActivePage('alerts')}
+                          className="contents"
+                          aria-label={t('settings.notifications')}
+                        />
+                        <div className="w-9 h-9 rounded-xl bg-[#FFE6D5] text-brand flex items-center justify-center shrink-0">
+                          <Bell className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.notifications')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.notifications_sub')}</p>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
+                      </div>
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#DCEAF3] text-[#1F3A8A] flex items-center justify-center shrink-0">
+                          <SettingsIcon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.units')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.units_sub')}</p>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
+                      </div>
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#EEF3F7] text-[#4A6378] flex items-center justify-center shrink-0">
+                          <HomeIcon className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.language')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{lang === 'ar' ? 'العربية' : 'English'}</p>
+                        </div>
+                        <LanguageToggle />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">{t('profile.your_vehicles')}</p>
+                    <div className="bg-white rounded-2xl border border-[#E1EAF1] p-3 space-y-2">
                       <button
                         onClick={handleAddVehicle}
-                        className="w-full bg-brand text-white p-4 rounded-2xl flex items-center justify-center gap-2 font-bold shadow-lg shadow-brand/20 hover:brightness-95 transition"
+                        className="w-full rounded-xl bg-brand text-white px-4 py-3 flex items-center justify-center gap-2 text-sm font-bold shadow-[0_8px_18px_rgba(242,107,31,0.32)]"
                       >
-                        <Plus className="w-5 h-5" />
+                        <Plus className="w-4 h-4" />
                         <span>{t('profile.add_vehicle')}</span>
                       </button>
                       {vehicles.length === 0 ? (
-                        <p className="text-sm text-black/40 text-center py-3">{t('profile.no_vehicles')}</p>
+                        <p className="text-xs text-[#7B92A6] text-center py-2">{t('profile.no_vehicles')}</p>
                       ) : (
-                        <div className="space-y-2">
+                        <div className="space-y-1.5">
                           {vehicles.map((v) => (
-                            <div key={v.id}>
-                              <VehicleManageRow vehicle={v} onDelete={handleDeleteVehicle} />
-                            </div>
+                            <VehicleManageRow key={v.id} vehicle={v} onDelete={handleDeleteVehicle} />
                           ))}
                         </div>
                       )}
                     </div>
+                  </div>
 
-                    {vehicles.length === 0 && (
+                  <div>
+                    <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">{t('settings.section_data')}</p>
+                    <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#E2EFE3] text-success flex items-center justify-center shrink-0">
+                          <History className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.backup')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.backup_sub')}</p>
+                        </div>
+                        <span className="text-[10px] font-bold text-success bg-[#E2EFE3] px-2 py-1 rounded-full">{t('settings.backup_synced')}</span>
+                      </div>
                       <button
-                        onClick={async () => {
-                          try {
-                            await seedDemoData(user.uid);
-                            toast.success(t('profile.seed_demo_done'));
-                            setActivePage('dashboard');
-                          } catch (err) {
-                            console.error(err);
-                            toast.error(t('profile.seed_demo_failed'));
-                          }
-                        }}
-                        className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-brand font-bold"
+                        onClick={() => runReport(selectedVehicle)}
+                        disabled={reportBusy || !selectedVehicle}
+                        className="w-full px-4 py-3 flex items-center gap-3 disabled:opacity-50"
                       >
-                        <Plus className="w-6 h-6" />
-                        <span>{t('profile.seed_demo')}</span>
+                        <div className="w-9 h-9 rounded-xl bg-[#EEF3F7] text-[#4A6378] flex items-center justify-center shrink-0">
+                          <Share2 className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.export')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.export_sub')}</p>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
                       </button>
-                    )}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">{t('settings.section_about')}</p>
+                    <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
+                      <div className="px-4 py-3 flex items-center gap-3">
+                        <div className="w-9 h-9 rounded-xl bg-[#EEF3F7] text-[#4A6378] flex items-center justify-center shrink-0">
+                          <CheckCircle2 className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.version')}</p>
+                          <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.version_sub')}</p>
+                        </div>
+                        <span className="text-[10px] font-semibold text-[#7B92A6]">{t('settings.backup_synced')}</span>
+                      </div>
+                      <a
+                        href="https://github.com/ibrahim980/motr/issues"
+                        target="_blank"
+                        rel="noreferrer"
+                        className="px-4 py-3 flex items-center gap-3"
+                      >
+                        <div className="w-9 h-9 rounded-xl bg-[#EEF3F7] text-[#4A6378] flex items-center justify-center shrink-0">
+                          <Heart className="w-4 h-4" />
+                        </div>
+                        <div className="flex-1 text-end min-w-0">
+                          <p className="text-sm font-semibold">{t('settings.rate')}</p>
+                        </div>
+                        <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
+                      </a>
+                    </div>
+                  </div>
+
+                  {vehicles.length === 0 && (
                     <button
-                      onClick={() => signOut(auth)}
-                      className="w-full glass-dark p-6 rounded-3xl flex items-center gap-4 text-danger font-bold"
+                      onClick={async () => {
+                        try {
+                          await seedDemoData(user.uid);
+                          toast.success(t('profile.seed_demo_done'));
+                          setActivePage('dashboard');
+                        } catch (err) {
+                          console.error(err);
+                          toast.error(t('profile.seed_demo_failed'));
+                        }
+                      }}
+                      className="w-full rounded-2xl bg-white border border-[#E1EAF1] px-4 py-3 text-sm font-bold text-brand"
                     >
-                      <LogOut className="w-6 h-6" />
-                      <span>{t('profile.sign_out')}</span>
+                      {t('profile.seed_demo')}
                     </button>
-                  </>
-                )}
-              </div>
+                  )}
+
+                  <button
+                    onClick={() => signOut(auth)}
+                    className="w-full text-center py-3 text-sm font-bold text-danger"
+                  >
+                    {t('profile.sign_out')}
+                  </button>
+                </>
+              )}
             </motion.div>
           )}
 
