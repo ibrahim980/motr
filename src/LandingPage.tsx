@@ -563,14 +563,14 @@ function FeatureCard({
     <div
       className={`rounded-[28px] p-7 ${dark ? 'bg-ink text-white' : 'bg-white text-ink'} shadow-[0_8px_24px_rgba(14,34,51,0.06)] ${className}`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0 text-end">
+      <div className="flex items-start gap-4">
+        <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
+          <Icon className="w-5 h-5" />
+        </div>
+        <div className="flex-1 min-w-0 text-start">
           <h3 className={`text-xl font-extrabold tracking-tight ${dark ? 'text-white' : 'text-ink'}`}>{title}</h3>
           <p className={`mt-2 text-sm leading-relaxed ${dark ? 'text-white/70' : 'text-ink/65'}`}>{desc}</p>
           {children}
-        </div>
-        <div className={`w-11 h-11 rounded-xl ${iconBg} flex items-center justify-center shrink-0`}>
-          <Icon className="w-5 h-5" />
         </div>
       </div>
     </div>
@@ -601,13 +601,21 @@ function FuelMiniChart() {
 }
 
 function HistoryMiniTimeline() {
-  return (
-    <ul className="mt-5 space-y-2 text-end">
-      {[
+  const { lang } = useLP();
+  const rows = lang === 'ar'
+    ? [
+        { d: '12 مارس', active: true },
+        { d: '4 فبراير', active: false },
+        { d: '18 ديسمبر', active: false },
+      ]
+    : [
         { d: 'Mar 12', active: true },
         { d: 'Feb 04', active: false },
         { d: 'Dec 18', active: false },
-      ].map((row) => (
+      ];
+  return (
+    <ul className="mt-5 space-y-2">
+      {rows.map((row) => (
         <li key={row.d} className="flex items-center justify-between text-[11px] font-bold text-ink/55">
           <span className={`inline-block w-2 h-2 rounded-full ${row.active ? 'bg-brand' : 'bg-ink/15'}`} />
           <span>{row.d}</span>
