@@ -1703,40 +1703,69 @@ export default function App() {
                     </div>
                     <div className="h-6 bg-brand" />
                     <div className="px-5 pt-4 pb-5">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="flex items-center gap-2 text-[11px] text-white/60 mt-1.5">
-                          <Camera className="w-3.5 h-3.5" />
-                          <span>
-                            {(() => {
-                              const d =
-                                timestampToDate(selectedVehicle.updatedAt) ||
-                                timestampToDate(selectedVehicle.createdAt);
-                              if (!d) return t('dashboard.never_updated');
-                              return t('dashboard.updated_ago', {
-                                time: formatDistanceToNow(d, {
-                                  addSuffix: true,
-                                  locale: lang === 'ar' ? arLocale : enLocale,
-                                }),
-                              });
-                            })()}
-                          </span>
-                        </div>
-                        <div className="text-end">
-                          <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
-                            {t('dashboard.current_odometer')}
-                          </p>
-                          <p
-                            dir="ltr"
-                            className="mt-1 text-4xl font-extrabold tabular tracking-tight leading-none text-end"
-                          >
-                            <CountUp
-                              value={selectedVehicle.currentMileage}
-                              format={(n) => new Intl.NumberFormat('en-US').format(n)}
-                            />
-                            <span className="ms-2 text-xs font-bold text-white/60">{t('common.km_unit')}</span>
-                          </p>
-                        </div>
-                      </div>
+                      {(() => {
+                        const vEvents = events.filter((e) => e.vehicleId === selectedVehicle.id);
+                        const latestEvent = vEvents.reduce<TimelineEvent | null>((acc, e) => {
+                          if (!acc) return e;
+                          return new Date(e.date).getTime() > new Date(acc.date).getTime() ? e : acc;
+                        }, null);
+                        const hasReading = vEvents.length > 0 || selectedVehicle.currentMileage > 0;
+                        if (!hasReading) {
+                          return (
+                            <div className="flex items-center justify-between gap-3">
+                              <button
+                                onClick={() => fileInputRef.current?.click()}
+                                className="bg-brand text-white rounded-full px-4 py-2 text-xs font-bold flex items-center gap-2 shadow-[0_8px_18px_rgba(242,107,31,0.38)]"
+                              >
+                                <Camera className="w-3.5 h-3.5" />
+                                {t('dashboard.scan_first')}
+                              </button>
+                              <div className="text-end">
+                                <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                                  {t('dashboard.current_odometer')}
+                                </p>
+                                <p className="mt-1 text-2xl font-extrabold tracking-tight text-white/40">
+                                  {t('dashboard.awaiting_first_reading')}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="flex items-start justify-between gap-3">
+                            <div className="flex items-center gap-2 text-[11px] text-white/60 mt-1.5">
+                              <Camera className="w-3.5 h-3.5" />
+                              {latestEvent ? (
+                                <span>
+                                  {t('dashboard.updated_ago', {
+                                    time: formatDistanceToNow(new Date(latestEvent.date), {
+                                      addSuffix: true,
+                                      locale: lang === 'ar' ? arLocale : enLocale,
+                                    }),
+                                  })}
+                                </span>
+                              ) : (
+                                <span>{t('dashboard.never_updated')}</span>
+                              )}
+                            </div>
+                            <div className="text-end">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-white/50">
+                                {t('dashboard.current_odometer')}
+                              </p>
+                              <p
+                                dir="ltr"
+                                className="mt-1 text-4xl font-extrabold tabular tracking-tight leading-none text-end"
+                              >
+                                <CountUp
+                                  value={selectedVehicle.currentMileage}
+                                  format={(n) => new Intl.NumberFormat('en-US').format(n)}
+                                />
+                                <span className="ms-2 text-xs font-bold text-white/60">{t('common.km_unit')}</span>
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
 
