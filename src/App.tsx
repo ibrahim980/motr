@@ -1070,8 +1070,8 @@ export default function App() {
   };
   const [reportBusy, setReportBusy] = useState(false);
   const [addCarForm, setAddCarForm] = useState({ name: '', make: '', model: '', year: '', color: '', mileage: '' });
-  const [fuelForm, setFuelForm] = useState({ amount: '', liters: '', station: '' });
-  const [serviceForm, setServiceForm] = useState({ center: '' });
+  const [fuelForm, setFuelForm] = useState({ liters: '', pricePerLiter: '', station: '', grade: '95' });
+  const [serviceForm, setServiceForm] = useState({ center: '', cost: '', subtype: 'oil', reminderOn: true });
 
   useEffect(() => {
     if (!showSplash) return;
@@ -1492,8 +1492,8 @@ export default function App() {
       setTempEventData(null);
       setEventNotes('');
       setSelectedServiceType(null);
-      setFuelForm({ amount: '', liters: '', station: '' });
-      setServiceForm({ center: '' });
+      setFuelForm({ liters: '', pricePerLiter: '', station: '', grade: '95' });
+      setServiceForm({ center: '', cost: '', subtype: 'oil', reminderOn: true });
     } catch (err) {
       console.error(err);
       toast.error(t('service.save_failed'));
@@ -2537,25 +2537,97 @@ export default function App() {
           {activePage === 'camera' && (
             <motion.div
               key="camera"
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.9 }}
-              className="flex flex-col items-center justify-center pt-20 text-center space-y-8"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="relative -mx-4 -mt-12 min-h-screen bg-[#0E0C0A] text-white overflow-hidden"
+              style={{
+                backgroundImage:
+                  'radial-gradient(120% 70% at 50% 42%, #2a2520 0%, #0E0C0A 60%), repeating-linear-gradient(45deg, rgba(255,255,255,0.02) 0 2px, transparent 2px 6px)',
+              }}
             >
-              <ScanViewport scanning={scanning} preview={scanPreview} />
+              <div className="absolute top-[28%] inset-x-[8%] h-56 rounded-3xl bg-gradient-to-b from-[#1a1410] to-[#2a2118] opacity-80" />
 
-              <div>
-                <h2 className="text-2xl font-bold mb-2">{t('camera.title')}</h2>
-                <p className="text-black/40 max-w-[240px]">{t('camera.subtitle')}</p>
+              <div className="relative pt-14 px-5 flex items-center justify-between gap-3">
+                <button
+                  onClick={() => setActivePage('dashboard')}
+                  className="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center"
+                  aria-label="close"
+                >
+                  <X className="w-4 h-4 text-white" />
+                </button>
+                <p className="flex-1 text-center text-base font-semibold">{t('capture.title')}</p>
+                <span className="w-9" />
               </div>
 
-              <button
-                onClick={() => fileInputRef.current?.click()}
-                disabled={scanning}
-                className="bg-brand text-white px-12 py-4 rounded-3xl font-bold shadow-2xl shadow-brand/20 disabled:opacity-50"
-              >
-                {scanning ? t('camera.scanning') : t('camera.open')}
-              </button>
+              <div className="relative mt-8 flex justify-center gap-2">
+                {[
+                  { k: 'odometer', label: t('capture.mode_odometer'), active: true },
+                  { k: 'receipt', label: t('capture.mode_receipt') },
+                  { k: 'tire', label: t('capture.mode_tire') },
+                ].map((m) => (
+                  <span
+                    key={m.k}
+                    className={cn(
+                      'px-3 py-1.5 rounded-full text-xs font-semibold',
+                      m.active ? 'bg-white text-ink' : 'bg-white/15 text-white',
+                    )}
+                  >
+                    {m.label}
+                  </span>
+                ))}
+              </div>
+
+              <div className="relative mt-14 mx-10 h-32 rounded-2xl">
+                {[
+                  'top-0 start-0 border-t-[3px] border-s-[3px] rounded-tl-2xl',
+                  'top-0 end-0 border-t-[3px] border-e-[3px] rounded-tr-2xl',
+                  'bottom-0 start-0 border-b-[3px] border-s-[3px] rounded-bl-2xl',
+                  'bottom-0 end-0 border-b-[3px] border-e-[3px] rounded-br-2xl',
+                ].map((cls, i) => (
+                  <div key={i} className={cn('absolute w-8 h-8 border-brand', cls)} />
+                ))}
+                <div className="absolute inset-3 rounded-lg bg-[#1a1410] flex items-center justify-center">
+                  <span
+                    className="font-mono text-5xl font-extrabold tracking-wider text-[#FFB07A]"
+                    style={{ textShadow: '0 0 14px rgba(242, 107, 31, 0.5)' }}
+                  >
+                    {scanPreview ? '212,450' : '— — —'}
+                  </span>
+                </div>
+                <div className="absolute inset-x-3 top-1/2 -translate-y-1/2 h-px bg-gradient-to-r from-transparent via-brand/80 to-transparent" />
+              </div>
+
+              <div className="relative mt-6 text-center">
+                <p className="text-sm text-white/65">
+                  {scanning ? t('camera.scanning') : t('capture.detected_ok')}
+                </p>
+              </div>
+
+              <div className="absolute bottom-7 inset-x-0 flex items-center justify-center gap-7 px-7" dir="ltr">
+                <button
+                  onClick={() => setActivePage('timeline')}
+                  className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center"
+                  aria-label="history"
+                >
+                  <History className="w-5 h-5 text-white" />
+                </button>
+                <button
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={scanning}
+                  className="w-20 h-20 rounded-full bg-white flex items-center justify-center disabled:opacity-50"
+                  aria-label="capture"
+                >
+                  <span className="w-16 h-16 rounded-full bg-brand" />
+                </button>
+                <button
+                  onClick={() => setActivePage('cars')}
+                  className="w-12 h-12 rounded-full bg-white/15 flex items-center justify-center"
+                  aria-label="cars"
+                >
+                  <Car className="w-5 h-5 text-white" />
+                </button>
+              </div>
             </motion.div>
           )}
 
@@ -2769,24 +2841,133 @@ export default function App() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
-              className="space-y-6 pt-8"
+              className="-mx-4 -mt-12 min-h-screen bg-bg-dark pt-14 pb-28"
             >
-              <AppTop title={lang === 'ar' ? 'تمت قراءة العداد' : 'Odometer scanned'} sub={t('camera.detected', { value: '' }).trim()} />
-              <div className="rounded-[32px] border border-[#E1EAF1] bg-white p-7 text-center shadow-sm">
-                <div className="mx-auto mb-5 grid h-20 w-20 place-items-center rounded-full bg-success/10 text-success">
-                  <CheckCircle2 className="h-10 w-10" />
-                </div>
-                <BigNum value={formatMileage(tempEventData?.mileage || 0).replace(' KM', '')} unit={t('common.km_unit')} size="text-5xl" />
-                <p className="mt-4 text-sm font-medium leading-7 text-[#4A6378]">
-                  {lang === 'ar' ? 'راجع الرقم ثم اختر العملية التي تريد تسجيلها.' : 'Review the number, then choose what you want to log.'}
-                </p>
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <button onClick={() => fileInputRef.current?.click()} className="rounded-2xl border border-[#E1EAF1] bg-white px-4 py-4 font-bold text-ink">
-                  {lang === 'ar' ? 'إعادة التصوير' : 'Retake'}
+              {(() => {
+                const m = tempEventData?.mileage ?? 0;
+                const lastEventMileage = (() => {
+                  if (!selectedVehicle) return null;
+                  const vEvents = events.filter((e) => e.vehicleId === selectedVehicle.id);
+                  if (vEvents.length === 0) return null;
+                  const sorted = [...vEvents].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                  return sorted[0].mileage;
+                })();
+                const diff = lastEventMileage != null ? m - lastEventMileage : null;
+                const sinceLast = lastEventMileage != null ? events.find((e) => e.mileage === lastEventMileage) : null;
+                const sinceText = sinceLast
+                  ? formatDistanceToNow(new Date(sinceLast.date), { addSuffix: true, locale: lang === 'ar' ? arLocale : enLocale })
+                  : null;
+
+                return (
+                  <div className="px-5 space-y-4">
+                    <div className="flex items-start justify-between gap-3">
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="w-9 h-9 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                        aria-label="retake"
+                      >
+                        <X className="w-4 h-4 text-ink" />
+                      </button>
+                      <div className="text-end min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4A6378]">{t('capture.result_sub')}</p>
+                        <h1 className="mt-0.5 text-lg font-extrabold tracking-tight text-ink truncate">{t('capture.result_title')}</h1>
+                      </div>
+                      <button
+                        onClick={() => setActivePage('dashboard')}
+                        className="w-9 h-9 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                        aria-label="close"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-ink rtl:scale-x-[-1]" />
+                      </button>
+                    </div>
+
+                    <div className="bg-[#1a1410] rounded-[22px] p-4 relative overflow-hidden">
+                      <div
+                        className="h-32 rounded-xl flex items-center justify-center relative"
+                        style={{ background: 'linear-gradient(180deg, #2a2118 0%, #1a1410 100%)' }}
+                      >
+                        <span
+                          className="font-mono text-4xl font-extrabold tracking-wider text-[#FFB07A]"
+                          style={{ textShadow: '0 0 12px rgba(242, 107, 31, 0.4)' }}
+                        >
+                          {m.toLocaleString()}
+                        </span>
+                        <span className="absolute top-2.5 start-2.5 bg-brand text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1 rounded-full">
+                          OCR · 2.1s
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="bg-white rounded-[22px] border border-[#E1EAF1] p-4">
+                      <p className="text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">
+                        {t('capture.detected_number')}
+                      </p>
+                      <div className="mt-2 flex items-baseline justify-between">
+                        <button className="bg-bg-dark text-ink rounded-full px-3 py-1.5 text-xs font-bold inline-flex items-center gap-1.5">
+                          <Plus className="w-3 h-3" />
+                          {t('capture.edit_number')}
+                        </button>
+                        <p dir="ltr" className="text-end">
+                          <span className="text-5xl font-extrabold tabular tracking-tight">{m.toLocaleString()}</span>
+                          <span className="ms-1 text-xs font-bold text-[#4A6378]">{t('common.km_unit')}</span>
+                        </p>
+                      </div>
+                      {diff != null && diff >= 0 && (
+                        <div className="mt-3.5 bg-[#DCEAF3] rounded-xl px-3 py-2.5 flex items-center justify-between">
+                          {sinceText && <span className="text-[11px] text-[#4A6378] tabular">{sinceText}</span>}
+                          <p className="text-xs text-ink">
+                            <span className="text-[#4A6378]">{t('capture.diff_since_last')} </span>
+                            <span dir="ltr" className="tabular font-bold">+ {diff.toLocaleString()} {t('common.km_unit')}</span>
+                          </p>
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">
+                        {t('capture.what_to_log')}
+                      </p>
+                      <div className="grid grid-cols-2 gap-2.5">
+                        {[
+                          { key: 'fuel', icon: Fuel, title: t('capture.act_fuel_title'), sub: t('capture.act_fuel_sub'), bg: 'bg-[#FFE6D5]', fg: 'text-brand', active: true, onClick: () => setActivePage('log-fuel') },
+                          { key: 'oil', icon: Droplets, title: t('capture.act_oil_title'), sub: t('capture.act_oil_sub'), bg: 'bg-[#DCEAF3]', fg: 'text-[#1F3A8A]', onClick: () => { setServiceForm((s) => ({ ...s, subtype: 'oil' })); setActivePage('log-service'); } },
+                          { key: 'service', icon: CheckCircle2, title: t('capture.act_service_title'), sub: t('capture.act_service_sub'), bg: 'bg-[#E2EFE3]', fg: 'text-success', onClick: () => { setServiceForm((s) => ({ ...s, subtype: 'check' })); setActivePage('log-service'); } },
+                          { key: 'reading', icon: History, title: t('capture.act_reading_title'), sub: t('capture.act_reading_sub'), bg: 'bg-white', fg: 'text-ink', onClick: () => setActivePage('dashboard') },
+                        ].map((o) => (
+                          <button
+                            key={o.key}
+                            onClick={o.onClick}
+                            className={cn(
+                              'bg-white rounded-2xl p-3.5 text-end flex flex-col items-start gap-2.5',
+                              o.active ? 'border-2 border-brand' : 'border border-[#E1EAF1]',
+                            )}
+                          >
+                            <div className={cn('w-9 h-9 rounded-xl flex items-center justify-center', o.bg, o.fg)}>
+                              <o.icon className="w-5 h-5" />
+                            </div>
+                            <div className="w-full text-end">
+                              <p className="text-sm font-bold">{o.title}</p>
+                              <p className="text-[11px] text-[#4A6378] mt-0.5">{o.sub}</p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })()}
+              <div className="fixed bottom-6 inset-x-4 max-w-[430px] mx-auto px-1 flex gap-2.5">
+                <button
+                  onClick={() => setActivePage('dashboard')}
+                  className="flex-1 rounded-2xl bg-bg-dark text-ink px-5 py-4 text-[15px] font-bold"
+                >
+                  {t('common.cancel')}
                 </button>
-                <button onClick={() => setActivePage('service-select')} className="rounded-2xl bg-brand px-4 py-4 font-bold text-white shadow-lg shadow-brand/20">
-                  {lang === 'ar' ? 'تأكيد' : 'Confirm'}
+                <button
+                  onClick={() => setActivePage('log-fuel')}
+                  className="flex-[2] rounded-2xl bg-brand text-white px-5 py-4 text-[15px] font-bold shadow-[0_12px_28px_rgba(242,107,31,0.35)]"
+                >
+                  {t('capture.continue')}
                 </button>
               </div>
             </motion.div>
@@ -2798,34 +2979,168 @@ export default function App() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
-              className="space-y-5"
+              className="-mx-4 -mt-12 min-h-screen bg-bg-dark pt-14 pb-28"
             >
-              <AppTop title={t('service.fuel')} sub={t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })} />
-              <div className="space-y-3 rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
-                <DesignField label={lang === 'ar' ? 'المبلغ' : 'Amount'} value={fuelForm.amount} onChange={(v) => updateFuelForm('amount', v)} type="number" placeholder="52" />
-                <DesignField label={lang === 'ar' ? 'اللترات' : 'Liters'} value={fuelForm.liters} onChange={(v) => updateFuelForm('liters', v)} type="number" placeholder="40" />
-                <DesignField label={lang === 'ar' ? 'المحطة' : 'Station'} value={fuelForm.station} onChange={(v) => updateFuelForm('station', v)} placeholder={lang === 'ar' ? 'محطة أرامكو' : 'Aramco station'} />
-                <label className="block rounded-2xl border border-[#E1EAF1] bg-white px-4 py-3">
-                  <span className="block text-[10px] font-bold uppercase tracking-normal text-[#4A6378]">{t('service.notes')}</span>
-                  <textarea
-                    value={eventNotes}
-                    onChange={(e) => setEventNotes(e.target.value)}
-                    rows={3}
-                    className="mt-2 w-full resize-none bg-transparent text-sm font-medium outline-none placeholder:text-[#7B92A6]"
-                    placeholder={t('service.notes_placeholder')}
-                  />
-                </label>
-              </div>
-              <button
-                onClick={() => saveEvent(ServiceType.FUEL, {
-                  amount: Number(fuelForm.amount),
-                  liters: Number(fuelForm.liters),
-                  station: fuelForm.station.trim(),
-                })}
-                className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20"
-              >
-                {t('common.save')}
-              </button>
+              {(() => {
+                const liters = Number(fuelForm.liters) || 0;
+                const price = Number(fuelForm.pricePerLiter) || 0;
+                const total = liters * price;
+                return (
+                  <>
+                    <div className="px-5 pb-3 flex items-start justify-between gap-3">
+                      <button
+                        onClick={() => setActivePage('ocr-result')}
+                        className="w-9 h-9 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                        aria-label="back"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-ink rtl:scale-x-[-1]" />
+                      </button>
+                      <div className="text-end min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4A6378]">{t('logfuel.sub')}</p>
+                        <h1 className="mt-0.5 text-lg font-extrabold tracking-tight text-ink truncate">{t('logfuel.title')}</h1>
+                      </div>
+                      <button
+                        onClick={() => saveEvent(ServiceType.FUEL, {
+                          amount: total > 0 ? total : undefined,
+                          liters: liters > 0 ? liters : undefined,
+                          station: fuelForm.station.trim() || undefined,
+                        })}
+                        className="text-sm font-bold text-brand"
+                      >
+                        {t('common.save')}
+                      </button>
+                    </div>
+
+                    <div className="px-5">
+                      <div className="relative overflow-hidden bg-ink text-white rounded-[22px] p-5">
+                        <div className="absolute inset-x-0 top-[58%] h-[18px] bg-brand pointer-events-none" />
+                        <div className="relative text-end">
+                          <p className="text-[11px] font-bold uppercase tracking-widest text-white/60">{t('logfuel.total_label')}</p>
+                          <p dir="ltr" className="mt-1.5 text-end">
+                            <span className="text-4xl font-extrabold tabular tracking-tight">{total.toFixed(2)}</span>
+                            <span className="ms-2 text-sm font-bold text-white/60">{t('timeline.unit_riyal')}</span>
+                          </p>
+                          {liters > 0 && price > 0 && (
+                            <p className="text-xs text-white/60 mt-1.5">
+                              {t('logfuel.total_breakdown', { liters: liters.toString(), price: price.toFixed(2) })}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.section_details')}</p>
+                        <div className="space-y-2">
+                          <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#FFE6D5] text-brand flex items-center justify-center shrink-0">
+                              <Camera className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 text-end min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.field_odometer')}</p>
+                              <p className="mt-0.5 text-lg font-bold tabular">{(tempEventData?.mileage ?? 0).toLocaleString()}</p>
+                            </div>
+                            <span className="text-xs font-semibold text-[#4A6378]">{t('common.km_unit')}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 text-end">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.field_quantity')}</p>
+                              <div className="mt-0.5 flex items-baseline justify-end gap-1">
+                                <input
+                                  inputMode="decimal"
+                                  value={fuelForm.liters}
+                                  onChange={(e) => updateFuelForm('liters', e.target.value)}
+                                  placeholder="32"
+                                  className="w-full bg-transparent text-lg font-bold tabular outline-none text-end"
+                                />
+                                <span className="text-xs font-semibold text-[#4A6378]">لتر</span>
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 text-end">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.field_price')}</p>
+                              <div className="mt-0.5 flex items-baseline justify-end gap-1">
+                                <input
+                                  inputMode="decimal"
+                                  value={fuelForm.pricePerLiter}
+                                  onChange={(e) => updateFuelForm('pricePerLiter', e.target.value)}
+                                  placeholder="3.23"
+                                  className="w-full bg-transparent text-lg font-bold tabular outline-none text-end"
+                                />
+                                <span className="text-xs font-semibold text-[#4A6378]">{t('timeline.unit_riyal')}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.section_grade')}</p>
+                        <div className="flex flex-wrap gap-2">
+                          {[
+                            { key: '95', label: t('addcar.fuel_95') },
+                            { key: '91', label: t('addcar.fuel_91') },
+                            { key: 'diesel', label: t('addcar.fuel_diesel') },
+                          ].map((c) => (
+                            <button
+                              key={c.key}
+                              onClick={() => updateFuelForm('grade', c.key)}
+                              className={cn(
+                                'inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold',
+                                fuelForm.grade === c.key ? 'bg-brand text-white' : 'bg-[#FFE6D5] text-brand',
+                              )}
+                            >
+                              {c.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.section_station')}</p>
+                        <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-[#DCEAF3] text-[#1F3A8A] flex items-center justify-center shrink-0">
+                            <Fuel className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 text-end min-w-0">
+                            <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.station_label')}</p>
+                            <input
+                              value={fuelForm.station}
+                              onChange={(e) => updateFuelForm('station', e.target.value)}
+                              placeholder={t('logfuel.station_placeholder')}
+                              className="mt-0.5 w-full bg-transparent text-sm font-semibold outline-none text-end placeholder:text-[#7B92A6] placeholder:font-medium"
+                            />
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.section_note')}</p>
+                        <textarea
+                          value={eventNotes}
+                          onChange={(e) => setEventNotes(e.target.value)}
+                          rows={3}
+                          placeholder={t('logfuel.note_placeholder')}
+                          className="w-full bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-3 text-sm font-medium outline-none placeholder:text-[#7B92A6] resize-none text-end"
+                        />
+                      </div>
+                      <div className="h-24" />
+                    </div>
+
+                    <div className="fixed bottom-6 inset-x-4 max-w-[430px] mx-auto px-1">
+                      <button
+                        onClick={() => saveEvent(ServiceType.FUEL, {
+                          amount: total > 0 ? total : undefined,
+                          liters: liters > 0 ? liters : undefined,
+                          station: fuelForm.station.trim() || undefined,
+                        })}
+                        className="w-full rounded-2xl bg-brand text-white px-5 py-4 text-[15px] font-bold tracking-tight shadow-[0_12px_28px_rgba(242,107,31,0.35)] flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('logfuel.save')}</span>
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           )}
 
@@ -2835,28 +3150,179 @@ export default function App() {
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -24 }}
-              className="space-y-5"
+              className="-mx-4 -mt-12 min-h-screen bg-bg-dark pt-14 pb-28"
             >
-              <AppTop title={t('service.maintenance')} sub={t('service.saw_odometer', { value: formatMileage(tempEventData?.mileage || 0) })} />
-              <div className="space-y-3 rounded-[28px] border border-[#E1EAF1] bg-white p-5 shadow-sm">
-                <DesignField label={lang === 'ar' ? 'مركز الخدمة' : 'Service center'} value={serviceForm.center} onChange={(v) => updateServiceForm('center', v)} />
-                <label className="block rounded-2xl border border-[#E1EAF1] bg-white px-4 py-3">
-                  <span className="block text-[10px] font-bold uppercase tracking-normal text-[#4A6378]">{t('service.notes')}</span>
-                  <textarea
-                    value={eventNotes}
-                    onChange={(e) => setEventNotes(e.target.value)}
-                    rows={4}
-                    className="mt-2 w-full resize-none bg-transparent text-sm font-medium outline-none placeholder:text-[#7B92A6]"
-                    placeholder={t('service.notes_placeholder')}
-                  />
-                </label>
-              </div>
-              <button
-                onClick={() => saveEvent(ServiceType.MAINTENANCE, { serviceCenter: serviceForm.center.trim() })}
-                className="w-full rounded-2xl bg-brand px-5 py-4 font-bold text-white shadow-lg shadow-brand/20"
-              >
-                {t('common.save')}
-              </button>
+              {(() => {
+                const types: { key: string; icon: typeof Droplets; label: string; mapsTo: ServiceType }[] = [
+                  { key: 'oil', icon: Droplets, label: t('logservice.type_oil'), mapsTo: ServiceType.OIL_CHANGE },
+                  { key: 'filter', icon: Cog, label: t('logservice.type_filter'), mapsTo: ServiceType.PARTS },
+                  { key: 'tires', icon: Disc, label: t('logservice.type_tires'), mapsTo: ServiceType.TIRES },
+                  { key: 'check', icon: CheckCircle2, label: t('logservice.type_check'), mapsTo: ServiceType.OTHER },
+                  { key: 'electrical', icon: Battery, label: t('logservice.type_electrical'), mapsTo: ServiceType.BATTERY },
+                  { key: 'other', icon: Wrench, label: t('logservice.type_other'), mapsTo: ServiceType.MAINTENANCE },
+                ];
+                const mappedType = types.find((x) => x.key === serviceForm.subtype)?.mapsTo ?? ServiceType.MAINTENANCE;
+                const cost = Number(serviceForm.cost) || 0;
+                const todayStr = new Date().toLocaleDateString(dateLocale, { day: 'numeric', month: 'long', year: 'numeric' });
+
+                return (
+                  <>
+                    <div className="px-5 pb-3 flex items-start justify-between gap-3">
+                      <button
+                        onClick={() => setActivePage('ocr-result')}
+                        className="w-9 h-9 rounded-full bg-white border border-[#E1EAF1] flex items-center justify-center"
+                        aria-label="back"
+                      >
+                        <ChevronLeft className="w-4 h-4 text-ink rtl:scale-x-[-1]" />
+                      </button>
+                      <div className="text-end min-w-0 flex-1">
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-[#4A6378]">{t('logservice.sub')}</p>
+                        <h1 className="mt-0.5 text-lg font-extrabold tracking-tight text-ink truncate">{t('logservice.title')}</h1>
+                      </div>
+                      <button
+                        onClick={() => saveEvent(mappedType, {
+                          amount: cost > 0 ? cost : undefined,
+                          serviceCenter: serviceForm.center.trim() || undefined,
+                        })}
+                        className="text-sm font-bold text-brand"
+                      >
+                        {t('common.save')}
+                      </button>
+                    </div>
+
+                    <div className="px-5">
+                      <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.section_type')}</p>
+                      <div className="grid grid-cols-3 gap-2">
+                        {types.map((tp) => {
+                          const active = serviceForm.subtype === tp.key;
+                          return (
+                            <button
+                              key={tp.key}
+                              onClick={() => updateServiceForm('subtype', tp.key)}
+                              className={cn(
+                                'rounded-2xl px-2 py-3.5 flex flex-col items-center gap-2 text-xs font-semibold',
+                                active ? 'bg-ink text-white' : 'bg-white text-ink border border-[#E1EAF1]',
+                              )}
+                            >
+                              <span
+                                className={cn(
+                                  'w-9 h-9 rounded-xl flex items-center justify-center',
+                                  active ? 'bg-brand text-white' : 'bg-[#DCEAF3] text-[#1F3A8A]',
+                                )}
+                              >
+                                <tp.icon className="w-4 h-4" />
+                              </span>
+                              <span>{tp.label}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.section_details')}</p>
+                        <div className="space-y-2">
+                          <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#FFE6D5] text-brand flex items-center justify-center shrink-0">
+                              <Camera className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 text-end min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logfuel.field_odometer')}</p>
+                              <p className="mt-0.5 text-lg font-bold tabular">{(tempEventData?.mileage ?? 0).toLocaleString()}</p>
+                            </div>
+                            <span className="text-xs font-semibold text-[#4A6378]">{t('common.km_unit')}</span>
+                          </div>
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 text-end">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.field_cost')}</p>
+                              <div className="mt-0.5 flex items-baseline justify-end gap-1">
+                                <input
+                                  inputMode="decimal"
+                                  value={serviceForm.cost}
+                                  onChange={(e) => updateServiceForm('cost', e.target.value)}
+                                  placeholder="180"
+                                  className="w-full bg-transparent text-lg font-bold tabular outline-none text-end"
+                                />
+                                <span className="text-xs font-semibold text-[#4A6378]">{t('timeline.unit_riyal')}</span>
+                              </div>
+                            </div>
+                            <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 text-end">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.field_date')}</p>
+                              <p className="mt-0.5 text-sm font-bold tabular truncate">{todayStr}</p>
+                            </div>
+                          </div>
+                          <div className="bg-white rounded-2xl border border-[#E1EAF1] px-3.5 py-2.5 flex items-center gap-3">
+                            <div className="w-9 h-9 rounded-xl bg-[#DCEAF3] text-[#1F3A8A] flex items-center justify-center shrink-0">
+                              <HomeIcon className="w-4 h-4" />
+                            </div>
+                            <div className="flex-1 text-end min-w-0">
+                              <p className="text-[10px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.field_workshop')}</p>
+                              <input
+                                value={serviceForm.center}
+                                onChange={(e) => updateServiceForm('center', e.target.value)}
+                                placeholder={t('logservice.workshop_placeholder')}
+                                className="mt-0.5 w-full bg-transparent text-sm font-semibold outline-none text-end placeholder:text-[#7B92A6] placeholder:font-medium"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.section_receipt')}</p>
+                        <button
+                          onClick={() => fileInputRef.current?.click()}
+                          className="w-full bg-white rounded-2xl border border-dashed border-[#E1EAF1] px-4 py-4 flex items-center justify-center gap-2.5 text-[#4A6378]"
+                        >
+                          <Camera className="w-5 h-5" />
+                          <span className="text-sm font-semibold">{t('logservice.receipt_cta')}</span>
+                        </button>
+                      </div>
+
+                      <div className="mt-4">
+                        <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378]">{t('logservice.section_reminder')}</p>
+                        <div className="bg-[#FFE6D5] rounded-2xl p-3.5 flex items-center gap-3">
+                          <div className="w-9 h-9 rounded-xl bg-brand text-white flex items-center justify-center shrink-0">
+                            <Bell className="w-4 h-4" />
+                          </div>
+                          <div className="flex-1 text-end min-w-0">
+                            <p className="text-sm font-bold text-ink">{t('logservice.reminder_label')}</p>
+                            <p className="text-[11px] text-[#4A6378] mt-0.5">{t('logservice.reminder_sub')}</p>
+                          </div>
+                          <button
+                            onClick={() => setServiceForm((s) => ({ ...s, reminderOn: !s.reminderOn }))}
+                            className={cn(
+                              'relative w-10 h-6 rounded-full transition shrink-0',
+                              serviceForm.reminderOn ? 'bg-brand' : 'bg-[#E1EAF1]',
+                            )}
+                            aria-pressed={serviceForm.reminderOn}
+                          >
+                            <span
+                              className={cn(
+                                'absolute top-1 w-4 h-4 rounded-full bg-white transition',
+                                serviceForm.reminderOn ? 'end-1' : 'start-1',
+                              )}
+                            />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="h-24" />
+                    </div>
+
+                    <div className="fixed bottom-6 inset-x-4 max-w-[430px] mx-auto px-1">
+                      <button
+                        onClick={() => saveEvent(mappedType, {
+                          amount: cost > 0 ? cost : undefined,
+                          serviceCenter: serviceForm.center.trim() || undefined,
+                        })}
+                        className="w-full rounded-2xl bg-brand text-white px-5 py-4 text-[15px] font-bold tracking-tight shadow-[0_12px_28px_rgba(242,107,31,0.35)] flex items-center justify-center gap-2"
+                      >
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>{t('logservice.save')}</span>
+                      </button>
+                    </div>
+                  </>
+                );
+              })()}
             </motion.div>
           )}
 
