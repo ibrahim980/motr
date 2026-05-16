@@ -1150,9 +1150,15 @@ export default function App() {
   const newVehicleIdRef = useRef<string | null>(null);
 
   const handleAddVehicle = () => {
-    setSelectedVehicle(null);
     setActivePage('add-car');
   };
+
+  useEffect(() => {
+    if (selectedVehicle) return;
+    if (vehicles.length === 0) return;
+    if (activePage === 'add-car') return;
+    setSelectedVehicle(vehicles[0]);
+  }, [vehicles, selectedVehicle, activePage]);
 
   const createVehicleFromForm = async () => {
     if (!user) {
@@ -2851,12 +2857,10 @@ export default function App() {
                   <div>
                     <p className="px-1 pb-2 text-[11px] font-bold uppercase tracking-widest text-[#4A6378] text-end">{t('settings.section_app')}</p>
                     <div className="bg-white rounded-2xl border border-[#E1EAF1] divide-y divide-[#EEF3F7]">
-                      <div className="px-4 py-3 flex items-center gap-3">
-                        <button
-                          onClick={() => setActivePage('alerts')}
-                          className="contents"
-                          aria-label={t('settings.notifications')}
-                        />
+                      <button
+                        onClick={() => setActivePage('alerts')}
+                        className="w-full px-4 py-3 flex items-center gap-3 hover:bg-[#F4F7F9] transition text-start"
+                      >
                         <div className="w-9 h-9 rounded-xl bg-[#FFE6D5] text-brand flex items-center justify-center shrink-0">
                           <Bell className="w-4 h-4" />
                         </div>
@@ -2865,7 +2869,7 @@ export default function App() {
                           <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.notifications_sub')}</p>
                         </div>
                         <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
-                      </div>
+                      </button>
                       <div className="px-4 py-3 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#DCEAF3] text-[#1F3A8A] flex items-center justify-center shrink-0">
                           <SettingsIcon className="w-4 h-4" />
@@ -2874,7 +2878,6 @@ export default function App() {
                           <p className="text-sm font-semibold">{t('settings.units')}</p>
                           <p className="text-xs text-[#4A6378] mt-0.5 truncate">{t('settings.units_sub')}</p>
                         </div>
-                        <ChevronLeft className="w-4 h-4 text-[#4A6378] rtl:scale-x-[-1] shrink-0" />
                       </div>
                       <div className="px-4 py-3 flex items-center gap-3">
                         <div className="w-9 h-9 rounded-xl bg-[#EEF3F7] text-[#4A6378] flex items-center justify-center shrink-0">
